@@ -1,0 +1,14 @@
+{
+  "name": "@steem-monsters/lib-monad",
+  "version": "0.1.0-prerelease2",
+  "description": "Library for monads",
+  "author": "Michiel Hegemans",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/steem-monsters/splinterlands-validator.git"
+  },
+  "publishConfig": {
+    "registry": "https://npm.pkg.github.com"
+  }
+}

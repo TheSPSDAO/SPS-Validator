@@ -1,0 +1,21 @@
+{
+    "start_date": "2022-02-24T17:00:00Z",
+    "price": [
+        {
+            "currency": "SPS",
+            "amount": 1
+        }
+    ],
+    "bonus": {
+        "currency": "VOUCHER",
+        "brackets": [{
+            "min": 0,
+            "ratio": 0.1
+        }]
+    },
+    "token": "LICENSE",
+    "item_details_name": "License with Bonus",
+    "supply": "limited",
+    "type": "token",
+    "max": 1000000
+}

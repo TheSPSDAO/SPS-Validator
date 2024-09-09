@@ -1,0 +1,13 @@
+# MacOS Stuff
+.DS_Store
+/snapshot.sql
+/snapshot.env
+/sqitch/downloaded-snapshot.zip
+node_modules
+/.vscode/
+/dist/
+.env
+config.ini
+/sqitch/validator-data-latest.zip
+.nx
+coverage

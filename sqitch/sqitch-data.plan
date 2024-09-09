@@ -1,0 +1,7 @@
+%syntax-version=1.0.0
+%project=splinterlands-validator
+%uri=https://github.com/steem-monsters/splinterlands-validator
+
+snapshot 2022-03-02T16:03:54Z Jelle Licht (wordempire) <jelle@splinterlands.com> # Dynamic snapshot restoration
+starting-block [snapshot] 2022-04-19T11:51:45Z Jelle Licht (wordempire) <jelle@splinterlands.com> # Insert a fake block if no blocks are in the database
+modernize-staking-settings [snapshot] 2022-09-05T07:47:12Z Jelle Licht (wordempire) <jelle@splinterlands.com> # Normalize staking pool settings.

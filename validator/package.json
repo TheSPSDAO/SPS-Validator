@@ -1,0 +1,18 @@
+{
+    "name": "@steem-monsters/splinterlands-validator",
+    "version": "0.1.0-prerelease45",
+    "description": "The main validator block processor for Splintershards (SPS).",
+    "author": "yabapmatt",
+    "license": "MIT",
+    "repository": {
+        "type": "git",
+        "url": "git://github.com/steem-monsters/splinterlands-validator.git"
+    },
+    "files": [
+        "licenses",
+        "src"
+    ],
+    "publishConfig": {
+        "registry": "https://npm.pkg.github.com"
+    }
+}

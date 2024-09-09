@@ -1,0 +1,21 @@
+{
+  "start_date": "2022-05-25T16:00:00Z",
+  "price": [
+    {
+      "currency": "USD",
+      "amount": 5000,
+      "accepted_currency": "SPS"
+    }
+  ],
+  "discount": {
+    "currency": "VOUCHER",
+    "max_amount": 500,
+    "discount_rate": 5
+  },
+  "supply": "limited",
+  "tranche_reserves": 50000,
+  "type": "token",
+  "token": "LICENSE",
+  "item_details_name": "Validator License",
+  "max": 500
+}

@@ -1,0 +1,30 @@
+{
+    "name": "validator-lib",
+    "$schema": "../node_modules/nx/schemas/project-schema.json",
+    "projectType": "library",
+    "targets": {
+        "build": {
+            "executor": "@nx/js:tsc",
+            "outputs": ["{options.outputPath}"],
+            "options": {
+                "outputPath": "dist/libs/validator",
+                "tsConfig": "validator/tsconfig.lib.json",
+                "packageJson": "validator/package.json",
+                "main": "validator/src/lib.ts",
+                "assets": ["validator/licenses/*"]
+            }
+        },
+        "lint": {
+            "executor": "@nx/eslint:lint",
+            "outputs": ["{options.outputFile}"]
+        },
+        "test": {
+            "executor": "@nx/jest:jest",
+            "outputs": ["{workspaceRoot}/coverage/validator"],
+            "options": {
+                "jestConfig": "validator/jest.config.js"
+            }
+        }
+    },
+    "tags": []
+}

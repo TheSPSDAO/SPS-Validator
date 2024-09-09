@@ -1,0 +1,5 @@
+# Auto detect text files and perform LF normalization
+* text=auto
+
+# Linux/OSX specific files that are only run on Windows in WSL
+*.sh text eol=lf

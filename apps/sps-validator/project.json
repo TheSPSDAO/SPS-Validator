@@ -1,0 +1,53 @@
+{
+    "name": "sps-validator",
+    "$schema": "../../node_modules/nx/schemas/project-schema.json",
+    "sourceRoot": "apps/sps-validator/src",
+    "projectType": "application",
+    "targets": {
+        "build": {
+            "executor": "@nx/webpack:webpack",
+            "outputs": ["{options.outputPath}"],
+            "options": {
+                "generatePackageJson": true,
+                "outputPath": "dist/apps/sps-validator",
+                "main": "apps/sps-validator/src/main.ts",
+                "tsConfig": "apps/sps-validator/tsconfig.app.json",
+                "compiler": "tsc",
+                "target": "node",
+                "webpackConfig": "apps/sps-validator/webpack.config.js",
+                "sourceMap": true
+            },
+            "configurations": {
+                "production": {
+                    "optimization": true,
+                    "extractLicenses": true,
+                    "inspect": true,
+                    "sourceMap": true
+                }
+            }
+        },
+        "serve": {
+            "executor": "@nx/js:node",
+            "options": {
+                "buildTarget": "sps-validator:build"
+            },
+            "configurations": {
+                "production": {
+                    "buildTarget": "sps-validator:build:production"
+                }
+            }
+        },
+        "lint": {
+            "executor": "@nx/eslint:lint",
+            "outputs": ["{options.outputFile}"]
+        },
+        "test": {
+            "executor": "@nx/jest:jest",
+            "outputs": ["{workspaceRoot}/coverage/apps/sps-validator"],
+            "options": {
+                "jestConfig": "apps/sps-validator/jest.config.ts"
+            }
+        }
+    },
+    "tags": []
+}

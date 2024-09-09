@@ -1,0 +1,24 @@
+.container {
+    padding: 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    width: 500px;
+    margin: auto;
+}
+
+.sub {
+    padding: 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.register {
+    align-self: stretch;
+}
+
+.controls {
+    display: flex;
+    justify-content: flex-end;
+}

@@ -1,0 +1,85 @@
+version: '3'
+
+services:
+  pg:
+    image: postgres:13-alpine
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    networks:
+      - "postgres"
+    environment:
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_DB: ${POSTGRES_DB:-postgres}
+
+  validator:
+    build:
+      context: .
+      dockerfile: ./apps/sps-validator/Dockerfile
+      args:
+        NPM_TOKEN: ${NPM_TOKEN:-}
+    ports:
+      - "3333:3333"
+    networks:
+      - "postgres"
+      - "validator"
+    environment:
+      NPM_TOKEN: ${NPM_TOKEN:-}
+      API_PORT: "3333"
+      POSTGRES_PASSWORD: ${APP_PASSWORD:-validator}
+      POSTGRES_USER: ${APP_USER:-validator}
+      POSTGRES_DB: ${APP_DATABASE:-validator}
+      BLOCKS_BEHIND_HEAD: ${BLOCKS_BEHIND_HEAD:-1}
+      CUSTOM_JSON_PREFIX: ${CUSTOM_JSON_PREFIX:-sm_}
+      LOGGING_LEVEL: ${LOGGING_LEVEL:-2}
+      START_BLOCK: ${START_BLOCK:-}
+      CUSTOM_JSON_ID: ${CUSTOM_JSON_ID:-sps}
+      RPC_NODES: ${RPC_NODES:-https://api.hive.blog,https://anyx.io,https://api.openhive.network,https://hived.splinterlands.com,https://hived-2.splinterlands.com}
+      REPLAY_BATCH_SIZE: ${REPLAY_BATCH_SIZE:-25}
+      DB: '{ "host": "pg", "port": 5432, "database": "${APP_DATABASE:-validator}", "user": "${APP_USER:-validator}", "password": "${APP_PASSWORD:-validator}" }'
+    depends_on:
+      - pg
+
+  validator-sqitch:
+    profiles: ["cli"]
+    build:
+      context: ./sqitch
+      dockerfile: Dockerfile
+      args:
+        # Default to latest snapshot, override with --build-arg snapshot='local-snapshot.zip'
+        snapshot: "https://sl-prod-s3-validator.s3.amazonaws.com/validator-data-latest.zip"
+    networks:
+      - "postgres"
+    depends_on:
+      - pg
+    environment:
+      PGPASSWORD: ${POSTGRES_PASSWORD:-postgres}
+      PGUSER: ${POSTGRES_USER:-postgres}
+      PGDATABASE: ${POSTGRES_DB:-postgres}
+      PGHOST: pg
+      PGPORT: 5432
+      APP_PASSWORD: ${APP_PASSWORD:-validator}
+      APP_USER: ${APP_USER:-validator}
+      APP_DATABASE: ${APP_DATABASE:-validator}
+      APP_SCHEMA: ${APP_SCHEMA:-public}
+
+  ui:
+    build:
+      context: ./ui
+      dockerfile: Dockerfile
+    ports:
+      - "8888:80"
+    networks:
+      - "validator"
+    depends_on:
+      - validator
+
+volumes:
+  pgdata:
+
+networks:
+  postgres:
+    name: validator:postgres
+  validator:

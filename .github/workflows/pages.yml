@@ -1,0 +1,33 @@
+name: Pages
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  build-and-deploy:
+    concurrency: ci-${{ github.ref }}
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./ui
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Install and Build
+        env:
+          PUBLIC_URL: https://steem-monsters.github.io/splinterlands-validator
+          REACT_APP_BASEPATH: splinterlands-validator
+        # TODO: Fix this force, as it's ugly. The problem is that the whole of CRA is deprecated and we need something else (or eject).
+        run: |
+          npm ci --force
+          npm run generate:openapi
+          npm run build
+          cp build/index.html build/404.html
+      - name: Deploy
+        uses: JamesIves/github-pages-deploy-action@v4.3.0
+        with:
+          branch: gh-pages
+          folder: ui/build

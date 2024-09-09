@@ -1,0 +1,15 @@
+%syntax-version=1.0.0
+%project=splinterlands-validator
+%uri=https://github.com/steem-monsters/splinterlands-validator
+
+appschema 2022-01-19T13:48:55Z Michiel Hegemans <michiel@splinterlands.com> # Add initial schema
+validators [appschema] 2022-01-19T14:20:48Z Michiel Hegemans <michiel@splinterlands.com> # Add validators
+pre-snapshot [validators appschema] 2022-03-02T16:03:54Z Jelle Licht (wordempire) <jelle@splinterlands.com> # Dynamic snapshot restore synchronization point
+price_feed [validators] 2022-03-25T19:36:16Z Jelle Licht (wordempire) <jelle@splinterlands.com> # Adds everything needed for price feeds.
+snapshot-tables [appschema validators] 2022-03-11T21:43:24Z Jelle Licht (wordempire) <jelle@splinterlands.com> # Schema and tables for snapshot creation
+snapshot-function [snapshot-tables] 2022-03-11T22:11:12Z Jelle Licht (wordempire) <jelle@splinterlands.com> # Add a function to fill the snapshot schema with a fresh snapshot.
+active_delegations 2022-09-03T14:30:00Z Osman Toplica (jens) <osman@splinterlands.com> # Add the active_delegations table.
+hive_account_authority 2024-03-29T14:23:58Z stephen <stephen@LAPTOP-N4OOE985> # Add authority to hive_account table
+promises 2024-06-03T18:41:31Z stephen <stephen@LAPTOP-N4OOE985> # Add promises schema
+migrate-unstaking-settings 2024-08-30T13:33:09Z stephen <stephen@LAPTOP-N4OOE985> # Migrate unstaking settings to separate key outside of staking_rewards
+running-validator-reward-pool 2024-09-04T16:36:39Z stephen <stephen@LAPTOP-N4OOE985> # Add running validator reward pool settings

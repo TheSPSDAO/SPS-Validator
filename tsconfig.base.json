@@ -1,0 +1,25 @@
+{
+    "compileOnSave": false,
+    "compilerOptions": {
+        "rootDir": ".",
+        "sourceMap": true,
+        "declaration": false,
+        "moduleResolution": "node",
+        "emitDecoratorMetadata": true,
+        "experimentalDecorators": true,
+        "importHelpers": true,
+        "target": "es2020",
+        "module": "commonjs",
+        "strict": true,
+        "lib": ["es2020"],
+        "skipLibCheck": true,
+        "resolveJsonModule": true,
+        "skipDefaultLibCheck": true,
+        "baseUrl": ".",
+        "paths": {
+            "@steem-monsters/lib-monad": ["monad/src/lib.ts"],
+            "@steem-monsters/splinterlands-validator": ["validator/src/lib.ts"]
+        }
+    },
+    "exclude": ["node_modules", "tmp"]
+}
