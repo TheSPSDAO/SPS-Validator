@@ -1,6 +1,15 @@
-import { Logger, StructuredLogMessage } from '@steem-monsters/lib-validator-nft';
 import { log, LogLevel } from '@steem-monsters/splinterlands-validator';
 import { injectable } from 'tsyringe';
+
+export type StructuredLogMessage = Record<string, unknown> | string;
+
+export interface Logger {
+    error(message: StructuredLogMessage): void;
+    warning(message: StructuredLogMessage): void;
+    info(message: StructuredLogMessage): void;
+    debug(message: StructuredLogMessage): void;
+    trace(message: StructuredLogMessage): void;
+}
 
 function structured_log_to_string(message: StructuredLogMessage): string {
     if (typeof message === 'string') {
