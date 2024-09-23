@@ -208,6 +208,8 @@ export class StakingRewardsRepository extends BaseRepository {
             start_block: pool_settings.start_block,
             stop_block: pool_settings.stop_block,
             stop_date_utc: pool_settings.stop_date_utc,
+            reduction_blocks: pool_settings.reduction_blocks,
+            reduction_pct: pool_settings.reduction_pct,
             acc_tokens_per_share,
             last_reward_block,
             total_staked: { token: pool.token, amount: total_staked },
