@@ -127,15 +127,17 @@ export function registerApiRoutes(app: Router, opts: ApiOptions): void {
             res.status(404).end();
             return;
         }
-
+        const trxStarter = req.resolver.resolve(TransactionStarter);
         const StakingRewards = req.resolver.resolve(StakingRewardsRepository);
-        const params = await StakingRewards.getPoolParameters(poolName);
-        if (params !== null) {
-            res.status(200).json(params);
-        } else {
-            // No record for this pool, that should have records; transient error due to broken db config?
-            res.status(503).end();
-        }
+        await trxStarter.withTransaction(TransactionMode.Reporting, async (trx?: Trx) => {
+            const params = await StakingRewards.getPoolParameters(poolName, trx);
+            if (params !== null) {
+                res.status(200).json(params);
+            } else {
+                // No record for this pool, that should have records; transient error due to broken db config?
+                res.status(503).end();
+            }
+        });
     });
 
     app.get('/pool/:poolName/reward_debt', async (req, res) => {
@@ -160,6 +162,35 @@ export function registerApiRoutes(app: Router, opts: ApiOptions): void {
             if (debt !== undefined) {
                 res.status(200).json(debt);
             } else {
+                // No record for this player + pool_name: send empty response
+                res.status(204).end();
+            }
+        });
+    });
+
+    app.get('/pool/:poolName/account_info', async (req, res) => {
+        const { poolName } = req.params;
+        const poolsHelper = req.resolver.resolve(PoolsHelper);
+        if (!poolsHelper.isPool(poolName)) {
+            res.status(404).end();
+            return;
+        }
+
+        const account = typeof req.query.account === 'string' ? req.query.account : undefined;
+        if (account === undefined) {
+            res.status(400).end();
+            return;
+        }
+
+        const trxStarter = req.resolver.resolve(TransactionStarter);
+        const StakingRewards = req.resolver.resolve(StakingRewardsRepository);
+        await trxStarter.withTransaction(TransactionMode.Reporting, async (trx?: Trx) => {
+            const debt = await StakingRewards.getAccountStakedInfo(poolName, account, trx);
+            // Not currently possible to be undefined due to defaults chosen elsewhere
+            if (debt !== undefined) {
+                res.status(200).json(debt);
+            } else {
+                // TODO this doesn't happen because of the repository - but confirm before removing.
                 // No record for this player + pool_name: send empty response
                 res.status(204).end();
             }

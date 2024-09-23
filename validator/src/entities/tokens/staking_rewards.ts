@@ -15,9 +15,25 @@ type StakingPoolRewardDebtEntry = {
     reward_debt: number;
 };
 
+type AccountStakedInfo = {
+    total_staked: {
+        token: string;
+        amount: number;
+    };
+    reward_debt: number;
+};
+
+type StakedPoolTotal = {
+    total_staked: {
+        token: string;
+        amount: number;
+    };
+};
+
 type MappedPoolProps = {
     [key in PoolProps]: number;
-} & PoolSettings;
+} & PoolSettings &
+    StakedPoolTotal;
 
 export type StakingIncrease = [number, string] | 0; // [amount, token], or just 0 for a claimAll
 
@@ -158,15 +174,35 @@ export class StakingRewardsRepository extends BaseRepository {
         return isNaN(ret_val) ? 0 : ret_val;
     }
 
-    async getPoolParameters<T extends string>(pool_name: T): Promise<MappedPoolProps | null> {
+    async getAccountStakedInfo<T extends string>(pool_name: T, player: string, trx?: Trx): Promise<AccountStakedInfo | null> {
+        const pool = this.pools.find((p) => p.name === pool_name);
+        if (!pool) {
+            utils.log(`Attempting to retrieve pool parameters for unknown pool ${pool_name}, ignoring.`, LogLevel.Error);
+            return null;
+        }
+        const balance = await this.balanceRepository.getBalance(player, pool.stake, trx);
+        return {
+            total_staked: { token: pool.stake, amount: balance },
+            reward_debt: await this.getRewardDebt(pool_name, player, trx),
+        };
+    }
+
+    async getPoolParameters<T extends string>(pool_name: T, trx?: Trx): Promise<MappedPoolProps | null> {
         const pools = this.watcher.pools;
         if (!pools) {
             utils.log(`Attempting to retrieve pool parameters while having misconfigured pool settings, ignoring.`, LogLevel.Error);
             return null;
         }
+        const pool = this.pools.find((p) => p.name === pool_name);
+        if (!pool) {
+            utils.log(`Attempting to retrieve pool parameters for unknown pool ${pool_name}, ignoring.`, LogLevel.Error);
+            return null;
+        }
+
         const pool_settings = pools[pool_name];
         const last_reward_block = pools[`${pool_name}_last_reward_block`] || pool_settings.start_block;
         const acc_tokens_per_share = pools[`${pool_name}_acc_tokens_per_share`];
+        const total_staked = await this.balanceRepository.getBalance(this.stakingConfiguration.staking_account, pool.token, trx);
         return {
             tokens_per_block: pool_settings.tokens_per_block,
             start_block: pool_settings.start_block,
@@ -174,6 +210,7 @@ export class StakingRewardsRepository extends BaseRepository {
             stop_date_utc: pool_settings.stop_date_utc,
             acc_tokens_per_share,
             last_reward_block,
+            total_staked: { token: pool.stake, amount: total_staked },
         };
     }
 
