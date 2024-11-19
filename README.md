@@ -78,19 +78,9 @@ If you run into linting or building errors after a `git pull`, make sure you hav
 The _only_ node_modules that you should need are:
 - `node_modules`, after `npm install`
 - `ui/node_modules`, after `cd ui; npm install`
-- `tests/node_modules`, after `cd tests; npm install`
 
 The following are usually problematic, and should be removed or renamed at your convenience:
 - `validator/node_modules`
-
-If you see an error message similar to the following while trying to run the migrations:
-```
-psql: error: could not connect to server: Connection refused
-        Is the server running on host "pg" (172.25.0.2) and accepting
-        TCP/IP connections on port 5432?
-```
-simply retry the docker-compose command.
-While admittedly a shoddy workaround for any race condition, solving this properly should be done upstream, and they won't.
 
 ## Useful links
 - [sqitch documentation](https://sqitch.org/docs/)
