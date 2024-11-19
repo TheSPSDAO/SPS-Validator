@@ -115,12 +115,24 @@ describe('Pool settings endpoints', () => {
         last_reward_block: 56186000,
         start_block: 56186000,
         tokens_per_block: 8.56164,
+        reduction_blocks: 864000,
+        reduction_pct: 1,
+        total_staked: {
+            amount: 0,
+            token: 'SPSP',
+        },
     };
     const validator_rewards_settings = {
         acc_tokens_per_share: 1,
         last_reward_block: 56186000,
         start_block: 56186000,
         tokens_per_block: 8.56164,
+        reduction_blocks: 864000,
+        reduction_pct: 1,
+        total_staked: {
+            amount: 0,
+            token: 'RUNNING_LICENSE',
+        },
     };
     beforeEach(async () => {
         await fixture.handle.query(ConfigEntity).insertItem({
@@ -192,6 +204,7 @@ describe('Pool settings endpoints', () => {
     test.dbOnly.each`
         pool                         | status | settings
         ${'staking_rewards'}         | ${200} | ${staking_rewards_settings}
+        ${'validator_rewards'}       | ${200} | ${validator_rewards_settings}
         ${'not-staking_rewards'}     | ${404} | ${{}}
     `(`Checking settings for [$pool] should give HTTP status [$status] and settings [$settings]`, async ({ pool, status, settings }) => {
         const response = await fixture.request.get(`/pool/${pool}`);

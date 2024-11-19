@@ -3,26 +3,66 @@
 -- requires: appschema
 
 BEGIN;
+
+TRUNCATE TABLE snapshot.balances;
+TRUNCATE TABLE snapshot.balance_history;
+TRUNCATE TABLE snapshot.hive_accounts;
+TRUNCATE TABLE snapshot.staking_pool_reward_debt;
+TRUNCATE TABLE snapshot.validator_votes;
+TRUNCATE TABLE snapshot.validator_vote_history;
+TRUNCATE TABLE snapshot.validators;
+TRUNCATE TABLE snapshot.blocks;
+TRUNCATE TABLE snapshot.validator_transactions;
+TRUNCATE TABLE snapshot.validator_transaction_players;
+TRUNCATE TABLE snapshot.token_unstaking;
+TRUNCATE TABLE snapshot.price_history;
+TRUNCATE TABLE snapshot.config;
+TRUNCATE TABLE snapshot.active_delegations;
+TRUNCATE TABLE snapshot.validator_check_in;
+TRUNCATE TABLE snapshot.promise;
+TRUNCATE TABLE snapshot.promise_history;
+
 \i :snapshot_file
 
--- Copied from new_db_config.sql;
--- Can be removed once snapshots contain config data as well.
-INSERT INTO :APP_SCHEMA.config (group_name, group_type, name, index, value_type, value, last_updated_date, last_updated_tx) VALUES ('validator', 'object', 'max_votes', 0, 'number', '10', '2022-01-20 14:55:53.32528', NULL) ON CONFLICT DO NOTHING;
-INSERT INTO :APP_SCHEMA.config (group_name, group_type, name, index, value_type, value, last_updated_date, last_updated_tx) VALUES ('validator', 'object', 'max_block_age', 0, 'number', '100', '2022-01-20 14:55:53.32528', NULL) ON CONFLICT DO NOTHING;
-INSERT INTO :APP_SCHEMA.config (group_name, group_type, name, index, value_type, value, last_updated_date, last_updated_tx) VALUES ('validator', 'object', 'min_validators', 0, 'number', '3', '2022-01-20 14:55:53.32528', NULL) ON CONFLICT DO NOTHING;
-INSERT INTO :APP_SCHEMA.config (group_name, group_type, name, index, value_type, value, last_updated_date, last_updated_tx) VALUES ('validator', 'object', 'reward_start_block', 0, 'number', '60963785', '2022-01-20 14:55:53.32528', NULL) ON CONFLICT DO NOTHING;
-INSERT INTO :APP_SCHEMA.config (group_name, group_type, name, index, value_type, value, last_updated_date, last_updated_tx) VALUES ('validator', 'object', 'tokens_per_block', 0, 'number', '4.34', '2022-01-20 14:55:53.32528', NULL) ON CONFLICT DO NOTHING;
-INSERT INTO :APP_SCHEMA.config (group_name, group_type, name, index, value_type, value, last_updated_date, last_updated_tx) VALUES ('validator', 'object', 'reduction_blocks', 0, 'number', '864000', '2022-01-20 14:55:53.32528', NULL) ON CONFLICT DO NOTHING;
-INSERT INTO :APP_SCHEMA.config (group_name, group_type, name, index, value_type, value, last_updated_date, last_updated_tx) VALUES ('validator', 'object', 'reduction_pct', 0, 'number', '1', '2022-01-20 14:55:53.32528', NULL) ON CONFLICT DO NOTHING;
-INSERT INTO :APP_SCHEMA.config (group_name, group_type, name, index, value_type, value, last_updated_date, last_updated_tx) VALUES ('$root', 'object', 'proxy_accounts', 0, 'array', '["sl-proxy-1", "sl-proxy-2", "sl-proxy-3", "sl-proxy-4", "sl-proxy-5"]', '2020-10-14 13:40:41.068322', NULL) ON CONFLICT DO NOTHING;
-INSERT INTO :APP_SCHEMA.config (group_name, group_type, name, index, value_type, value, last_updated_date, last_updated_tx) VALUES ('sps', 'object', 'staking_rewards', 0, 'object', '{ "tokens_per_block": 8.56164, "reduction_blocks": 864000, "reduction_pct": 1, "start_block": 56186000, "unstaking_periods": 4, "unstaking_interval_seconds": 604800 }', '2021-07-23 19:44:31.554835', NULL) ON CONFLICT DO NOTHING;
-INSERT INTO :APP_SCHEMA.config (group_name, group_type, name, index, value_type, value, last_updated_date, last_updated_tx) VALUES ('$root', 'object', 'admin_accounts', 0, 'array', '["sl-admin-1", "sl-admin-2", "sl-admin-3", "sl-admin-4", "sl-admin-5"]', '2021-07-27 17:10:16.532421', NULL) ON CONFLICT DO NOTHING;
-INSERT INTO :APP_SCHEMA.config (group_name, group_type, name, index, value_type, value, last_updated_date, last_updated_tx) VALUES ('sps', 'object', 'staking_rewards_last_reward_block', 0, 'number', '61103010', '2021-07-23 19:44:31.554835', NULL) ON CONFLICT DO NOTHING;
-INSERT INTO :APP_SCHEMA.config (group_name, group_type, name, index, value_type, value, last_updated_date, last_updated_tx) VALUES ('sps', 'object', 'staking_rewards_acc_tokens_per_share', 0, 'number', '0.4523962116972181', '2021-07-23 19:44:31.554835', NULL) ON CONFLICT DO NOTHING;
-INSERT INTO :APP_SCHEMA.config (group_name, group_type, name, index, value_type, value, last_updated_date, last_updated_tx) VALUES ('sps', 'object', 'staking_rewards_voucher', 0, 'object', '{ "tokens_per_block": 0.69444, "start_block": 63712974, "unstaking_periods": 4, "unstaking_interval_seconds": 604800 }', '2021-07-23 19:44:31.554835', NULL) ON CONFLICT DO NOTHING;
-INSERT INTO :APP_SCHEMA.config (group_name, group_type, name, index, value_type, value, last_updated_date, last_updated_tx) VALUES ('sps', 'object', 'staking_rewards_voucher_last_reward_block', 0, 'number', '63712974', '2021-07-23 19:44:31.554835', NULL) ON CONFLICT DO NOTHING;
-INSERT INTO :APP_SCHEMA.config (group_name, group_type, name, index, value_type, value, last_updated_date, last_updated_tx) VALUES ('sps', 'object', 'staking_rewards_voucher_acc_tokens_per_share', 0, 'number', '0', '2021-07-23 19:44:31.554835', NULL) ON CONFLICT DO NOTHING;
-INSERT INTO :APP_SCHEMA.config (group_name, group_type, name, index, value_type, value, last_updated_date, last_updated_tx) VALUES ('sps', 'object', 'inflation_pools', 0, 'array', '[]', '2022-07-09 09:44:31.554835', NULL) ON CONFLICT DO NOTHING;
-INSERT INTO :APP_SCHEMA.config (group_name, group_type, name, index, value_type, value, last_updated_date, last_updated_tx) VALUES ('sps', 'object', 'token_records', 0, 'array', '[]', '2022-07-21 18:22:32.554835', NULL) ON CONFLICT DO NOTHING;
+INSERT INTO :APP_SCHEMA.active_delegations SELECT * FROM snapshot.active_delegations;
+INSERT INTO :APP_SCHEMA.balance_history SELECT * FROM snapshot.balance_history;
+INSERT INTO :APP_SCHEMA.balances SELECT * FROM snapshot.balances;
+INSERT INTO :APP_SCHEMA.config SELECT * FROM snapshot.config;
+INSERT INTO :APP_SCHEMA.hive_accounts SELECT * FROM snapshot.hive_accounts;
+INSERT INTO :APP_SCHEMA.price_history SELECT * FROM snapshot.price_history;
+INSERT INTO :APP_SCHEMA.staking_pool_reward_debt SELECT * FROM snapshot.staking_pool_reward_debt;
+INSERT INTO :APP_SCHEMA.validator_votes SELECT * FROM snapshot.validator_votes;
+INSERT INTO :APP_SCHEMA.validator_vote_history SELECT * FROM snapshot.validator_vote_history;
+INSERT INTO :APP_SCHEMA.validators SELECT * FROM snapshot.validators;
+INSERT INTO :APP_SCHEMA.blocks SELECT * FROM snapshot.blocks;
+INSERT INTO :APP_SCHEMA.validator_transactions SELECT * FROM snapshot.validator_transactions;
+INSERT INTO :APP_SCHEMA.validator_transaction_players SELECT * FROM snapshot.validator_transaction_players;
+INSERT INTO :APP_SCHEMA.token_unstaking SELECT * FROM snapshot.token_unstaking;
+INSERT INTO :APP_SCHEMA.validator_check_in SELECT * FROM snapshot.validator_check_in;
+
+-- special handling for serial keyed tables
+INSERT INTO :APP_SCHEMA.promise SELECT * FROM snapshot.promise;
+INSERT INTO :APP_SCHEMA.promise_history SELECT * FROM snapshot.promise_history;
+-- set the sequence values for the serial columns
+SELECT setval(:'APP_SCHEMA' || '.promise_id_seq', (SELECT MAX(id) FROM :APP_SCHEMA.promise), true);
+SELECT setval(:'APP_SCHEMA' || '.promise_history_id_seq', (SELECT MAX(id) FROM :APP_SCHEMA.promise_history), true);
+
+TRUNCATE TABLE snapshot.balances;
+TRUNCATE TABLE snapshot.balance_history;
+TRUNCATE TABLE snapshot.hive_accounts;
+TRUNCATE TABLE snapshot.staking_pool_reward_debt;
+TRUNCATE TABLE snapshot.validator_votes;
+TRUNCATE TABLE snapshot.validator_vote_history;
+TRUNCATE TABLE snapshot.validators;
+TRUNCATE TABLE snapshot.blocks;
+TRUNCATE TABLE snapshot.validator_transactions;
+TRUNCATE TABLE snapshot.validator_transaction_players;
+TRUNCATE TABLE snapshot.token_unstaking;
+TRUNCATE TABLE snapshot.price_history;
+TRUNCATE TABLE snapshot.config;
+TRUNCATE TABLE snapshot.active_delegations;
+TRUNCATE TABLE snapshot.validator_check_in;
+TRUNCATE TABLE snapshot.promise;
+TRUNCATE TABLE snapshot.promise_history;
 
 COMMIT;

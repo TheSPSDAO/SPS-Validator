@@ -8,7 +8,7 @@ const SpsPool = {
 
 const ValidatorPool = {
     name: 'validator_rewards',
-    token: TOKENS.SPSP,
+    token: TOKENS.SPS,
     stake: TOKENS.RUNNING_LICENSE,
 } as const;
 

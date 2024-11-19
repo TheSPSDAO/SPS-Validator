@@ -30,11 +30,6 @@ if [[ ! $SNAPSHOT_URL ]]; then
     exit
 fi
 
-if [[ ! $NPM_TOKEN ]]; then
-    echo "NPM_TOKEN not defined in the .env file"
-    exit
-fi
-
 start() {
     echo "Starting $DOCKER_NAME"
     if [[ $1 == "db" ]]; then
@@ -205,5 +200,5 @@ case $1 in
         echo "Invalid CMD"
         help
     ;;
-    
+
 esac

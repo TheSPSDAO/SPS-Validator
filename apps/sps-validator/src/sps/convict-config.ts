@@ -231,6 +231,12 @@ const schema = {
         default: true,
         env: 'ENABLE_CHECK_INS',
     },
+    helmetjs: {
+        doc: 'Enable helmetjs security middleware',
+        format: Boolean,
+        default: false,
+        env: 'HELMETJS',
+    },
 };
 
 const config = convict(schema);

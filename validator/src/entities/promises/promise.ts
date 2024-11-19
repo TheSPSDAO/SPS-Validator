@@ -1,5 +1,5 @@
 import { IAction } from '../../actions/action';
-import { EventLog, EventTypes } from '../../entities/event_log';
+import { EventLog, EventTypes } from '../event_log';
 import { BaseRepository, Handle, PromiseAction, PromiseEntity, PromiseHistoryEntity, PromiseStatus, Trx } from '../../db/tables';
 
 export type PromiseInsert = Omit<PromiseEntity, 'id' | 'created_date' | 'updated_date' | 'fulfilled_by' | 'fulfilled_at' | 'fulfilled_expiration'> & {

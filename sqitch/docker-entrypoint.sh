@@ -11,5 +11,5 @@ env_file=$(mktemp "$TMP_TEMPLATE")
 # ShellCheck can't follow non-constant source. Use a directive to specify location.
 # shellcheck disable=SC1090
 source "$env_file"
-LAST_BLOCK="$LAST_BLOCK" "$SCRIPT_DIR/staggered-deploy.sh" 
+"$SCRIPT_DIR/staggered-deploy.sh"
 rm -f "$env_file"

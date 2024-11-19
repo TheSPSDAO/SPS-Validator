@@ -3,7 +3,7 @@
 --
 
 -- Dumped from database version 13.14
--- Dumped by pg_dump version 14.12 (Ubuntu 14.12-1.pgdg20.04+1)
+-- Dumped by pg_dump version 14.13 (Ubuntu 14.13-1.pgdg20.04+1)
 
 SET statement_timeout = 0;
 SET lock_timeout = 0;
@@ -17,7 +17,7 @@ SET client_min_messages = warning;
 SET row_security = off;
 
 --
--- Name: promise_status; Type: TYPE; Schema: validator; Owner: -
+-- Name: promise_status; Type: TYPE; Schema: public; Owner: -
 --
 
 CREATE TYPE public.promise_status AS ENUM (
@@ -29,7 +29,7 @@ CREATE TYPE public.promise_status AS ENUM (
 
 
 --
--- Name: validator_check_in_status; Type: TYPE; Schema: validator; Owner: -
+-- Name: validator_check_in_status; Type: TYPE; Schema: public; Owner: -
 --
 
 CREATE TYPE public.validator_check_in_status AS ENUM (
@@ -41,7 +41,7 @@ CREATE TYPE public.validator_check_in_status AS ENUM (
 SET default_table_access_method = heap;
 
 --
--- Name: active_delegations; Type: TABLE; Schema: validator; Owner: -
+-- Name: active_delegations; Type: TABLE; Schema: public; Owner: -
 --
 
 CREATE TABLE public.active_delegations (
@@ -49,15 +49,15 @@ CREATE TABLE public.active_delegations (
     delegator character varying(50) NOT NULL,
     delegatee character varying(50) NOT NULL,
     amount numeric NOT NULL,
-    last_delegation_tx character varying(100) NOT NULL,
-    last_delegation_date timestamp with time zone NOT NULL,
+    last_delegation_tx character varying(100),
+    last_delegation_date timestamp with time zone,
     last_undelegation_date timestamp with time zone,
     last_undelegation_tx character varying(100)
 );
 
 
 --
--- Name: balance_history; Type: TABLE; Schema: validator; Owner: -
+-- Name: balance_history; Type: TABLE; Schema: public; Owner: -
 --
 
 CREATE TABLE public.balance_history (
@@ -75,7 +75,7 @@ CREATE TABLE public.balance_history (
 
 
 --
--- Name: balances; Type: TABLE; Schema: validator; Owner: -
+-- Name: balances; Type: TABLE; Schema: public; Owner: -
 --
 
 CREATE TABLE public.balances (
@@ -87,7 +87,7 @@ CREATE TABLE public.balances (
 
 
 --
--- Name: blocks; Type: TABLE; Schema: validator; Owner: -
+-- Name: blocks; Type: TABLE; Schema: public; Owner: -
 --
 
 CREATE TABLE public.blocks (
@@ -102,7 +102,7 @@ CREATE TABLE public.blocks (
 
 
 --
--- Name: config; Type: TABLE; Schema: validator; Owner: -
+-- Name: config; Type: TABLE; Schema: public; Owner: -
 --
 
 CREATE TABLE public.config (
@@ -118,7 +118,7 @@ CREATE TABLE public.config (
 
 
 --
--- Name: hive_accounts; Type: TABLE; Schema: validator; Owner: -
+-- Name: hive_accounts; Type: TABLE; Schema: public; Owner: -
 --
 
 CREATE TABLE public.hive_accounts (
@@ -128,7 +128,7 @@ CREATE TABLE public.hive_accounts (
 
 
 --
--- Name: item_details_id_seq; Type: SEQUENCE; Schema: validator; Owner: -
+-- Name: item_details_id_seq; Type: SEQUENCE; Schema: public; Owner: -
 --
 
 CREATE SEQUENCE public.item_details_id_seq
@@ -140,7 +140,7 @@ CREATE SEQUENCE public.item_details_id_seq
 
 
 --
--- Name: price_history; Type: TABLE; Schema: validator; Owner: -
+-- Name: price_history; Type: TABLE; Schema: public; Owner: -
 --
 
 CREATE TABLE public.price_history (
@@ -153,7 +153,7 @@ CREATE TABLE public.price_history (
 
 
 --
--- Name: promise; Type: TABLE; Schema: validator; Owner: -
+-- Name: promise; Type: TABLE; Schema: public; Owner: -
 --
 
 CREATE TABLE public.promise (
@@ -173,7 +173,7 @@ CREATE TABLE public.promise (
 
 
 --
--- Name: promise_history; Type: TABLE; Schema: validator; Owner: -
+-- Name: promise_history; Type: TABLE; Schema: public; Owner: -
 --
 
 CREATE TABLE public.promise_history (
@@ -189,7 +189,7 @@ CREATE TABLE public.promise_history (
 
 
 --
--- Name: promise_history_id_seq; Type: SEQUENCE; Schema: validator; Owner: -
+-- Name: promise_history_id_seq; Type: SEQUENCE; Schema: public; Owner: -
 --
 
 CREATE SEQUENCE public.promise_history_id_seq
@@ -202,14 +202,14 @@ CREATE SEQUENCE public.promise_history_id_seq
 
 
 --
--- Name: promise_history_id_seq; Type: SEQUENCE OWNED BY; Schema: validator; Owner: -
+-- Name: promise_history_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
 --
 
 ALTER SEQUENCE public.promise_history_id_seq OWNED BY public.promise_history.id;
 
 
 --
--- Name: promise_id_seq; Type: SEQUENCE; Schema: validator; Owner: -
+-- Name: promise_id_seq; Type: SEQUENCE; Schema: public; Owner: -
 --
 
 CREATE SEQUENCE public.promise_id_seq
@@ -222,14 +222,14 @@ CREATE SEQUENCE public.promise_id_seq
 
 
 --
--- Name: promise_id_seq; Type: SEQUENCE OWNED BY; Schema: validator; Owner: -
+-- Name: promise_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
 --
 
 ALTER SEQUENCE public.promise_id_seq OWNED BY public.promise.id;
 
 
 --
--- Name: staking_pool_reward_debt; Type: TABLE; Schema: validator; Owner: -
+-- Name: staking_pool_reward_debt; Type: TABLE; Schema: public; Owner: -
 --
 
 CREATE TABLE public.staking_pool_reward_debt (
@@ -240,7 +240,7 @@ CREATE TABLE public.staking_pool_reward_debt (
 
 
 --
--- Name: token_unstaking; Type: TABLE; Schema: validator; Owner: -
+-- Name: token_unstaking; Type: TABLE; Schema: public; Owner: -
 --
 
 CREATE TABLE public.token_unstaking (
@@ -259,7 +259,7 @@ CREATE TABLE public.token_unstaking (
 
 
 --
--- Name: validator_check_in; Type: TABLE; Schema: validator; Owner: -
+-- Name: validator_check_in; Type: TABLE; Schema: public; Owner: -
 --
 
 CREATE TABLE public.validator_check_in (
@@ -271,7 +271,7 @@ CREATE TABLE public.validator_check_in (
 
 
 --
--- Name: validator_transaction_players; Type: TABLE; Schema: validator; Owner: -
+-- Name: validator_transaction_players; Type: TABLE; Schema: public; Owner: -
 --
 
 CREATE TABLE public.validator_transaction_players (
@@ -281,7 +281,7 @@ CREATE TABLE public.validator_transaction_players (
 
 
 --
--- Name: validator_transactions; Type: TABLE; Schema: validator; Owner: -
+-- Name: validator_transactions; Type: TABLE; Schema: public; Owner: -
 --
 
 CREATE TABLE public.validator_transactions (
@@ -300,7 +300,7 @@ CREATE TABLE public.validator_transactions (
 
 
 --
--- Name: validator_vote_history; Type: TABLE; Schema: validator; Owner: -
+-- Name: validator_vote_history; Type: TABLE; Schema: public; Owner: -
 --
 
 CREATE TABLE public.validator_vote_history (
@@ -314,7 +314,7 @@ CREATE TABLE public.validator_vote_history (
 
 
 --
--- Name: validator_votes; Type: TABLE; Schema: validator; Owner: -
+-- Name: validator_votes; Type: TABLE; Schema: public; Owner: -
 --
 
 CREATE TABLE public.validator_votes (
@@ -325,7 +325,7 @@ CREATE TABLE public.validator_votes (
 
 
 --
--- Name: validators; Type: TABLE; Schema: validator; Owner: -
+-- Name: validators; Type: TABLE; Schema: public; Owner: -
 --
 
 CREATE TABLE public.validators (
@@ -338,21 +338,21 @@ CREATE TABLE public.validators (
 
 
 --
--- Name: promise id; Type: DEFAULT; Schema: validator; Owner: -
+-- Name: promise id; Type: DEFAULT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.promise ALTER COLUMN id SET DEFAULT nextval('public.promise_id_seq'::regclass);
 
 
 --
--- Name: promise_history id; Type: DEFAULT; Schema: validator; Owner: -
+-- Name: promise_history id; Type: DEFAULT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.promise_history ALTER COLUMN id SET DEFAULT nextval('public.promise_history_id_seq'::regclass);
 
 
 --
--- Name: active_delegations active_delegations_pkey; Type: CONSTRAINT; Schema: validator; Owner: -
+-- Name: active_delegations active_delegations_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.active_delegations
@@ -360,7 +360,7 @@ ALTER TABLE ONLY public.active_delegations
 
 
 --
--- Name: balances balances_pkey; Type: CONSTRAINT; Schema: validator; Owner: -
+-- Name: balances balances_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.balances
@@ -368,7 +368,7 @@ ALTER TABLE ONLY public.balances
 
 
 --
--- Name: blocks blocks_pkey; Type: CONSTRAINT; Schema: validator; Owner: -
+-- Name: blocks blocks_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.blocks
@@ -376,7 +376,7 @@ ALTER TABLE ONLY public.blocks
 
 
 --
--- Name: config config_pkey; Type: CONSTRAINT; Schema: validator; Owner: -
+-- Name: config config_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.config
@@ -384,7 +384,7 @@ ALTER TABLE ONLY public.config
 
 
 --
--- Name: hive_accounts hive_accounts_pkey; Type: CONSTRAINT; Schema: validator; Owner: -
+-- Name: hive_accounts hive_accounts_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.hive_accounts
@@ -392,7 +392,7 @@ ALTER TABLE ONLY public.hive_accounts
 
 
 --
--- Name: price_history price_history_pkey; Type: CONSTRAINT; Schema: validator; Owner: -
+-- Name: price_history price_history_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.price_history
@@ -400,7 +400,7 @@ ALTER TABLE ONLY public.price_history
 
 
 --
--- Name: promise_history promise_history_pkey; Type: CONSTRAINT; Schema: validator; Owner: -
+-- Name: promise_history promise_history_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.promise_history
@@ -408,7 +408,7 @@ ALTER TABLE ONLY public.promise_history
 
 
 --
--- Name: promise promise_pkey; Type: CONSTRAINT; Schema: validator; Owner: -
+-- Name: promise promise_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.promise
@@ -416,7 +416,7 @@ ALTER TABLE ONLY public.promise
 
 
 --
--- Name: staking_pool_reward_debt staking_pool_reward_debt_pkey; Type: CONSTRAINT; Schema: validator; Owner: -
+-- Name: staking_pool_reward_debt staking_pool_reward_debt_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.staking_pool_reward_debt
@@ -424,7 +424,7 @@ ALTER TABLE ONLY public.staking_pool_reward_debt
 
 
 --
--- Name: token_unstaking token_unstaking_pkey; Type: CONSTRAINT; Schema: validator; Owner: -
+-- Name: token_unstaking token_unstaking_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.token_unstaking
@@ -432,7 +432,7 @@ ALTER TABLE ONLY public.token_unstaking
 
 
 --
--- Name: validator_check_in validator_check_in_pkey; Type: CONSTRAINT; Schema: validator; Owner: -
+-- Name: validator_check_in validator_check_in_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.validator_check_in
@@ -440,7 +440,7 @@ ALTER TABLE ONLY public.validator_check_in
 
 
 --
--- Name: validator_transaction_players validator_transaction_players_pkey; Type: CONSTRAINT; Schema: validator; Owner: -
+-- Name: validator_transaction_players validator_transaction_players_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.validator_transaction_players
@@ -448,7 +448,7 @@ ALTER TABLE ONLY public.validator_transaction_players
 
 
 --
--- Name: validator_transactions validator_transactions_pkey; Type: CONSTRAINT; Schema: validator; Owner: -
+-- Name: validator_transactions validator_transactions_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.validator_transactions
@@ -456,7 +456,7 @@ ALTER TABLE ONLY public.validator_transactions
 
 
 --
--- Name: validator_vote_history validator_vote_history_pkey; Type: CONSTRAINT; Schema: validator; Owner: -
+-- Name: validator_vote_history validator_vote_history_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.validator_vote_history
@@ -464,7 +464,7 @@ ALTER TABLE ONLY public.validator_vote_history
 
 
 --
--- Name: validator_votes validator_votes_pkey; Type: CONSTRAINT; Schema: validator; Owner: -
+-- Name: validator_votes validator_votes_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.validator_votes
@@ -472,7 +472,7 @@ ALTER TABLE ONLY public.validator_votes
 
 
 --
--- Name: validators validators_pkey; Type: CONSTRAINT; Schema: validator; Owner: -
+-- Name: validators validators_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.validators
@@ -480,63 +480,63 @@ ALTER TABLE ONLY public.validators
 
 
 --
--- Name: idx_balance_history_created_date; Type: INDEX; Schema: validator; Owner: -
+-- Name: idx_balance_history_created_date; Type: INDEX; Schema: public; Owner: -
 --
 
 CREATE INDEX idx_balance_history_created_date ON public.balance_history USING btree (created_date DESC);
 
 
 --
--- Name: idx_balance_history_player; Type: INDEX; Schema: validator; Owner: -
+-- Name: idx_balance_history_player; Type: INDEX; Schema: public; Owner: -
 --
 
 CREATE INDEX idx_balance_history_player ON public.balance_history USING btree (player);
 
 
 --
--- Name: idx_validator_check_in_last_check_in; Type: INDEX; Schema: validator; Owner: -
+-- Name: idx_validator_check_in_last_check_in_status; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE INDEX idx_validator_check_in_last_check_in ON public.validator_check_in USING btree (last_check_in_block_num);
+CREATE INDEX idx_validator_check_in_last_check_in_status ON public.validator_check_in USING btree (last_check_in_block_num, status);
 
 
 --
--- Name: promise_history_promise_id_idx; Type: INDEX; Schema: validator; Owner: -
+-- Name: promise_history_promise_id_idx; Type: INDEX; Schema: public; Owner: -
 --
 
 CREATE INDEX promise_history_promise_id_idx ON public.promise_history USING btree (promise_id);
 
 
 --
--- Name: promise_type_ext_id_idx; Type: INDEX; Schema: validator; Owner: -
+-- Name: promise_type_ext_id_idx; Type: INDEX; Schema: public; Owner: -
 --
 
 CREATE INDEX promise_type_ext_id_idx ON public.promise USING btree (type, ext_id);
 
 
 --
--- Name: validator_transaction_players_player_idx; Type: INDEX; Schema: validator; Owner: -
+-- Name: validator_transaction_players_player_idx; Type: INDEX; Schema: public; Owner: -
 --
 
 CREATE INDEX validator_transaction_players_player_idx ON public.validator_transaction_players USING btree (player);
 
 
 --
--- Name: validator_transactions_block_num_idx; Type: INDEX; Schema: validator; Owner: -
+-- Name: validator_transactions_block_num_idx; Type: INDEX; Schema: public; Owner: -
 --
 
 CREATE INDEX validator_transactions_block_num_idx ON public.validator_transactions USING btree (block_num);
 
 
 --
--- Name: validator_transactions_created_date_idx; Type: INDEX; Schema: validator; Owner: -
+-- Name: validator_transactions_created_date_idx; Type: INDEX; Schema: public; Owner: -
 --
 
 CREATE INDEX validator_transactions_created_date_idx ON public.validator_transactions USING btree (created_date);
 
 
 --
--- Name: validator_transactions_type_player_idx; Type: INDEX; Schema: validator; Owner: -
+-- Name: validator_transactions_type_player_idx; Type: INDEX; Schema: public; Owner: -
 --
 
 CREATE INDEX validator_transactions_type_player_idx ON public.validator_transactions USING btree (player, type);

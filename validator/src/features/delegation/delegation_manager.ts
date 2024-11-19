@@ -23,6 +23,8 @@ export type DelegateTokensMultiRequest = {
 };
 
 export type UndelegateTokensRequest = {
+    // could be the delegator, or when returning tokens, the delegatee
+    account: string;
     to: string;
     from: string;
     qty: number;
@@ -84,7 +86,7 @@ export class DelegationManager {
             ? this.hiveAccountRepository.onlyHiveOrSystemAccounts(accountsToValidate, trx)
             : this.hiveAccountRepository.onlyHiveAccounts(accountsToValidate, trx));
         if (!is_valid_account) {
-            return Result.Err(new ValidationError('Argument to and player must be a valid Hive account.', action, ErrorType.AccountNotKnown));
+            return Result.Err(new ValidationError('Arguments to and from must be a valid Hive account.', action, ErrorType.AccountNotKnown));
         }
 
         if (request.qty <= 0 || isNaN(request.qty)) {
@@ -167,25 +169,25 @@ export class DelegationManager {
         }
 
         // Must be valid Hive account
-        const accountsToValidate = [request.to, request.from];
+        const accountsToValidate = [request.account, request.to, request.from];
         const is_valid_account = await (request.allowSystemAccounts
             ? this.hiveAccountRepository.onlyHiveOrSystemAccounts(accountsToValidate, trx)
             : this.hiveAccountRepository.onlyHiveAccounts(accountsToValidate, trx));
         if (!is_valid_account) {
-            return Result.Err(new ValidationError('Argument from and player must be a valid Hive account.', action, ErrorType.AccountNotKnown));
+            return Result.Err(new ValidationError('Argument to and from must be a valid Hive account.', action, ErrorType.AccountNotKnown));
         }
 
         if (request.qty <= 0 || isNaN(request.qty)) {
             return Result.Err(new ValidationError('Amount must always be greater than 0.', action, ErrorType.AmountNotPositive));
         }
 
-        // check authority
-        const has_authority = await this.hiveAccountRepository.checkAuthority(action.op.account, AuthorityTypes.DELEGATION, request.to, trx);
+        // check authority against the account field. when undelegating, its just the "to" field. when returning tokens its the "from" field.
+        const has_authority = await this.hiveAccountRepository.checkAuthority(action.op.account, AuthorityTypes.DELEGATION, request.account, trx);
         if (!has_authority) {
-            return Result.Err(new ValidationError(`${action.op.account} does not have the authority to undelegate tokens for ${request.to}.`, action, ErrorType.NoAuthority));
+            return Result.Err(new ValidationError(`${action.op.account} does not have the authority to undelegate tokens for ${request.account}.`, action, ErrorType.NoAuthority));
         }
 
-        // Check that the undelegation amount is not bigger than amount delegated
+        // Check that the undelegation amount is not greater than amount delegated
         const active_delegation = await this.delegationRepository.getActiveDelegation(request.to, request.from, request.token, trx);
         if (!active_delegation) {
             return Result.Err(
@@ -261,11 +263,11 @@ export class DelegationManager {
         return Result.OkVoid();
     }
 
-    async undelegate(undelegation: UndelegateTokensRequest, action: IAction, trx?: Trx) {
-        const tokenEntry = TokenSupport.entry(this.tokenSupport.tokens, undelegation.token);
+    async undelegate(request: UndelegateTokensRequest, action: IAction, trx?: Trx) {
+        const tokenEntry = TokenSupport.entry(this.tokenSupport.tokens, request.token);
         if (!tokenEntry || !tokenEntry.delegation) {
-            throw new Error(`Delegation is not supported for the specified token: ${undelegation.token}.`);
+            throw new Error(`Delegation is not supported for the specified token: ${request.token}.`);
         }
-        return this.delegationRepository.undelegate(action, undelegation.to, undelegation.from, tokenEntry, undelegation.qty, trx);
+        return this.delegationRepository.undelegate(action, request.to, request.from, tokenEntry, request.qty, trx);
     }
 }

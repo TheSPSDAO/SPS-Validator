@@ -36,6 +36,7 @@ export class UndelegateTokensMultiAction extends Action<typeof undelegate_tokens
             this.players.push(from);
             const logs = await this.delegationManager.undelegate(
                 {
+                    account: this.toPlayer,
                     to: this.toPlayer,
                     from: from,
                     qty: qty,

@@ -162,6 +162,7 @@ export class DelegationPromiseHandler extends PromiseHandler {
         return this.delegationManager.undelegate(
             {
                 ...params,
+                account: promise.fulfilled_by!,
                 to: promise.fulfilled_by!,
                 from: this.opts.delegation_promise_account,
                 allowSystemAccounts: true,
@@ -181,6 +182,7 @@ export class DelegationPromiseHandler extends PromiseHandler {
         const undelegateLogs = await this.delegationManager.undelegate(
             {
                 ...params,
+                account: promise.fulfilled_by!,
                 to: promise.fulfilled_by!,
                 from: this.opts.delegation_promise_account,
                 allowSystemAccounts: true,

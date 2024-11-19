@@ -13,20 +13,23 @@ services:
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
       POSTGRES_USER: ${POSTGRES_USER:-postgres}
       POSTGRES_DB: ${POSTGRES_DB:-postgres}
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready", "-d", "${POSTGRES_DB:-postgres}"]
+      interval: 30s
+      timeout: 60s
+      retries: 5
+      start_period: 80s
 
   validator:
     build:
       context: .
       dockerfile: ./apps/sps-validator/Dockerfile
-      args:
-        NPM_TOKEN: ${NPM_TOKEN:-}
     ports:
       - "3333:3333"
     networks:
       - "postgres"
       - "validator"
     environment:
-      NPM_TOKEN: ${NPM_TOKEN:-}
       API_PORT: "3333"
       POSTGRES_PASSWORD: ${APP_PASSWORD:-validator}
       POSTGRES_USER: ${APP_USER:-validator}
@@ -53,7 +56,8 @@ services:
     networks:
       - "postgres"
     depends_on:
-      - pg
+      pg:
+        condition: service_healthy
     environment:
       PGPASSWORD: ${POSTGRES_PASSWORD:-postgres}
       PGUSER: ${POSTGRES_USER:-postgres}

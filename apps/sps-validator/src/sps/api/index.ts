@@ -93,11 +93,13 @@ export class EnabledApiActivator implements ConditionalApiActivator {
         const app = express();
 
         //  secures API - see: https://www.securecoding.com/blog/using-helmetjs
-        app.use(helmet({ hidePoweredBy: true }));
+        if (this.cfg.helmetjs) {
+            app.use(helmet({ hidePoweredBy: true }));
+        }
 
         app.use(function (req, res, next) {
             res.header('Access-Control-Allow-Origin', '*');
-            res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, X-CSRF-Token, Content-Type, Accept');
+            res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, X-CSRF-Token, Content-Type, Accept, Authorization');
             res.header('X-Frame-Options', 'sameorigin');
             next();
         });

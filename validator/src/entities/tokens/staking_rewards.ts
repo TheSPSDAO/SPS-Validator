@@ -202,7 +202,7 @@ export class StakingRewardsRepository extends BaseRepository {
         const pool_settings = pools[pool_name];
         const last_reward_block = pools[`${pool_name}_last_reward_block`] || pool_settings.start_block;
         const acc_tokens_per_share = pools[`${pool_name}_acc_tokens_per_share`];
-        const total_staked = await this.balanceRepository.getBalance(this.stakingConfiguration.staking_account, pool.token, trx);
+        const total_staked = -1 * (await this.balanceRepository.getBalance(this.stakingConfiguration.staking_account, pool.stake, trx));
         return {
             tokens_per_block: pool_settings.tokens_per_block,
             start_block: pool_settings.start_block,
@@ -212,7 +212,7 @@ export class StakingRewardsRepository extends BaseRepository {
             reduction_pct: pool_settings.reduction_pct,
             acc_tokens_per_share,
             last_reward_block,
-            total_staked: { token: pool.token, amount: total_staked },
+            total_staked: { token: pool.stake, amount: total_staked },
         };
     }
 

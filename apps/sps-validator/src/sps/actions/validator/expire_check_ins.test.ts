@@ -68,6 +68,6 @@ test.dbOnly('expire_check_ins expires check ins and takes them out of the reward
     expect(runningLicenses?.balance).toBe(0);
 
     // should have a reward
-    const rewards = await fixture.testHelper.getDummyToken('steemmonsters', TOKENS.SPSP);
+    const rewards = await fixture.testHelper.getDummyToken('steemmonsters', TOKENS.SPS);
     expect(rewards?.balance).toBeCloseTo(validator_rewards_settings.tokens_per_block * (block_num - validator_rewards_settings.start_block));
 });

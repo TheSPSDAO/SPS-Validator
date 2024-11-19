@@ -10,7 +10,6 @@ function usage {
     echo "  -h      display help"
     echo "  Required environment variables:"
     echo "    - SNAPSHOT"
-    echo "    - LAST_BLOCK"
     echo "  Configuration environment variables:"
     echo "    - PGUSER"
     echo "    - PGHOST"
@@ -37,17 +36,10 @@ then
   exit 1
 fi
 
-if [ -z ${LAST_BLOCK+x} ]
-then
-  echo "LAST_BLOCK is unset."
-  usage
-  exit 1
-fi
-
 silent_expected_error='Cannot deploy to an earlier change; use "revert" instead'
 silent_expected_logspam='Nothing to deploy (up-to-date)'
 
 pushd "$SCRIPT_DIR" > /dev/null
 PGUSER=$APP_USER PGPASSWORD=$APP_PASSWORD PGDATABASE=$APP_DATABASE sqitch deploy --to-change pre-snapshot@HEAD --set APP_USER="$APP_USER" --set "APP_SCHEMA=$APP_SCHEMA" |& grep --invert-match "$silent_expected_error" || echo "Initial part of the migration was already run, skipping..."
-PGUSER=$APP_USER PGPASSWORD=$APP_PASSWORD PGDATABASE=$APP_DATABASE sqitch deploy -t sqitch-data --set snapshot_file="$SNAPSHOT" --set last_block="$LAST_BLOCK" --set APP_USER="$APP_USER" --set "APP_SCHEMA=$APP_SCHEMA" | { grep --invert-match "$silent_expected_logspam" || true; }
+PGUSER=$APP_USER PGPASSWORD=$APP_PASSWORD PGDATABASE=$APP_DATABASE sqitch deploy -t sqitch-data --set snapshot_file="$SNAPSHOT" --set APP_USER="$APP_USER" --set "APP_SCHEMA=$APP_SCHEMA" | { grep --invert-match "$silent_expected_logspam" || true; }
 PGUSER=$APP_USER PGPASSWORD=$APP_PASSWORD PGDATABASE=$APP_DATABASE sqitch deploy --set APP_USER="$APP_USER" --set "APP_SCHEMA=$APP_SCHEMA"

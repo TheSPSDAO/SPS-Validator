@@ -8,7 +8,6 @@ WORKDIR /app
 # Required to compile secp256k1 C++
 RUN apk add --no-cache g++ make python3
 ENV npm_config_python=/usr/bin/python3
-ARG NPM_TOKEN
 COPY npmrc.docker ./.npmrc
 COPY package.json package-lock.json ./
 ENV DISABLE_OPENCOLLECTIVE=yes
@@ -24,9 +23,7 @@ COPY package.json package-lock.json nx.json tsconfig.base.json ./
 COPY monad ./monad
 COPY validator ./validator
 COPY bridge ./bridge
-COPY nft ./nft
 COPY apps ./apps
-COPY custom-json-queue ./custom-json-queue
 RUN npx nx run sps-validator:build:production
 
 ######################################################################
@@ -36,7 +33,6 @@ WORKDIR /app
 # Required to compile secp256k1 C++
 RUN apk add --no-cache g++ make python3
 ENV npm_config_python=/usr/bin/python3
-ARG NPM_TOKEN
 COPY npmrc.docker ./.npmrc
 COPY package-lock.json ./
 COPY --from=builder /app/dist/apps/sps-validator/package.json ./

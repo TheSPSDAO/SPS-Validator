@@ -1,2 +1,0 @@
--- Revert splinterlands-validator:starting-block from pg
--- Do nothing

@@ -71,6 +71,16 @@ const undelegate_tokens = new Schema.Schema(
     }),
 );
 
+const return_tokens = new Schema.Schema(
+    'return_tokens',
+    object({
+        token: Schema.token,
+        from: Schema.hiveUsernameOrSystemAccount.required(),
+        qty: Schema.qty.positive(),
+        player: Schema.hiveAccount.optional(),
+    }),
+);
+
 const undelegate_tokens_multi = new Schema.Schema(
     'undelegate_tokens_multi',
     object({
@@ -432,4 +442,5 @@ export {
     deactivate_license,
     check_in_validator,
     expire_check_ins,
+    return_tokens,
 };

@@ -1,21 +1,21 @@
 import { OperationData, DelegationManager, Action, Trx, EventLog } from '@steem-monsters/splinterlands-validator';
-import { undelegate_tokens } from '../schema';
+import { return_tokens } from '../schema';
 import { Result } from '@steem-monsters/lib-monad';
 import { MakeActionFactory, MakeRouter } from '../utils';
 
-export class UndelegateTokensAction extends Action<typeof undelegate_tokens.actionSchema> {
-    private readonly toPlayer: string;
+export class ReturnTokensAction extends Action<typeof return_tokens.actionSchema> {
+    private readonly fromPlayer: string;
     constructor(op: OperationData, data: unknown, index: number, private readonly delegationManager: DelegationManager) {
-        super(undelegate_tokens, op, data, index);
-        this.toPlayer = this.params.player ?? this.op.account;
+        super(return_tokens, op, data, index);
+        this.fromPlayer = this.params.player ?? this.op.account;
     }
 
     async validate(trx?: Trx) {
         const validationResult = await this.delegationManager.validateUndelegation(
             {
-                account: this.toPlayer,
-                to: this.toPlayer, // to is the delegator
-                from: this.params.from,
+                account: this.fromPlayer,
+                to: this.params.from,
+                from: this.fromPlayer,
                 token: this.params.token,
                 qty: this.params.qty,
                 allowSystemAccounts: false,
@@ -32,12 +32,12 @@ export class UndelegateTokensAction extends Action<typeof undelegate_tokens.acti
     }
 
     async process(trx?: Trx): Promise<EventLog[]> {
-        this.players.push(this.toPlayer, this.params.from);
+        this.players.push(this.fromPlayer, this.params.from);
         const eventLogs = await this.delegationManager.undelegate(
             {
-                account: this.toPlayer,
-                to: this.toPlayer,
-                from: this.params.from,
+                account: this.fromPlayer,
+                to: this.params.from,
+                from: this.fromPlayer,
                 qty: this.params.qty,
                 token: this.params.token,
                 allowSystemAccounts: false,
@@ -49,5 +49,5 @@ export class UndelegateTokensAction extends Action<typeof undelegate_tokens.acti
     }
 }
 
-const Builder = MakeActionFactory(UndelegateTokensAction, DelegationManager);
-export const Router = MakeRouter(undelegate_tokens.action_name, Builder);
+const Builder = MakeActionFactory(ReturnTokensAction, DelegationManager);
+export const Router = MakeRouter(return_tokens.action_name, Builder);

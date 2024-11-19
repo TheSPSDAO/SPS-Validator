@@ -18,6 +18,7 @@ const posting_auth_ops = [
     'delegate_tokens',
     'undelegate_tokens',
     'undelegate_tokens_multi',
+    'return_tokens',
     'fulfill_promise',
     'fulfill_promise_multi',
 ];
