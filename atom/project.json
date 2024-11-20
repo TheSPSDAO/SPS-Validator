@@ -1,0 +1,28 @@
+{
+    "name": "lib-atom",
+    "$schema": "../node_modules/nx/schemas/project-schema.json",
+    "sourceRoot": "atom/src",
+    "projectType": "library",
+    "targets": {
+        "build": {
+            "executor": "@nx/js:tsc",
+            "outputs": ["{options.outputPath}"],
+            "options": {
+                "outputPath": "dist/libs/atom",
+                "main": "atom/src/index.ts",
+                "tsConfig": "atom/tsconfig.lib.json"
+            }
+        },
+        "lint": {
+            "executor": "@nx/eslint:lint"
+        },
+        "test": {
+            "executor": "@nx/jest:jest",
+            "outputs": ["{workspaceRoot}/coverage/atom"],
+            "options": {
+                "jestConfig": "atom/jest.config.js"
+            }
+        }
+    },
+    "tags": []
+}

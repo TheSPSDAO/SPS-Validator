@@ -18,7 +18,8 @@
         "baseUrl": ".",
         "paths": {
             "@steem-monsters/lib-monad": ["monad/src/lib.ts"],
-            "@steem-monsters/splinterlands-validator": ["validator/src/lib.ts"]
+            "@steem-monsters/splinterlands-validator": ["validator/src/lib.ts"],
+            "@steem-monsters/atom": ["atom/src/index.ts"]
         }
     },
     "exclude": ["node_modules", "tmp"]

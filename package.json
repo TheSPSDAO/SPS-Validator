@@ -50,7 +50,6 @@
     "dependencies": {
         "@abraham/reflection": "^0.10.0",
         "@arrows/multimethod": "^2.1.0",
-        "@steem-monsters/atom": "1.3.5-development",
         "@wwwouter/typed-knex": "^4.11.0",
         "bignumber.js": "^9.1.0",
         "convict": "^6.2.3",

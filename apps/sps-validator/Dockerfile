@@ -2,7 +2,7 @@ FROM alpine:3.18 AS utils
 RUN apk add --no-cache dumb-init
 
 ######################################################################
-FROM node:20-alpine3.18 as dev-dependencies
+FROM node:20-alpine3.18 AS dev-dependencies
 ######################################################################
 WORKDIR /app
 # Required to compile secp256k1 C++
@@ -22,12 +22,12 @@ COPY --from=dev-dependencies /app /app
 COPY package.json package-lock.json nx.json tsconfig.base.json ./
 COPY monad ./monad
 COPY validator ./validator
-COPY bridge ./bridge
+COPY atom ./atom
 COPY apps ./apps
 RUN npx nx run sps-validator:build:production
 
 ######################################################################
-FROM node:20-alpine3.18 as prod-dependencies
+FROM node:20-alpine3.18 AS prod-dependencies
 ######################################################################
 WORKDIR /app
 # Required to compile secp256k1 C++
@@ -41,7 +41,7 @@ RUN npm ci --omit=dev
 RUN rm -f .npmrc
 
 ######################################################################
-FROM node:20-alpine3.18 as final
+FROM node:20-alpine3.18 AS final
 ######################################################################
 COPY --from=utils /usr/bin/dumb-init /usr/bin/dumb-init
 WORKDIR /app
