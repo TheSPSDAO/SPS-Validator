@@ -54,7 +54,7 @@ fi
 
 unzip_dir=$(mktemp -d "$TMP_TEMPLATE")
 unzip "$FILE" -d "$unzip_dir"
-snapshot_file=$(find "$unzip_dir" -maxdepth 1 -type f -name "*.sql" | head -n 1)
+snapshot_file=$(find "$unzip_dir" -maxdepth 1 -type f -iname "*.sql" | head -n 1)
 
 
 mv "$snapshot_file" "$SNAPSHOT"

@@ -41,6 +41,21 @@ test.dbOnly('Simple token_transfer.', async () => {
     expect([balance1?.balance, balance2?.balance]).toStrictEqual([90, 10]);
 });
 
+test.dbOnly('Unsupported token_transfer is ignored.', async () => {
+    await fixture.testHelper.setDummyToken('steemmonsters', 100);
+    await fixture.testHelper.setHiveAccount('steemmonsters2');
+    await expect(
+        fixture.opsHelper.processOp('token_transfer', 'steemmonsters', {
+            token: 'VOUCHER',
+            qty: 10,
+            to: 'steemmonsters2',
+        }),
+    ).resolves.toBeUndefined();
+    const balance1 = await fixture.testHelper.getDummyToken('steemmonsters');
+    const balance2 = await fixture.testHelper.getDummyToken('steemmonsters2');
+    expect([balance1?.balance, balance2?.balance]).toStrictEqual([90, 10]);
+});
+
 test.dbOnly('Non Hive account token_transfer is ignored.', async () => {
     // TODO: does not actually test that no transaction happened, but these cases cannot be distinguished without diving into the change events.
     await fixture.testHelper.setDummyToken('steemmonsters', 100);

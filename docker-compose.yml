@@ -1,5 +1,4 @@
-version: '3'
-name: splinterlands-validator
+name: "${DOCKER_NAME}"
 
 services:
   pg:
@@ -52,8 +51,8 @@ services:
       context: ./sqitch
       dockerfile: Dockerfile
       args:
-        # Default to latest snapshot, override with --build-arg snapshot='local-snapshot.zip'
-        snapshot: "https://sl-prod-s3-validator.s3.amazonaws.com/validator-data-latest.zip"
+        # Default to latest snapshot, override with --build-arg snapshot='local-snapshot.zip'. run.sh overrides this with SNAPSHOT_URL from .env.
+        snapshot: "https://d33cuc2qlex36c.cloudfront.net/validator-data-latest-20241128-0.zip"
     networks:
       - "postgres"
     depends_on:

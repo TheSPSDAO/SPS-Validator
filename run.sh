@@ -53,14 +53,29 @@ restart() {
     start
 }
 
+destroy() {
+    read -p "Are you sure you want to destroy? This will stop the current running container and remove the local database (including any locally validated blocks) (y/n)" -n 1 -r
+    echo    # (optional) move to a new line
+    if [[ $REPLY =~ ^[Yy]$ ]]
+    then
+        stop
+        _destroy
+    fi
+}
+
+_destroy() {
+    docker volume ls --filter name="${DOCKER_NAME}*" -q | xargs -r docker volume rm || true # delete local database
+    docker ps --filter name="${DOCKER_NAME}*" -aq | xargs -r docker rm || true # delete splinterlands containers
+    docker images --filter=reference="${DOCKER_NAME}*" -q | xargs -r docker rmi || true # delete splinterlands images
+}
+
 replay() {
     read -p "Are you sure you want to replay? This will stop the current running container and remove the local database (including any locally validated blocks) (y/n)" -n 1 -r
     echo    # (optional) move to a new line
     if [[ $REPLY =~ ^[Yy]$ ]]
     then
         stop
-        docker volume rm splinterlands-validator_pgdata || true # delete local database
-        docker rmi splinterlands-validator-validator-sqitch || true # delete database migrations
+        _destroy
         build "$1" "$2"
         start
     fi
@@ -153,6 +168,7 @@ help() {
     echo "    start       - starts docker"
     echo "    stop        - stops docker"
     echo "    restart     - runs stop + start"
+    echo "    destroy     - runs stop and deletes local database"
     echo "    replay      - stops docker (if exists), deletes local database and runs build + start"
     echo "    build       - runs dl_snapshot + database migrations"
     echo "    dl_snapshot - downloads snapshot if it doesn't exists locally"
@@ -174,6 +190,9 @@ case $1 in
     ;;
     restart)
         restart
+    ;;
+    destroy)
+        destroy
     ;;
     replay)
         replay "$2" "$3"
