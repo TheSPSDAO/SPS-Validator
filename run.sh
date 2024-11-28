@@ -60,7 +60,7 @@ replay() {
     then
         stop
         docker volume rm splinterlands-validator_pgdata || true # delete local database
-        docker rmi splinterlands-validator_validator-sqitch || true # delete database migrations
+        docker rmi splinterlands-validator-validator-sqitch || true # delete database migrations
         build "$1" "$2"
         start
     fi
