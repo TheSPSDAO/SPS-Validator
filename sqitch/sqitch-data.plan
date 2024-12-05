@@ -1,5 +1,5 @@
 %syntax-version=1.0.0
-%project=splinterlands-validator
-%uri=https://github.com/steem-monsters/splinterlands-validator
+%project=splinterlands-validator-snapshot
+%uri=https://github.com/steem-monsters/splinterlands-validator?ref=snapshot
 
 snapshot 2022-03-02T16:03:54Z Jelle Licht (wordempire) <jelle@splinterlands.com> # Dynamic snapshot restoration

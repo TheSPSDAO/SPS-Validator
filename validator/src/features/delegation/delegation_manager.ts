@@ -41,6 +41,7 @@ export type UndelegateTokensMultiRequest = {
 
 export type DelegationManagerOpts = {
     undelegation_cooldown_ms: number;
+    system_account_whitelist?: string[];
 };
 
 export class DelegationManager {
@@ -84,7 +85,7 @@ export class DelegationManager {
         const accountsToValidate = [request.to, request.from];
         const is_valid_account = await (request.allowSystemAccounts
             ? this.hiveAccountRepository.onlyHiveOrSystemAccounts(accountsToValidate, trx)
-            : this.hiveAccountRepository.onlyHiveAccounts(accountsToValidate, trx));
+            : this.validAccounts(accountsToValidate, trx));
         if (!is_valid_account) {
             return Result.Err(new ValidationError('Arguments to and from must be a valid Hive account.', action, ErrorType.AccountNotKnown));
         }
@@ -123,7 +124,7 @@ export class DelegationManager {
         const accountsToValidate = [...toAccounts, request.from];
         const is_valid_account = await (request.allowSystemAccounts
             ? this.hiveAccountRepository.onlyHiveOrSystemAccounts(accountsToValidate, trx)
-            : this.hiveAccountRepository.onlyHiveAccounts(accountsToValidate, trx));
+            : this.validAccounts(accountsToValidate, trx));
         if (!is_valid_account) {
             return Result.Err(new ValidationError('to players must all be valid Hive accounts.', action, ErrorType.AccountNotKnown));
         }
@@ -172,7 +173,7 @@ export class DelegationManager {
         const accountsToValidate = [request.account, request.to, request.from];
         const is_valid_account = await (request.allowSystemAccounts
             ? this.hiveAccountRepository.onlyHiveOrSystemAccounts(accountsToValidate, trx)
-            : this.hiveAccountRepository.onlyHiveAccounts(accountsToValidate, trx));
+            : this.validAccounts(accountsToValidate, trx));
         if (!is_valid_account) {
             return Result.Err(new ValidationError('Argument to and from must be a valid Hive account.', action, ErrorType.AccountNotKnown));
         }
@@ -217,7 +218,7 @@ export class DelegationManager {
         const accountsToValidate = [...accounts, request.to];
         const is_valid_account = await (request.allowSystemAccounts
             ? this.hiveAccountRepository.onlyHiveOrSystemAccounts(accountsToValidate, trx)
-            : this.hiveAccountRepository.onlyHiveAccounts(accountsToValidate, trx));
+            : this.validAccounts(accountsToValidate, trx));
         if (!is_valid_account) {
             return Result.Err(new ValidationError('Argument to must be a valid Hive account.', action, ErrorType.AccountNotKnown));
         }
@@ -269,5 +270,13 @@ export class DelegationManager {
             throw new Error(`Delegation is not supported for the specified token: ${request.token}.`);
         }
         return this.delegationRepository.undelegate(action, request.to, request.from, tokenEntry, request.qty, trx);
+    }
+
+    private async validAccounts(accounts: string[], trx?: Trx): Promise<boolean> {
+        const systemAccounts = accounts.filter((a) => a.startsWith('$'));
+        const hiveAccounts = accounts.filter((a) => !a.startsWith('$'));
+        const is_valid_account = await this.hiveAccountRepository.onlyHiveAccounts(hiveAccounts, trx);
+        const is_valid_sys_account = systemAccounts.every((account) => this.opts.system_account_whitelist?.includes(account) ?? false);
+        return is_valid_account && is_valid_sys_account;
     }
 }

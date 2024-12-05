@@ -5,6 +5,7 @@ import { SUPPORTED_TOKENS } from '../tokens';
 const DELEGATION_MANAGER_OPTS: DelegationManagerOpts = {
     // 7 days in milliseconds
     undelegation_cooldown_ms: 7 * 24 * 60 * 60 * 1000,
+    system_account_whitelist: ['$SOULKEEP'],
 };
 
 @injectable()

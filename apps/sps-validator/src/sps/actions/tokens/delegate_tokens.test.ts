@@ -10,6 +10,7 @@ const delegatorWithAuthority = 'steemmonstersauth';
 const delegatorWithoutAuthority = 'steemmonstersauth2';
 const delegator = 'steemmonsters';
 const delegatee = 'steemmonsters2';
+const system_delegatee = '$SOULKEEP';
 
 beforeAll(async () => {
     await fixture.init();
@@ -28,6 +29,9 @@ beforeEach(async () => {
     await fixture.testHelper.setStaked(delegatee, 0);
     await fixture.testHelper.setDelegatedOut(delegatee, 0);
     await fixture.testHelper.setDelegatedIn(delegatee, 0);
+    await fixture.testHelper.setStaked(system_delegatee, 0);
+    await fixture.testHelper.setDelegatedOut(system_delegatee, 0);
+    await fixture.testHelper.setDelegatedIn(system_delegatee, 0);
     await fixture.testHelper.setDelegatedOut(DELEGATION_ACCOUNT, 0);
     await fixture.testHelper.setDelegatedIn(DELEGATION_ACCOUNT, 0);
 
@@ -66,6 +70,43 @@ test.dbOnly('Simple delegate tokens.', async () => {
     const delegatee_SPSP_balance_after = (await fixture.testHelper.getDummyToken(delegatee, TOKENS.SPSP))!.balance;
     const delegatee_SPSP_OUT_balance_after = (await fixture.testHelper.getDummyToken(delegatee, TOKENS.SPSP_OUT))!.balance;
     const delegatee_SPSP_IN_balance_after = (await fixture.testHelper.getDummyToken(delegatee, TOKENS.SPSP_IN))!.balance;
+
+    const sysacc_SPSP_OUT_balance_after = (await fixture.testHelper.getDummyToken(DELEGATION_ACCOUNT, TOKENS.SPSP_OUT))!.balance;
+    const sysacc_SPSP_IN_balance_after = (await fixture.testHelper.getDummyToken(DELEGATION_ACCOUNT, TOKENS.SPSP_IN))!.balance;
+
+    expect(active_delegation_record.amount).toBe(amount_to_delegate.toString());
+    expect(delegator_SPSP_balance_after).toBe(initial_staked_amount);
+    expect(delegator_SPSP_OUT_balance_after).toBe(amount_to_delegate);
+    expect(delegator_SPSP_IN_balance_after).toBe(0);
+
+    expect(delegatee_SPSP_balance_after).toBe(0);
+    expect(delegatee_SPSP_OUT_balance_after).toBe(0);
+    expect(delegatee_SPSP_IN_balance_after).toBe(amount_to_delegate);
+
+    expect(sysacc_SPSP_OUT_balance_after).toBe(-amount_to_delegate);
+    expect(sysacc_SPSP_IN_balance_after).toBe(-amount_to_delegate);
+});
+
+test.dbOnly('Simple delegate tokens to whitelisted system account.', async () => {
+    const amount_to_delegate = 50;
+
+    await expect(
+        fixture.opsHelper.processOp('delegate_tokens', delegator, {
+            token: 'SPSP',
+            to: system_delegatee,
+            qty: amount_to_delegate,
+        }),
+    ).resolves.toBeUndefined();
+
+    const active_delegation_record = (await fixture.testHelper.getActiveDelegationRecord(delegator, system_delegatee, TOKENS.SPSP))!;
+
+    const delegator_SPSP_balance_after = (await fixture.testHelper.getDummyToken(delegator, TOKENS.SPSP))!.balance;
+    const delegator_SPSP_OUT_balance_after = (await fixture.testHelper.getDummyToken(delegator, TOKENS.SPSP_OUT))!.balance;
+    const delegator_SPSP_IN_balance_after = (await fixture.testHelper.getDummyToken(delegator, TOKENS.SPSP_IN))!.balance;
+
+    const delegatee_SPSP_balance_after = (await fixture.testHelper.getDummyToken(system_delegatee, TOKENS.SPSP))!.balance;
+    const delegatee_SPSP_OUT_balance_after = (await fixture.testHelper.getDummyToken(system_delegatee, TOKENS.SPSP_OUT))!.balance;
+    const delegatee_SPSP_IN_balance_after = (await fixture.testHelper.getDummyToken(system_delegatee, TOKENS.SPSP_IN))!.balance;
 
     const sysacc_SPSP_OUT_balance_after = (await fixture.testHelper.getDummyToken(DELEGATION_ACCOUNT, TOKENS.SPSP_OUT))!.balance;
     const sysacc_SPSP_IN_balance_after = (await fixture.testHelper.getDummyToken(DELEGATION_ACCOUNT, TOKENS.SPSP_IN))!.balance;
@@ -155,6 +196,36 @@ test.dbOnly('delegate without authority fails.', async () => {
     expect(delegatee_SPSP_balance_after).toBe(0);
     expect(delegatee_SPSP_OUT_balance_after).toBe(0);
     expect(delegatee_SPSP_IN_balance_after).toBe(0);
+
+    expect(sysacc_SPSP_OUT_balance_after).toBe(0);
+    expect(sysacc_SPSP_IN_balance_after).toBe(0);
+});
+
+test.dbOnly('delegate to non-whitelisted system account fails.', async () => {
+    const amount_to_delegate = 50;
+
+    await expect(
+        fixture.opsHelper.processOp('delegate_tokens', delegator, {
+            token: 'SPSP',
+            to: '$NOTSOULKEEP',
+            qty: amount_to_delegate,
+        }),
+    ).resolves.toBeUndefined();
+
+    const active_delegation_record = (await fixture.testHelper.getActiveDelegationRecord(delegator, delegatee, TOKENS.SPSP))!;
+
+    const delegator_SPSP_balance_after = (await fixture.testHelper.getDummyToken(delegator, TOKENS.SPSP))!.balance;
+    const delegator_SPSP_OUT_balance_after = (await fixture.testHelper.getDummyToken(delegator, TOKENS.SPSP_OUT))!.balance;
+    const delegator_SPSP_IN_balance_after = (await fixture.testHelper.getDummyToken(delegator, TOKENS.SPSP_IN))!.balance;
+
+    const sysacc_SPSP_OUT_balance_after = (await fixture.testHelper.getDummyToken(DELEGATION_ACCOUNT, TOKENS.SPSP_OUT))!.balance;
+    const sysacc_SPSP_IN_balance_after = (await fixture.testHelper.getDummyToken(DELEGATION_ACCOUNT, TOKENS.SPSP_IN))!.balance;
+
+    expect(active_delegation_record).toBeNull();
+
+    expect(delegator_SPSP_balance_after).toBe(initial_staked_amount);
+    expect(delegator_SPSP_OUT_balance_after).toBe(0);
+    expect(delegator_SPSP_IN_balance_after).toBe(0);
 
     expect(sysacc_SPSP_OUT_balance_after).toBe(0);
     expect(sysacc_SPSP_IN_balance_after).toBe(0);

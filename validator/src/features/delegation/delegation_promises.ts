@@ -80,7 +80,7 @@ export class DelegationPromiseHandler extends PromiseHandler {
                 // TODO set to to system account? fulfilling doesn't go to the promise "holder" yet
                 ...params,
                 from: action.op.account,
-                allowSystemAccounts: true,
+                allowSystemAccounts: false,
             },
             action,
             trx,
