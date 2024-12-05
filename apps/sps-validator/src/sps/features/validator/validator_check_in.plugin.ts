@@ -26,16 +26,17 @@ export class ValidatorCheckInPlugin implements Plugin, Prime {
     }
 
     async prime(trx?: Trx | undefined): Promise<void> {
-        this.primed = true;
         if (this.primed) {
             return;
         }
+        this.primed = true;
         if (!this.checkInWatcher.validator_check_in) {
             log('Validator check in config is invalid. Not setting next check in block.', LogLevel.Warning);
             return;
         }
         const checkIn = await this.checkInRepository.getByAccount(config.validator_account, trx);
         this.nextCheckInBlock = checkIn ? this.getNextCheckInBlock(checkIn.last_check_in_block_num) : undefined;
+        log(`Next check in block: ${this.nextCheckInBlock}`, LogLevel.Info);
     }
 
     static isAvailable() {

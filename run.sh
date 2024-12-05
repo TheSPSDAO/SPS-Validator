@@ -30,6 +30,13 @@ if [[ ! $SNAPSHOT_URL ]]; then
     exit
 fi
 
+rebuild_validator() {
+    echo "Rebuilding $DOCKER_NAME validator"
+    docker compose down
+    docker compose up -d --build validator
+    logs
+}
+
 start() {
     echo "Starting $DOCKER_NAME"
     if [[ $1 == "db" ]]; then
@@ -166,6 +173,7 @@ help() {
     echo
     echo "Commands: "
     echo "    start       - starts docker"
+    echo "    update      - updates validator config"
     echo "    stop        - stops docker"
     echo "    restart     - runs stop + start"
     echo "    destroy     - runs stop and deletes local database"
@@ -184,6 +192,9 @@ help() {
 case $1 in
     start)
         start "$2"
+    ;;
+    rebuild_validator)
+        rebuild_validator
     ;;
     stop)
         stop

@@ -24,6 +24,7 @@ services:
     build:
       context: .
       dockerfile: ./apps/sps-validator/Dockerfile
+      no_cache: true
     ports:
       - "3333:3333"
     networks:
@@ -42,6 +43,8 @@ services:
       RPC_NODES: ${RPC_NODES:-https://api.hive.blog,https://anyx.io,https://api.openhive.network,https://hived.splinterlands.com,https://hived-2.splinterlands.com}
       REPLAY_BATCH_SIZE: ${REPLAY_BATCH_SIZE:-25}
       DB: '{ "host": "pg", "port": 5432, "database": "${APP_DATABASE:-validator}", "user": "${APP_USER:-validator}", "password": "${APP_PASSWORD:-validator}" }'
+      VALIDATOR_ACCOUNT: ${VALIDATOR_ACCOUNT:-}
+      VALIDATOR_KEY: ${VALIDATOR_KEY:-}
     depends_on:
       - pg
 
