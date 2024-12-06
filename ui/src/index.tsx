@@ -14,25 +14,34 @@ import { getLocalStorageValue } from "./hooks";
 
 const locale = navigator.language;
 const messages = new Map([
-  ["en-GB", English],
-  ["en-US", English],
+    ["en-GB", English],
+    ["en-US", English],
 ]);
 
-OpenAPI.BASE = getLocalStorageValue("api.url", "http://localhost:3333");
+OpenAPI.BASE = getLocalStorageValue(
+    "api.url",
+    process.env.VALIDATOR_API_URL || "http://localhost:3333"
+);
 OpenAPI.WITH_CREDENTIALS = false;
-Hive.PREFIX = getLocalStorageValue("hive.prefix", "sm_");
+Hive.PREFIX = getLocalStorageValue(
+    "hive.prefix",
+    process.env.VALIDATOR_PREFIX || "sm_"
+);
 
 ReactDOM.render(
-  <React.StrictMode>
-    <ThemeProvider theme={createTheme()}>
-      <IntlProvider locale={locale} messages={messages.get(locale) || English}>
-        <BrowserRouter basename={process.env.REACT_APP_BASEPATH}>
-          <App />
-        </BrowserRouter>
-      </IntlProvider>
-    </ThemeProvider>
-  </React.StrictMode>,
-  document.getElementById("root")
+    <React.StrictMode>
+        <ThemeProvider theme={createTheme()}>
+            <IntlProvider
+                locale={locale}
+                messages={messages.get(locale) || English}
+            >
+                <BrowserRouter basename={process.env.REACT_APP_BASEPATH}>
+                    <App />
+                </BrowserRouter>
+            </IntlProvider>
+        </ThemeProvider>
+    </React.StrictMode>,
+    document.getElementById("root")
 );
 
 // If you want to start measuring performance in your app, pass a function

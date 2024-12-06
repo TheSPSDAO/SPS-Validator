@@ -24,7 +24,6 @@ services:
     build:
       context: .
       dockerfile: ./apps/sps-validator/Dockerfile
-      no_cache: true
     ports:
       - "3333:3333"
     networks:
@@ -76,6 +75,9 @@ services:
     build:
       context: ./ui
       dockerfile: Dockerfile
+      args:
+        VALIDATOR_API_URL: "http://localhost:3333"
+        VALIDATOR_PREFIX: "${CUSTOM_JSON_PREFIX:-sm_}"
     ports:
       - "8888:80"
     networks:

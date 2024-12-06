@@ -44,7 +44,7 @@ jobs:
       - name: Overwrite validator/structure.sql if needed
         working-directory: scripts
         run: ./ci-lazy-regenerate-structure.sh
-      - run: npm ci
+      - run: npm ci --silent
         env:
           NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       - run: npm run lint validator-lib

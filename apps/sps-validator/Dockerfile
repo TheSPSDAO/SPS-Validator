@@ -11,7 +11,7 @@ ENV npm_config_python=/usr/bin/python3
 COPY npmrc.docker ./.npmrc
 COPY package.json package-lock.json ./
 ENV DISABLE_OPENCOLLECTIVE=yes
-RUN npm ci
+RUN npm ci --silent
 RUN rm -f .npmrc
 
 ######################################################################
@@ -37,7 +37,7 @@ COPY npmrc.docker ./.npmrc
 COPY package-lock.json ./
 COPY --from=builder /app/dist/apps/sps-validator/package.json ./
 ENV DISABLE_OPENCOLLECTIVE=yes
-RUN npm ci --omit=dev
+RUN npm ci --silent --omit=dev
 RUN rm -f .npmrc
 
 ######################################################################

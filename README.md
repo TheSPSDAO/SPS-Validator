@@ -11,9 +11,10 @@ You need to re-build the validator when getting started or when updating to a ne
 
 ### Setup Instructions
 
-- `bash run.sh stop` : Ensure the validator is not currently running (`bash run.sh stop`)
-- `bash run.sh build`: Build the validator.  This will deploy the database, run migrations and also download/deploy the snapshot.
-- `bash run.sh start`: Start the validator.
+- `bash run.sh stop`     : Ensure the validator is not currently running (`bash run.sh stop`)
+- `bash run.sh build`    : Build the validator.  This will deploy the database, run migrations and also download/deploy the snapshot.
+- `bash run.sh start`    : Start the validator.
+- `bash run.sh start all`: Start the validator and the ui.
 
 ### Additional Commands
 

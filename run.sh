@@ -30,10 +30,10 @@ if [[ ! $SNAPSHOT_URL ]]; then
     exit
 fi
 
-rebuild_validator() {
-    echo "Rebuilding $DOCKER_NAME validator"
-    docker compose down
-    docker compose up -d --build validator
+rebuild_service() {
+    echo "Rebuilding $DOCKER_NAME $1 service"
+    docker compose down "$1"
+    docker compose up -d --build "$1"
     logs
 }
 
@@ -41,7 +41,7 @@ start() {
     echo "Starting $DOCKER_NAME"
     if [[ $1 == "db" ]]; then
         docker compose up -d pg
-        elif [[ $1 == "all" ]]; then
+    elif [[ $1 == "all" ]]; then
         docker compose up -d
         logs
     else
@@ -172,15 +172,15 @@ help() {
     echo "Usage: $0 COMMAND"
     echo
     echo "Commands: "
-    echo "    start       - starts docker"
-    echo "    update      - updates validator config"
-    echo "    stop        - stops docker"
-    echo "    restart     - runs stop + start"
-    echo "    destroy     - runs stop and deletes local database"
-    echo "    replay      - stops docker (if exists), deletes local database and runs build + start"
-    echo "    build       - runs dl_snapshot + database migrations"
-    echo "    dl_snapshot - downloads snapshot if it doesn't exists locally"
-    echo "    logs        - trails the last 30 lines of logs"
+    echo "    start [db | all]          - starts docker. the default just starts the validator. db starts only the database. all starts everything"
+    echo "    rebuild_service [service] - rebuilds the service. service can be validator or ui"
+    echo "    stop                      - stops docker"
+    echo "    restart                   - runs stop + start"
+    echo "    destroy                   - runs stop and deletes local database"
+    echo "    replay                    - stops docker (if exists), deletes local database and runs build + start"
+    echo "    build                     - runs dl_snapshot + database migrations"
+    echo "    dl_snapshot               - downloads snapshot if it doesn't exists locally"
+    echo "    logs                      - trails the last 30 lines of logs"
     echo
     echo "Helpers:"
     echo "    install_docker - install docker"
@@ -193,8 +193,8 @@ case $1 in
     start)
         start "$2"
     ;;
-    rebuild_validator)
-        rebuild_validator
+    rebuild_service)
+        rebuild_service "$2"
     ;;
     stop)
         stop
