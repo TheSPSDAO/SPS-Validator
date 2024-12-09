@@ -22,6 +22,7 @@ import { isDefined } from './libs/guards';
 import { Trx } from './lib';
 
 export type ValidatorOpts = {
+    reward_account: string | null;
     validator_account: string | null;
     validator_key: string | null;
 };
