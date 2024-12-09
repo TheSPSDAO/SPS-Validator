@@ -124,7 +124,7 @@ test.dbOnly('check_in_validator for invalid reward_account fails', async () => {
     const checkIn = await fixture.testHelper.getCheckIn('notanaccount');
     expect(checkIn).toBeNull();
 
-    // should be in the validator reward pool
+    // shouldnt be in the validator reward pool
     const runningLicenses = await fixture.testHelper.getDummyToken('notanaccount', TOKENS.RUNNING_LICENSE);
     expect(runningLicenses?.balance ?? 0).toBe(0);
 });
