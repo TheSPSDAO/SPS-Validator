@@ -12,6 +12,7 @@ beforeAll(async () => {
 beforeEach(async () => {
     await fixture.restore();
     await fixture.testHelper.insertDefaultConfiguration();
+    await fixture.testHelper.setHiveAccount('steemmonsters2');
     await fixture.handle.query(ConfigEntity).where('group_name', 'validator').andWhere('name', 'max_block_age').updateItem({ value: '100' });
     await fixture.loader.load();
 });
@@ -49,6 +50,38 @@ test.dbOnly('Existing block works', async () => {
     );
     const result = await fixture.testHelper.blockForBlockNumber(1);
     expect(result?.validation_tx).toEqual('proper_validate_block');
+});
+
+test.dbOnly('Existing block works with reward_account', async () => {
+    await fixture.testHelper.insertDummyBlock(1, 'my-hash', 'steemmonsters');
+    await fixture.opsHelper.processOp(
+        'validate_block',
+        'steemmonsters',
+        {
+            block_num: 1,
+            hash: 'my-hash',
+            reward_account: 'steemmonsters2',
+        },
+        { transaction: 'proper_validate_block' },
+    );
+    const result = await fixture.testHelper.blockForBlockNumber(1);
+    expect(result?.validation_tx).toEqual('proper_validate_block');
+});
+
+test.dbOnly('Existing block works with invalid reward_account does not work', async () => {
+    await fixture.testHelper.insertDummyBlock(1, 'my-hash', 'steemmonsters');
+    await fixture.opsHelper.processOp(
+        'validate_block',
+        'steemmonsters',
+        {
+            block_num: 1,
+            hash: 'my-hash',
+            reward_account: 'notanaccount',
+        },
+        { transaction: 'proper_validate_block' },
+    );
+    const result = await fixture.testHelper.blockForBlockNumber(1);
+    expect(result?.validation_tx).toBeNull();
 });
 
 test.dbOnly('Existing old block does not work', async () => {

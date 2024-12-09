@@ -1,8 +1,20 @@
-import { Action, BalanceRepository, BlockRepository, ErrorType, EventLog, OperationData, Trx, ValidationError, ValidatorWatch } from '@steem-monsters/splinterlands-validator';
+import {
+    Action,
+    BalanceRepository,
+    BlockRepository,
+    ErrorType,
+    EventLog,
+    HiveAccountRepository,
+    OperationData,
+    Trx,
+    ValidationError,
+    ValidatorWatch,
+} from '@steem-monsters/splinterlands-validator';
 import { validate_block } from '../schema';
 import { MakeActionFactory, MakeRouter } from '../utils';
 
 export class ValidateBlockAction extends Action<typeof validate_block.actionSchema> {
+    private readonly reward_account: string;
     constructor(
         op: OperationData,
         data: unknown,
@@ -10,8 +22,10 @@ export class ValidateBlockAction extends Action<typeof validate_block.actionSche
         private readonly watcher: ValidatorWatch,
         private readonly blockRepository: BlockRepository,
         private readonly balanceRepository: BalanceRepository,
+        private readonly accountRepository: HiveAccountRepository,
     ) {
         super(validate_block, op, data, index);
+        this.reward_account = this.params.reward_account ?? this.op.account;
     }
 
     async validate(trx?: Trx) {
@@ -46,6 +60,11 @@ export class ValidateBlockAction extends Action<typeof validate_block.actionSche
             throw new ValidationError('The specified hash does not match.', this, ErrorType.BlockHashMismatch);
         }
 
+        const validRewardAccount = await this.accountRepository.onlyHiveAccounts([this.reward_account], trx);
+        if (!validRewardAccount) {
+            throw new ValidationError('The specified reward account does not exist.', this, ErrorType.AccountNotKnown);
+        }
+
         return true;
     }
 
@@ -59,7 +78,7 @@ export class ValidateBlockAction extends Action<typeof validate_block.actionSche
         if (reward !== 0) {
             const [amount, token] = reward;
             if (amount > 0) {
-                results.push(...(await this.balanceRepository.updateBalance(this, '$VALIDATOR_REWARDS', this.op.account, token, amount, this.action_name, trx)));
+                results.push(...(await this.balanceRepository.updateBalance(this, '$VALIDATOR_REWARDS', this.reward_account, token, amount, this.action_name, trx)));
             }
         }
 
@@ -67,5 +86,5 @@ export class ValidateBlockAction extends Action<typeof validate_block.actionSche
     }
 }
 
-const Builder = MakeActionFactory(ValidateBlockAction, ValidatorWatch, BlockRepository, BalanceRepository);
+const Builder = MakeActionFactory(ValidateBlockAction, ValidatorWatch, BlockRepository, BalanceRepository, HiveAccountRepository);
 export const Router = MakeRouter(validate_block.action_name, Builder);

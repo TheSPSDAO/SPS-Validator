@@ -161,6 +161,7 @@ const validate_block = new Schema.Schema(
     object({
         block_num: number().integer().required(),
         hash: string().required(),
+        reward_account: Schema.hiveAccount.optional(),
     }),
 );
 
@@ -396,6 +397,7 @@ const check_in_validator = new Schema.Schema(
     object({
         block_num: number().integer().positive().required(),
         hash: string().required(),
+        reward_account: Schema.hiveAccount.optional(),
     }),
 );
 

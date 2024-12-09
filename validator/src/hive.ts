@@ -32,7 +32,7 @@ export class HiveClient extends Client {
                 id: this.prefixOpts.custom_json_id,
                 json: {
                     action: 'check_in_validator',
-                    params: { block_num, hash },
+                    params: { block_num, hash, reward_account: this.validatorConfig.reward_account ?? undefined },
                 },
                 account: this.validatorConfig.validator_account,
                 role: 'active',
@@ -51,7 +51,7 @@ export class HiveClient extends Client {
                 id: this.prefixOpts.custom_json_id,
                 json: {
                     action: 'validate_block',
-                    params: { block_num, hash },
+                    params: { block_num, hash, reward_account: this.validatorConfig.reward_account ?? undefined },
                 },
                 account: this.validatorConfig.validator_account,
                 role: 'active',

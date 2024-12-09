@@ -9,6 +9,8 @@ import { SpsValidatorLicenseManager } from './validator_license.manager';
 export class ValidatorCheckInPlugin implements Plugin, Prime {
     readonly name = 'validator_check_in';
 
+    private readonly checkInAccount: string;
+
     private primed = false;
     private nextCheckInBlock: number | undefined;
 
@@ -23,6 +25,7 @@ export class ValidatorCheckInPlugin implements Plugin, Prime {
         private readonly licenseManager: SpsValidatorLicenseManager,
     ) {
         // this.checkInWatcher.addValidatorCheckInWatcher() TODO add watcher so we can update the nextBlock if the config changes
+        this.checkInAccount = config.reward_account ?? config.validator_account;
     }
 
     async prime(trx?: Trx | undefined): Promise<void> {
@@ -34,7 +37,7 @@ export class ValidatorCheckInPlugin implements Plugin, Prime {
             log('Validator check in config is invalid. Not setting next check in block.', LogLevel.Warning);
             return;
         }
-        const checkIn = await this.checkInRepository.getByAccount(config.validator_account, trx);
+        const checkIn = await this.checkInRepository.getByAccount(this.checkInAccount, trx);
         this.nextCheckInBlock = checkIn ? this.getNextCheckInBlock(checkIn.last_check_in_block_num) : undefined;
         log(`Next check in block: ${this.nextCheckInBlock}`, LogLevel.Info);
     }
@@ -55,7 +58,7 @@ export class ValidatorCheckInPlugin implements Plugin, Prime {
         }
 
         // Check in
-        const hash = this.licenseManager.getCheckInHash(blockHash, config.validator_account);
+        const hash = this.licenseManager.getCheckInHash(blockHash, this.checkInAccount);
         // plugins are run asynchronously, so we need to set nextCheckInBlock before calling into async code
         this.nextCheckInBlock = this.getNextCheckInBlock(blockNumber);
         try {
