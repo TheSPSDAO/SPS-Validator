@@ -12,6 +12,7 @@ beforeAll(async () => {
 beforeEach(async () => {
     await fixture.restore();
     await fixture.testHelper.insertDefaultConfiguration();
+    await fixture.testHelper.setHiveAccount('steemmonsters');
     await fixture.testHelper.setHiveAccount('steemmonsters2');
     await fixture.handle.query(ConfigEntity).where('group_name', 'validator').andWhere('name', 'max_block_age').updateItem({ value: '100' });
     await fixture.loader.load();

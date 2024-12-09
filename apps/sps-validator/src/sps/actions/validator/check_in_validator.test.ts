@@ -26,6 +26,7 @@ beforeEach(async () => {
         .where('group_name', 'sps')
         .where('name', 'validator_rewards')
         .updateItem({ value: JSON.stringify(validator_rewards_settings) });
+    await fixture.testHelper.setHiveAccount('steemmonsters');
     await fixture.testHelper.setHiveAccount('steemmonsters2');
     await fixture.loader.load();
 });
