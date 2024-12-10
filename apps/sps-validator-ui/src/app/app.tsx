@@ -24,10 +24,10 @@ function AppRoutes() {
     );
 }
 
-function AppSidebarItems() {
+function AppSidebarItems({ closeSidebar }: { closeSidebar: () => void }) {
     return (
         <>
-            <Link to="/">
+            <Link to="/" onClick={closeSidebar}>
                 <ListItem>
                     <ListItemPrefix>
                         <HomeIcon className="h-5 w-5" />
@@ -35,7 +35,7 @@ function AppSidebarItems() {
                     Home
                 </ListItem>
             </Link>
-            <Link to="/validator-nodes">
+            <Link to="/validator-nodes" onClick={closeSidebar}>
                 <ListItem>
                     <ListItemPrefix>
                         <ServerStackIcon className="h-5 w-5" />
@@ -43,7 +43,7 @@ function AppSidebarItems() {
                     Validator Nodes
                 </ListItem>
             </Link>
-            <Link to="/token-balances">
+            <Link to="/token-balances" onClick={closeSidebar}>
                 <ListItem>
                     <ListItemPrefix>
                         <ChartBarIcon className="h-5 w-5" />
@@ -51,7 +51,7 @@ function AppSidebarItems() {
                     Token Balances
                 </ListItem>
             </Link>
-            <Link to="/account-balances">
+            <Link to="/account-balances" onClick={closeSidebar}>
                 <ListItem>
                     <ListItemPrefix>
                         <UserIcon className="h-5 w-5" />
@@ -59,7 +59,7 @@ function AppSidebarItems() {
                     Account Balances
                 </ListItem>
             </Link>
-            <Link to="/settings">
+            <Link to="/settings" onClick={closeSidebar}>
                 <ListItem>
                     <ListItemPrefix>
                         <CogIcon className="h-5 w-5" />
@@ -67,39 +67,6 @@ function AppSidebarItems() {
                     Settings
                 </ListItem>
             </Link>
-            {/* <ListItem>
-                <ListItemPrefix>
-                    <ShoppingBagIcon className="h-5 w-5" />
-                </ListItemPrefix>
-                E-Commerce
-            </ListItem>
-            <ListItem>
-                <ListItemPrefix>
-                    <InboxIcon className="h-5 w-5" />
-                </ListItemPrefix>
-                Inbox
-                <ListItemSuffix>
-                    <Chip value="14" size="sm" variant="ghost" color="blue-gray" className="rounded-full" />
-                </ListItemSuffix>
-            </ListItem>
-            <ListItem>
-                <ListItemPrefix>
-                    <UserCircleIcon className="h-5 w-5" />
-                </ListItemPrefix>
-                Profile
-            </ListItem>
-            <ListItem>
-                <ListItemPrefix>
-                    <Cog6ToothIcon className="h-5 w-5" />
-                </ListItemPrefix>
-                Settings
-            </ListItem>
-            <ListItem>
-                <ListItemPrefix>
-                    <PowerIcon className="h-5 w-5" />
-                </ListItemPrefix>
-                Log Out
-            </ListItem> */}
         </>
     );
 }
@@ -147,7 +114,7 @@ export function App() {
             <AppNavbar tickers={tickers} toggleSidebar={() => setMobileSidebarOpen((prev) => !prev)} />
             <div className="flex-grow flex relative">
                 <AppSidebar isMobileOpen={mobileSidebarOpen}>
-                    <AppSidebarItems />
+                    <AppSidebarItems closeSidebar={() => setMobileSidebarOpen(false)} />
                 </AppSidebar>
                 <div className="flex-grow p-5">
                     <AppRoutes />
