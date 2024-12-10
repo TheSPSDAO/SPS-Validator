@@ -18,7 +18,6 @@
         "@nx/js": "20.2.1",
         "@nx/node": "20.2.1",
         "@nx/react": "20.2.1",
-        "@nx/webpack": "20.2.1",
         "@nx/workspace": "20.2.1",
         "@testcontainers/postgresql": "^10.8.1",
         "@types/convict": "^6.1.1",
