@@ -44,13 +44,22 @@ export class DefaultService {
     }
     /**
      * Gets the list of validators
+     * @param limit
+     * @param skip
      * @returns Validators Successful operation
      * @throws ApiError
      */
-    public static getValidators(): CancelablePromise<Validators> {
+    public static getValidators(
+        limit?: number,
+        skip?: number,
+    ): CancelablePromise<Validators> {
         return __request(OpenAPI, {
             method: 'GET',
             url: '/validators',
+            query: {
+                'limit': limit,
+                'skip': skip,
+            },
         });
     }
     /**

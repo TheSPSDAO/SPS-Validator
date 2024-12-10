@@ -97,8 +97,10 @@ export function registerApiRoutes(app: Router, opts: ApiOptions): void {
     app.get('/validators', async (req, res) => {
         const trxStarter = req.resolver.resolve(TransactionStarter);
         const Validator = req.resolver.resolve(ValidatorRepository);
+        const skip = typeof req.query.skip === 'string' ? parseInt(req.query.skip, 10) : 0;
+        const limit = typeof req.query.limit === 'string' ? parseInt(req.query.limit, 10) : 100;
         await trxStarter.withTransaction(TransactionMode.Reporting, async (trx?: Trx) => {
-            res.json(await Validator.getValidators(trx));
+            res.json(await Validator.getValidators({ count: true, skip, limit }, trx));
         });
     });
 

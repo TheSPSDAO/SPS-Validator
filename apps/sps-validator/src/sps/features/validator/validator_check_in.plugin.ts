@@ -25,7 +25,7 @@ export class ValidatorCheckInPlugin implements Plugin, Prime {
         private readonly licenseManager: SpsValidatorLicenseManager,
     ) {
         // this.checkInWatcher.addValidatorCheckInWatcher() TODO add watcher so we can update the nextBlock if the config changes
-        this.checkInAccount = config.reward_account ?? config.validator_account;
+        this.checkInAccount = config.reward_account || config.validator_account;
     }
 
     async prime(trx?: Trx | undefined): Promise<void> {
@@ -33,7 +33,10 @@ export class ValidatorCheckInPlugin implements Plugin, Prime {
             return;
         }
         this.primed = true;
-        if (!this.checkInWatcher.validator_check_in) {
+        if (!this.checkInAccount) {
+            log('No check in account configured. Not setting next check in block.', LogLevel.Warning);
+            return;
+        } else if (!this.checkInWatcher.validator_check_in) {
             log('Validator check in config is invalid. Not setting next check in block.', LogLevel.Warning);
             return;
         }

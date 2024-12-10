@@ -201,7 +201,7 @@ export class TopPriceFeedWrapper implements PriceFeedProducer {
 
     async addPriceEntry(pe: PriceEntry, trx?: Trx): Promise<EventLog[]> {
         const top = await this.getTopValidators(trx);
-        if (top.some((ve) => ve.account_name === pe.validator && ve.is_active)) {
+        if (top.some((ve) => ve.account_name === pe.validator)) {
             return this.source.addPriceEntry(pe, trx);
         } else {
             return [];
@@ -209,9 +209,10 @@ export class TopPriceFeedWrapper implements PriceFeedProducer {
     }
 
     private async getTopValidators(trx?: Trx) {
-        const num_top = this.watcher.validator?.num_top_validators;
-        if (num_top) {
-            return this.validatorRepository.getValidators(trx, num_top);
+        const limit = this.watcher.validator?.num_top_validators;
+        if (limit) {
+            const { validators } = await this.validatorRepository.getValidators({ limit, is_active: true }, trx);
+            return validators;
         } else {
             return [];
         }

@@ -13,6 +13,7 @@ export class UpdateValidatorAction extends Action<typeof update_validator.action
 
     async process(trx?: Trx): Promise<EventLog[]> {
         // Insert or update the validators table
+        // TODO: remove votes when a validator is deactivated??
         return [
             await this.validatorRepository.register(
                 {

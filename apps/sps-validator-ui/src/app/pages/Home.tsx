@@ -31,14 +31,14 @@ function UsefulLinksCard() {
 function MetricsCard() {
     const [spsPrice] = usePromise(() => DefaultService.getPriceForToken('SPS'));
     // TODO switch to count endpoint
-    const [validators] = usePromise(() => DefaultService.getValidators());
+    const [validators] = usePromise(() => DefaultService.getValidators(0, 0));
     const [status] = usePromise(() => DefaultService.getStatus());
 
     const [metrics, setMetrics] = useState<{ label: string; value: string }[]>([]);
     useEffect(() => {
         setMetrics([
             { label: 'SPS Price', value: `$${spsPrice?.price ?? '...'}` },
-            { label: 'Validator Nodes', value: validators?.length.toString() ?? '...' },
+            { label: 'Validator Nodes', value: validators?.count?.toString() ?? '...' },
             { label: 'Block Num', value: status?.last_block?.toString() ?? '...' },
         ]);
     }, [spsPrice, validators, status]);
