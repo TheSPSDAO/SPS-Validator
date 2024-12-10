@@ -1,7 +1,7 @@
 import { ConfigType } from '../sps/convict-config';
 import { inject, singleton } from 'tsyringe';
 import { OperationFactory, TransactionStarter, Trx } from '@steem-monsters/splinterlands-validator';
-import * as seedrandom from 'seedrandom';
+import seedrandom from 'seedrandom';
 
 // TODO: Can be made an enum in the long run;
 export type Method = string;

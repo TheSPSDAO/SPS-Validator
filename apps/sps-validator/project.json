@@ -5,23 +5,21 @@
     "projectType": "application",
     "targets": {
         "build": {
-            "executor": "@nx/webpack:webpack",
+            "executor": "@nx/esbuild:esbuild",
             "outputs": ["{options.outputPath}"],
             "options": {
                 "generatePackageJson": true,
                 "outputPath": "dist/apps/sps-validator",
                 "main": "apps/sps-validator/src/main.ts",
                 "tsConfig": "apps/sps-validator/tsconfig.app.json",
-                "compiler": "tsc",
-                "target": "node",
-                "webpackConfig": "apps/sps-validator/webpack.config.js",
-                "sourceMap": true
+                "platform": "node",
+                "format": ["cjs"],
+                "bundle": true
             },
             "configurations": {
                 "production": {
                     "optimization": true,
                     "extractLicenses": true,
-                    "inspect": true,
                     "sourceMap": true
                 }
             }

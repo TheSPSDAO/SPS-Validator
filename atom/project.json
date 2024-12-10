@@ -5,11 +5,13 @@
     "projectType": "library",
     "targets": {
         "build": {
-            "executor": "@nx/js:tsc",
+            "executor": "@nx/esbuild:esbuild",
             "outputs": ["{options.outputPath}"],
             "options": {
                 "outputPath": "dist/libs/atom",
                 "main": "atom/src/index.ts",
+                "platform": "node",
+                "format": ["cjs"],
                 "tsConfig": "atom/tsconfig.lib.json"
             }
         },

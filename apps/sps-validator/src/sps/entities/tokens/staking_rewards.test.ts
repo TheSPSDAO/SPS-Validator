@@ -2,7 +2,7 @@ import { Fixture as BaseFixture } from '../../../__tests__/action-fixture';
 import { inject, injectable } from 'tsyringe';
 import { container } from '../../../__tests__/test-composition-root';
 import { ConfigEntity, IAction, OperationData, StakingRewardsRepository, Trx } from '@steem-monsters/splinterlands-validator';
-import * as seedrandom from 'seedrandom';
+import seedrandom from 'seedrandom';
 import { TOKENS } from '../../features/tokens';
 
 @injectable()
@@ -18,7 +18,6 @@ class Fixture extends BaseFixture {
 
 const fixture = container.resolve(Fixture);
 const baseBlock = 56186000;
-const baseDate = new Date('2022-12-05T13:59:15.000Z');
 const stopBlock = baseBlock + 15;
 const stopDate = new Date('2022-12-05T14:00:00.000Z');
 

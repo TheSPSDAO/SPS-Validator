@@ -7,6 +7,7 @@
         "moduleResolution": "node",
         "emitDecoratorMetadata": true,
         "experimentalDecorators": true,
+        "forceConsistentCasingInFileNames": true,
         "importHelpers": true,
         "target": "es2020",
         "module": "commonjs",
@@ -17,9 +18,9 @@
         "skipDefaultLibCheck": true,
         "baseUrl": ".",
         "paths": {
+            "@steem-monsters/atom": ["atom/src/index.ts"],
             "@steem-monsters/lib-monad": ["monad/src/lib.ts"],
-            "@steem-monsters/splinterlands-validator": ["validator/src/lib.ts"],
-            "@steem-monsters/atom": ["atom/src/index.ts"]
+            "@steem-monsters/splinterlands-validator": ["validator/src/lib.ts"]
         }
     },
     "exclude": ["node_modules", "tmp"]

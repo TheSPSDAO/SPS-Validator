@@ -4,11 +4,11 @@ name: 'Shellcheck CI'
 on:
   push:
     branches:
-      - main
+      - master
       - release-*
   pull_request:
     branches:
-      - main
+      - master
       - release-*
 
 jobs:

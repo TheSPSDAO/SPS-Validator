@@ -4,12 +4,13 @@
     "projectType": "library",
     "targets": {
         "build": {
-            "executor": "@nx/js:tsc",
+            "executor": "@nx/esbuild:esbuild",
             "outputs": ["{options.outputPath}"],
             "options": {
                 "outputPath": "dist/libs/monad",
                 "tsConfig": "monad/tsconfig.lib.json",
-                "packageJson": "monad/package.json",
+                "platform": "node",
+                "format": ["cjs"],
                 "main": "monad/src/lib.ts",
                 "assets": ["monad/"]
             }

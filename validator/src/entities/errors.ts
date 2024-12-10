@@ -76,19 +76,24 @@ export enum ErrorType {
 export type ActionIdentifier = Pick<IAction, 'id'>;
 
 export class ActionError extends Error {
+    readonly log_obj: {
+        message: string;
+        code: number;
+        action: string;
+    };
+
     // TODO: Possible circular dependency with Action
     constructor(message: string, private readonly action: ActionIdentifier, private readonly code: number) {
         super(message);
         this.name = this.constructor.name;
         this.action = action;
         this.code = code;
+        this.log_obj = {
+            message: this.message,
+            code: this.code,
+            action: this.action.id,
+        };
     }
-
-    readonly log_obj = {
-        message: this.message,
-        code: this.code,
-        action: this.action.id,
-    };
 }
 
 export class ValidationError<Value extends ErrorType> extends ActionError {

@@ -1,6 +1,6 @@
 import { DependencyContainer, inject, injectable } from 'tsyringe';
 import { Request, Response } from 'express-serve-static-core';
-import * as express from 'express';
+import express from 'express';
 import { NextFunction } from 'express';
 import helmet from 'helmet';
 import {

@@ -1,10 +1,11 @@
 {
-  "extends": "./tsconfig.json",
-  "compilerOptions": {
-    "isolatedModules": true,
-    "noEmit": false,
-    "declaration": true,
-    "declarationMap": true,
-  },
-  "exclude": ["src/**/*.test.ts"]
+    "extends": "./tsconfig.json",
+    "compilerOptions": {
+        "isolatedModules": true,
+        "noEmit": false,
+        "declaration": true,
+        "declarationMap": true
+    },
+    "include": ["src/**/*.ts"],
+    "exclude": ["src/**/*.test.ts", "src/**/*.spec.ts"]
 }

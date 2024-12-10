@@ -3,7 +3,7 @@ import knex, { Knex } from 'knex';
 import { singleton } from 'tsyringe';
 import { Handle, log, LogLevel } from '@steem-monsters/splinterlands-validator';
 import { Disposable } from './disposable';
-import * as crypto from 'crypto';
+import crypto from 'crypto';
 
 export interface Backup {
     init(): Promise<void>;
@@ -107,5 +107,20 @@ export class FreshDatabase implements Disposable {
             return;
         }
         await this.currentKnex.destroy();
+
+        // drop the database that was created
+        if (this.currentDb) {
+            await this.currentKnex?.destroy();
+            const knexInstance = knex({
+                client: 'pg',
+                connection: {
+                    // this can be cleaned up a bunch, but its working for now and test dont take 8 minutes :)
+                    connectionString: TEMPLATE_DB_CONNECTION_STRING.replace(TEMPLATE_DB_NAME, 'control_db'),
+                },
+                searchPath: 'public',
+            });
+            await knexInstance.raw(`DROP DATABASE IF EXISTS ${this.currentDb};`);
+            await knexInstance.destroy();
+        }
     }
 }

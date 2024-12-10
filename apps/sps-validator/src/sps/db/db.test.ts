@@ -47,9 +47,7 @@ test.dbOnly('Using rolled back transaction throws', async () => {
     await expect(fixture.handle.query(HiveAccountEntity).transacting(trx).getFirstOrNull()).rejects.toBeInstanceOf(Error);
 });
 
-// Weird interaction between knex and a bug pg-mem, that makes rollbacks not work
-// Verified to work on actual databases fine though!
-test.dbOnly.skip('Manual transaction rollback is rolled back', async () => {
+test.dbOnly('Manual transaction rollback is rolled back', async () => {
     const payload = { name: 'hello', authority: {} };
     const trx = await fixture.transactionStarter.beginTransaction();
     const beforeAccounts = await fixture.handle!.query(HiveAccountEntity).transacting(trx).getMany();

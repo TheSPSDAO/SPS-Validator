@@ -6,8 +6,7 @@ export enum TransactionMode {
     Reporting, // repeatable read read-only transaction of the world.
 }
 
-// Exported for pg-mem intercept
-export const reporting_statement = 'set transaction isolation level repeatable read read only;';
+const reporting_statement = 'set transaction isolation level repeatable read read only;';
 
 export class TransactionStarter {
     public constructor(private readonly knex: Knex) {}

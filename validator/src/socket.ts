@@ -1,4 +1,4 @@
-import * as WebSocket from 'ws';
+import WebSocket from 'ws';
 import * as utils from './utils';
 import { LogLevel } from './utils';
 

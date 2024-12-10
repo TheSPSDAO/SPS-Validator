@@ -8,7 +8,7 @@ export * from './utilities/traits';
 export type { PriceEntry } from './entities/tokens/price_history';
 export { coerceToBlockNum } from './utilities/block_num';
 export { LogLevel, log } from './utils';
-export { TransactionMode, reporting_statement } from './db/transaction';
+export { TransactionMode } from './db/transaction';
 export { AutonomousPoolError, AutonomousPoolsWrapper } from './libs/pool';
 export type { AutonomousPoolConfiguration } from './libs/pool';
 export { AutonomousMint, AutonomousMintError } from './libs/mint';

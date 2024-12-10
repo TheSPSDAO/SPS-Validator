@@ -1,7 +1,7 @@
-import * as supertest from 'supertest';
+import supertest from 'supertest';
 import type { SuperTest, Test } from 'supertest';
 import { container } from '../../__tests__/test-composition-root';
-import * as express from 'express';
+import express from 'express';
 import { inject, injectable } from 'tsyringe';
 import { Fixture as BaseFixture } from '../../__tests__/fixture';
 import { ConfigType } from '../convict-config';

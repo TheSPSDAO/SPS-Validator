@@ -1,5 +1,5 @@
-import * as supertest from 'supertest';
-import * as express from 'express';
+import supertest from 'supertest';
+import express from 'express';
 import type { Express } from 'express';
 import { DependencyContainer, InjectionToken } from 'tsyringe';
 import { SpsConfigLoader } from '../config';

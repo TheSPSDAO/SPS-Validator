@@ -1,6 +1,6 @@
 // This seems to be the most technically correct way to import convict.
-import convict = require('convict');
-import validators = require('convict-format-with-validator');
+import convict from 'convict';
+import validators from 'convict-format-with-validator';
 import { DB_Connection, LogLevel } from '@steem-monsters/splinterlands-validator';
 import isURL from 'format-validator/lib/isURL';
 

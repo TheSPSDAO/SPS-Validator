@@ -87,7 +87,6 @@ export class TransactionRepository_ extends BaseRepository {
     }
 
     async lookupTokenTransferByBlockNum(blockNum: number, trx?: Trx): Promise<TokenTransfer[]> {
-        //TODO: when resolved whereExists can be used instead https://github.com/oguimbal/pg-mem/issues/38
         const result = await this.query(TransactionEntity, trx)
             .whereRaw(`block_num = (SELECT block_num FROM blocks WHERE block_num=${blockNum})`)
             .where('type', 'token_transfer')
@@ -96,7 +95,6 @@ export class TransactionRepository_ extends BaseRepository {
     }
 
     async lookupByBlockNum(blockNum: number, trx?: Trx): Promise<TransactionEntity[]> {
-        //TODO: when resolved whereExists can be used instead https://github.com/oguimbal/pg-mem/issues/38
         return this.query(TransactionEntity, trx).whereRaw(`block_num = (SELECT block_num FROM blocks WHERE block_num=${blockNum})`).getMany();
     }
 

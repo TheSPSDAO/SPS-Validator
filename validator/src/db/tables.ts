@@ -5,7 +5,7 @@ import { knex } from 'knex';
 // Activate implicit type mappings
 import './config/mapping';
 import { TransactionMode } from './transaction';
-import { JSONB, SerialIntKey } from './columns';
+import type { JSONB, SerialIntKey } from './columns';
 
 export { validateTables } from '@wwwouter/typed-knex';
 

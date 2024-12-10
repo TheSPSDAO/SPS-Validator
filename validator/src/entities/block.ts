@@ -11,7 +11,7 @@ import { SocketLike } from '../socket';
 import { Cloneable, Prime } from '../utilities/traits';
 import { log, LogLevel } from '../utils';
 import { PRNG } from 'seedrandom';
-import * as seedrandom from 'seedrandom';
+import seedrandom from 'seedrandom';
 
 export class TransactionRepository extends BaseRepository {
     public constructor(handle: Handle, private readonly socket: SocketLike) {
