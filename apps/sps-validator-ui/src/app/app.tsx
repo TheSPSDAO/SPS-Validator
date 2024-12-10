@@ -1,10 +1,66 @@
-import { Route, Routes, Link } from 'react-router-dom';
+import { Link, Route, Routes } from 'react-router-dom';
 import { useEffect, useState } from 'react';
-import { CurrencyDollarIcon, Square3Stack3DIcon } from '@heroicons/react/24/solid';
+import { CurrencyDollarIcon, HomeIcon, Square3Stack3DIcon } from '@heroicons/react/24/solid';
 import { AppNavbar, AppNavbarTickerProps } from './components/layout/Navbar';
 import { DefaultService } from './services/openapi';
 import { usePromiseRefresh } from './hooks/Promise';
 import { AppSidebar } from './components/layout/Sidebar';
+import { Home } from './pages/Home';
+import { ListItem, ListItemPrefix } from '@material-tailwind/react';
+
+function AppRoutes() {
+    return (
+        <Routes>
+            <Route path="/" element={<Home />} />
+        </Routes>
+    );
+}
+
+function AppSidebarItems() {
+    return (
+        <>
+            <ListItem>
+                <ListItemPrefix>
+                    <HomeIcon className="h-5 w-5" />
+                </ListItemPrefix>
+                <Link to="/">Home</Link>
+            </ListItem>
+            {/* <ListItem>
+                <ListItemPrefix>
+                    <ShoppingBagIcon className="h-5 w-5" />
+                </ListItemPrefix>
+                E-Commerce
+            </ListItem>
+            <ListItem>
+                <ListItemPrefix>
+                    <InboxIcon className="h-5 w-5" />
+                </ListItemPrefix>
+                Inbox
+                <ListItemSuffix>
+                    <Chip value="14" size="sm" variant="ghost" color="blue-gray" className="rounded-full" />
+                </ListItemSuffix>
+            </ListItem>
+            <ListItem>
+                <ListItemPrefix>
+                    <UserCircleIcon className="h-5 w-5" />
+                </ListItemPrefix>
+                Profile
+            </ListItem>
+            <ListItem>
+                <ListItemPrefix>
+                    <Cog6ToothIcon className="h-5 w-5" />
+                </ListItemPrefix>
+                Settings
+            </ListItem>
+            <ListItem>
+                <ListItemPrefix>
+                    <PowerIcon className="h-5 w-5" />
+                </ListItemPrefix>
+                Log Out
+            </ListItem> */}
+        </>
+    );
+}
 
 function useTickers() {
     const [spsPrice] = usePromiseRefresh(() => DefaultService.getPriceForToken('SPS'), 5000, []);
@@ -48,8 +104,12 @@ export function App() {
         <div className="h-screen w-full flex flex-col">
             <AppNavbar tickers={tickers} toggleSidebar={() => setMobileSidebarOpen((prev) => !prev)} />
             <div className="flex-grow flex relative">
-                <AppSidebar isMobileOpen={mobileSidebarOpen} />
-                <div className="flex-grow p-5">Hi there</div>
+                <AppSidebar isMobileOpen={mobileSidebarOpen}>
+                    <AppSidebarItems />
+                </AppSidebar>
+                <div className="flex-grow p-5">
+                    <AppRoutes />
+                </div>
             </div>
         </div>
     );

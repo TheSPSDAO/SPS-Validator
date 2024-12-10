@@ -19,7 +19,6 @@ export function usePromise<T>(fn: () => MaybeCancelablePromise<T>, deps?: Depend
 
     useEffect(() => {
         setLoading(true);
-        console.log('Calling promise');
         const promise = fn();
         promise
             .then((result) => {
@@ -43,10 +42,8 @@ export function usePromise<T>(fn: () => MaybeCancelablePromise<T>, deps?: Depend
 export function usePromiseRefresh<T>(fn: () => MaybeCancelablePromise<T>, interval: number, deps?: DependencyList): [T | null, boolean, Error | null, () => void] {
     const [result, loading, error, reload] = usePromise(fn, deps);
     useEffect(() => {
-        console.log('Setting interval');
         const id = setInterval(() => {
             reload();
-            console.log('Reloading');
         }, interval);
         return () => clearInterval(id);
     }, [interval]);
