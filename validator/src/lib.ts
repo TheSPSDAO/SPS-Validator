@@ -86,7 +86,7 @@ export { VoteWeightCalculator } from './entities/validator/types';
 export { Shop } from './libs/shop';
 export type { SaleReport, SaleResult } from './libs/shop';
 export { SaleError, ShopItemType, Supply } from './libs/shop/types';
-export type { CardConfig, ShopTokenConfig, SaleTransfer } from './libs/shop/types';
+export type { ShopTokenConfig, SaleTransfer } from './libs/shop/types';
 export { PoolManager, PoolSerializer } from './utilities/pool_manager';
 export { EntryPoint } from './entry-point';
 export { EventLog, EventTypes } from './entities/event_log';

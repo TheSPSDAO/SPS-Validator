@@ -23,7 +23,7 @@ COPY package.json package-lock.json nx.json tsconfig.base.json ./
 COPY monad ./monad
 COPY validator ./validator
 COPY atom ./atom
-COPY apps ./apps
+COPY apps/sps-validator ./apps/sps-validator
 RUN npx nx run sps-validator:build:production
 
 ######################################################################

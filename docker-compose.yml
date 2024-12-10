@@ -74,8 +74,9 @@ services:
 
   ui:
     build:
-      context: ./ui
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: ./apps/sps-validator-ui/Dockerfile
+      no_cache: true
       args:
         VALIDATOR_API_URL: "http://localhost:3333"
         VALIDATOR_PREFIX: "${CUSTOM_JSON_PREFIX:-sm_}"
