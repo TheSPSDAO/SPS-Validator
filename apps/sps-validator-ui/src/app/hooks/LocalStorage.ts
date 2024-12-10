@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState } from 'react';
 
 export function getLocalStorageValue<T>(key: string, defaultValue: T) {
     const stored = localStorage.getItem(key);
