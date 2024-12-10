@@ -1,8 +1,9 @@
-import { Card, CardBody, List, ListItem, Typography } from '@material-tailwind/react';
+import { Card, CardBody, List, ListItem, Spinner, Typography } from '@material-tailwind/react';
 import { Link } from 'react-router-dom';
 import { usePromise } from '../hooks/Promise';
 import { DefaultService } from '../services/openapi';
 import { useEffect, useState } from 'react';
+import { Table, TableHead, TableRow, TableColumn, TableBody, TableCell } from '../components/Table';
 
 const usefulLinks = [
     { name: 'Splinterlands', url: 'https://splinterlands.com' },
@@ -64,6 +65,112 @@ function MetricsCard() {
     );
 }
 
+export type TopValidatorsTableProps = {
+    limit?: number;
+    className?: string;
+};
+
+export function TopValidatorsTable(props: TopValidatorsTableProps) {
+    const [result, isLoading] = usePromise(() => DefaultService.getValidators(props.limit), [props.limit]);
+    if (isLoading) {
+        return <Spinner className="w-full" />;
+    }
+    const noValidators = result?.validators === undefined || result.validators.length === 0;
+    return (
+        <Table className={props.className}>
+            <TableHead>
+                <TableRow>
+                    <TableColumn>
+                        <Typography color="blue-gray" className="font-normal text-left">
+                            Validator
+                        </Typography>
+                    </TableColumn>
+                    <TableColumn>
+                        <Typography color="blue-gray" className="font-normal text-left">
+                            Active
+                        </Typography>
+                    </TableColumn>
+                    <TableColumn>
+                        <Typography color="blue-gray" className="font-normal text-left">
+                            Missed Blocks
+                        </Typography>
+                    </TableColumn>
+                    <TableColumn>
+                        <Typography color="blue-gray" className="font-normal text-left">
+                            Total Votes
+                        </Typography>
+                    </TableColumn>
+                </TableRow>
+            </TableHead>
+            <TableBody>
+                {noValidators && (
+                    <TableRow>
+                        <TableCell colSpan={4}>
+                            <Typography color="blue-gray" className="text-center">
+                                No validators registered.{' '}
+                                <Link to="/validators" className="text-blue-600 underline">
+                                    Register now.
+                                </Link>
+                            </Typography>
+                        </TableCell>
+                    </TableRow>
+                )}
+                {!noValidators &&
+                    result?.validators?.map((validator) => (
+                        <TableRow key={validator.account_name}>
+                            <TableCell>
+                                <a href={validator.post_url ?? undefined} target="_blank" rel="noreferrer">
+                                    {validator.account_name}
+                                </a>
+                            </TableCell>
+                            <TableCell>{validator.is_active}</TableCell>
+                            <TableCell>{validator.missed_blocks.toLocaleString()}</TableCell>
+                            <TableCell>{validator.total_votes.toLocaleString()}</TableCell>
+                        </TableRow>
+                    ))}
+            </TableBody>
+        </Table>
+    );
+}
+
+export type TopSpsHoldersTableProps = {
+    limit?: number;
+    className?: string;
+};
+
+export function TopSpsHoldersTable(props: TopSpsHoldersTableProps) {
+    const [balances, isLoading] = usePromise(() => DefaultService.getBalancesByToken('SPS', props.limit), [props.limit]);
+    if (isLoading) {
+        return <Spinner className="w-full" />;
+    }
+    return (
+        <Table className={props.className}>
+            <TableHead>
+                <TableRow>
+                    <TableColumn>
+                        <Typography color="blue-gray" className="font-normal text-left">
+                            Player
+                        </Typography>
+                    </TableColumn>
+                    <TableColumn>
+                        <Typography color="blue-gray" className="font-normal text-left">
+                            Balance
+                        </Typography>
+                    </TableColumn>
+                </TableRow>
+            </TableHead>
+            <TableBody>
+                {balances?.balances?.map((balance, index) => (
+                    <TableRow key={index}>
+                        <TableCell>{balance.player}</TableCell>
+                        <TableCell>{balance.balance.toLocaleString()}</TableCell>
+                    </TableRow>
+                ))}
+            </TableBody>
+        </Table>
+    );
+}
+
 export function Home() {
     return (
         <div className="grid xl:grid-cols-4 gap-6">
@@ -75,11 +182,11 @@ export function Home() {
                         </Typography>
                         <Typography variant="paragraph">Welcome to the homepage of the SPS Validator Network.</Typography>
                         <Typography className="mt-3" variant="paragraph">
-                            Before you use the UI, visit the{' '}
+                            Please visit the{' '}
                             <Link to="/settings" className="text-blue-600 underline">
                                 settings
                             </Link>{' '}
-                            page and configure your hive account.
+                            page and configure your hive account if it's your first time here.
                         </Typography>
                     </CardBody>
                 </Card>
@@ -89,6 +196,7 @@ export function Home() {
                         <Typography variant="h5" color="blue-gray" className="mb-2">
                             Top Validators
                         </Typography>
+                        <TopValidatorsTable limit={10} className="w-full mt-5 border-2 border-gray-200" />
                     </CardBody>
                 </Card>
 
@@ -97,6 +205,7 @@ export function Home() {
                         <Typography variant="h5" color="blue-gray" className="mb-2">
                             Top SPS Holders
                         </Typography>
+                        <TopSpsHoldersTable limit={10} className="w-full mt-5 border-2 border-gray-200" />
                     </CardBody>
                 </Card>
             </div>

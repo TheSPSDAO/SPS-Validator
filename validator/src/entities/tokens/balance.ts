@@ -13,6 +13,19 @@ type BalanceEntry = {
     balance: number;
 };
 
+export type GetTokenBalancesParams = {
+    tokens: string[];
+    limit?: number;
+    skip?: number;
+    systemAccounts?: boolean;
+    count?: boolean;
+};
+
+export type GetTokenBalancesResult = {
+    count?: number | bigint | string;
+    balances: BalanceEntry[];
+};
+
 export class BalanceRepository extends BaseRepository {
     public constructor(handle: Handle, private readonly burnOpts: BurnOpts, private readonly balanceHistory: BalanceHistoryRepository, private readonly bookkeeping: Bookkeeping) {
         super(handle);
@@ -69,9 +82,32 @@ export class BalanceRepository extends BaseRepository {
         return records.map(BalanceRepository.into);
     }
 
-    async getTokenBalances(tokens: string[], trx?: Trx): Promise<BalanceEntry[]> {
-        const records = await this.query(BalanceEntity, trx).whereIn('token', tokens).select('player', 'token', 'balance').getMany();
-        return records.map(BalanceRepository.into);
+    async getTokenBalances(params: GetTokenBalancesParams, trx?: Trx): Promise<GetTokenBalancesResult> {
+        let query = this.query(BalanceEntity, trx).whereIn('token', params.tokens).orderBy('balance', 'desc').select('player', 'token', 'balance');
+        let countQuery = this.query(BalanceEntity, trx).whereIn('token', params.tokens);
+        if (params.systemAccounts === false || params.systemAccounts === undefined) {
+            query = query.where('player', 'NOT LIKE', '$%');
+            countQuery = countQuery.where('player', 'NOT LIKE', '$%');
+        }
+        const count = params.count ? await countQuery.getCount() : undefined;
+        if (params.limit === 0 && params.skip === 0) {
+            return {
+                count,
+                balances: [],
+            };
+        }
+
+        if (params.limit !== undefined) {
+            query = query.limit(params.limit);
+        }
+        if (params.skip !== undefined) {
+            query = query.offset(params.skip);
+        }
+        const records = await query.getMany();
+        return {
+            count,
+            balances: records.map(BalanceRepository.into),
+        };
     }
 
     async updateBalance(action: IAction, from: string, to: string, token: string, amount: number, type: string | null, trx?: Trx): Promise<EventLog[]> {

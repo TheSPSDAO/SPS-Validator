@@ -3,6 +3,7 @@
 /* tslint:disable */
 /* eslint-disable */
 import type { Balances } from '../models/Balances';
+import type { BalancesCount } from '../models/BalancesCount';
 import type { PoolSettings } from '../models/PoolSettings';
 import type { PriceAtPoint } from '../models/PriceAtPoint';
 import type { Status } from '../models/Status';
@@ -43,15 +44,73 @@ export class DefaultService {
         });
     }
     /**
+     * Gets balances of the token
+     * Returns the list of accounts with a balance of the specified token.
+     * @param token Name of the token
+     * @param limit The number of results to return
+     * @param skip The number of results to skip
+     * @param systemAccounts Include system accounts?
+     * @returns BalancesCount Successful operation
+     * @throws ApiError
+     */
+    public static getBalancesByToken(
+        token: string,
+        limit?: number,
+        skip?: number,
+        systemAccounts?: boolean,
+    ): CancelablePromise<BalancesCount> {
+        return __request(OpenAPI, {
+            method: 'GET',
+            url: '/tokens/{token}',
+            path: {
+                'token': token,
+            },
+            query: {
+                'limit': limit,
+                'skip': skip,
+                'systemAccounts': systemAccounts,
+            },
+        });
+    }
+    /**
+     * Gets balances of the token
+     * Returns the list of accounts with a balance of the specified token.
+     * @param token Name of the tokens. Can be specified multiple times to get balances for multiple tokens.
+     * @param limit The number of results to return
+     * @param skip The number of results to skip
+     * @param systemAccounts Include system accounts?
+     * @returns BalancesCount Successful operation
+     * @throws ApiError
+     */
+    public static getBalancesByTokens(
+        token: string,
+        limit?: number,
+        skip?: number,
+        systemAccounts?: boolean,
+    ): CancelablePromise<BalancesCount> {
+        return __request(OpenAPI, {
+            method: 'GET',
+            url: '/tokens',
+            query: {
+                'token': token,
+                'limit': limit,
+                'skip': skip,
+                'systemAccounts': systemAccounts,
+            },
+        });
+    }
+    /**
      * Gets the list of validators
      * @param limit
      * @param skip
+     * @param search
      * @returns Validators Successful operation
      * @throws ApiError
      */
     public static getValidators(
         limit?: number,
         skip?: number,
+        search?: string,
     ): CancelablePromise<Validators> {
         return __request(OpenAPI, {
             method: 'GET',
@@ -59,6 +118,7 @@ export class DefaultService {
             query: {
                 'limit': limit,
                 'skip': skip,
+                'search': search,
             },
         });
     }

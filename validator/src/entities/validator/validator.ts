@@ -17,6 +17,7 @@ export type GetValidatorsParams = {
     skip?: number;
     is_active?: boolean;
     count?: boolean;
+    search?: string;
 };
 
 export class ValidatorRepository extends BaseRepository {
@@ -60,6 +61,11 @@ export class ValidatorRepository extends BaseRepository {
         }
         if (params?.skip !== undefined) {
             q = q.offset(params.skip);
+        }
+
+        if (params?.search) {
+            q = q.where('account_name', 'ilike', `%${params.search}%`);
+            countQuery = countQuery.where('account_name', 'ilike', `%${params.search}%`);
         }
 
         const count = params?.count ? await countQuery.getCount() : undefined;

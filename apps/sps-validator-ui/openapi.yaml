@@ -45,6 +45,81 @@ paths:
                         application/json:
                             schema:
                                 $ref: "#/components/schemas/Balances"
+
+    /tokens/{token}:
+        get:
+            tags:
+                - Default
+            summary: Gets balances of the token
+            description: Returns the list of accounts with a balance of the specified token.
+            operationId: getBalancesByToken
+            parameters:
+                - in: path
+                  name: token
+                  schema:
+                      type: string
+                  required: true
+                  description: Name of the token
+                - in: query
+                  name: limit
+                  schema:
+                      type: number
+                  description: The number of results to return
+                - in: query
+                  name: skip
+                  schema:
+                      type: number
+                  description: The number of results to skip
+                - in: query
+                  name: systemAccounts
+                  schema:
+                      type: boolean
+                  description: Include system accounts?
+            responses:
+                200:
+                    description: Successful operation
+                    content:
+                        application/json:
+                            schema:
+                                $ref: "#/components/schemas/BalancesCount"
+
+    /tokens:
+        get:
+            tags:
+                - Default
+            summary: Gets balances of the token
+            description: Returns the list of accounts with a balance of the specified token.
+            operationId: getBalancesByTokens
+            parameters:
+                - in: query
+                  name: token
+                  schema:
+                      type: string
+                  required: true
+                  description: Name of the tokens. Can be specified multiple times to get balances for multiple tokens.
+                - in: query
+                  name: limit
+                  schema:
+                      type: number
+                  description: The number of results to return
+                - in: query
+                  name: skip
+                  schema:
+                      type: number
+                  description: The number of results to skip
+                - in: query
+                  name: systemAccounts
+                  schema:
+                      type: boolean
+                  description: Include system accounts?
+            responses:
+                200:
+                    description: Successful operation
+                    content:
+                        application/json:
+                            schema:
+                                $ref: "#/components/schemas/BalancesCount"
+
     /validators:
         get:
             tags:
@@ -60,6 +135,10 @@ paths:
                   name: skip
                   schema:
                       type: integer
+                - in: query
+                  name: search
+                  schema:
+                      type: string
             responses:
                 200:
                     description: Successful operation
@@ -67,6 +146,7 @@ paths:
                         application/json:
                             schema:
                                 $ref: "#/components/schemas/Validators"
+
     /votes_by_account:
         get:
             tags:
@@ -234,6 +314,17 @@ components:
             type: array
             items:
                 $ref: "#/components/schemas/Balance"
+
+        BalancesCount:
+            type: object
+            properties:
+                count:
+                    type: integer
+                    format: int64
+                balances:
+                    type: array
+                    items:
+                        $ref: "#/components/schemas/Balance"
 
         Status:
             type: object

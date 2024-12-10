@@ -124,8 +124,10 @@ export function registerApiRoutes(app: Router, opts: ApiOptions): void {
             const Validator = req.resolver.resolve(ValidatorRepository);
             const skip = typeof req.query.skip === 'string' ? parseInt(req.query.skip, 10) : 0;
             const limit = typeof req.query.limit === 'string' ? parseInt(req.query.limit, 10) : 100;
+            const active = typeof req.query.active === 'string' ? req.query.active.toLowerCase() === 'true' : undefined;
+            const search = typeof req.query.search === 'string' ? req.query.search : undefined;
             await trxStarter.withTransaction(TransactionMode.Reporting, async (trx?: Trx) => {
-                res.json(await Validator.getValidators({ count: true, skip, limit }, trx));
+                res.json(await Validator.getValidators({ count: true, skip, limit, is_active: active, search }, trx));
             });
         } catch (err) {
             next(err);
@@ -326,8 +328,22 @@ export function registerApiRoutes(app: Router, opts: ApiOptions): void {
             const token = req.params.token;
             const trxStarter = req.resolver.resolve(TransactionStarter);
             const Balance = req.resolver.resolve(BalanceRepository);
+            const limit = typeof req.query.limit === 'string' ? parseInt(req.query.limit, 10) : undefined;
+            const skip = typeof req.query.skip === 'string' ? parseInt(req.query.skip, 10) : undefined;
+            const systemAccounts = typeof req.query.systemAccounts === 'string' ? req.query.systemAccounts.toLowerCase() === 'true' : false;
             await trxStarter.withTransaction(TransactionMode.Reporting, async (trx?: Trx) => {
-                res.json(await Balance.getTokenBalances([token], trx));
+                res.json(
+                    await Balance.getTokenBalances(
+                        {
+                            tokens: [token],
+                            limit,
+                            skip,
+                            systemAccounts,
+                            count: true,
+                        },
+                        trx,
+                    ),
+                );
             });
         } catch (err) {
             next(err);
@@ -342,10 +358,24 @@ export function registerApiRoutes(app: Router, opts: ApiOptions): void {
                 return;
             }
 
+            const limit = typeof req.query.limit === 'string' ? parseInt(req.query.limit, 10) : undefined;
+            const skip = typeof req.query.skip === 'string' ? parseInt(req.query.skip, 10) : undefined;
+            const systemAccounts = typeof req.query.systemAccounts === 'string' ? req.query.systemAccounts.toLowerCase() === 'true' : false;
             const trxStarter = req.resolver.resolve(TransactionStarter);
             const Balance = req.resolver.resolve(BalanceRepository);
             await trxStarter.withTransaction(TransactionMode.Reporting, async (trx?: Trx) => {
-                res.json(await Balance.getTokenBalances(tokens, trx));
+                res.json(
+                    await Balance.getTokenBalances(
+                        {
+                            tokens,
+                            limit,
+                            skip,
+                            systemAccounts,
+                            count: true,
+                        },
+                        trx,
+                    ),
+                );
             });
         } catch (err) {
             next(err);

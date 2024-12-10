@@ -1,18 +1,24 @@
 import { Link, Route, Routes } from 'react-router-dom';
 import { useEffect, useState } from 'react';
-import { CurrencyDollarIcon, HomeIcon, Square3Stack3DIcon, CogIcon } from '@heroicons/react/24/solid';
+import { CurrencyDollarIcon, HomeIcon, Square3Stack3DIcon, ServerStackIcon, CogIcon, UserIcon, ChartBarIcon } from '@heroicons/react/24/solid';
+import { ListItem, ListItemPrefix } from '@material-tailwind/react';
 import { AppNavbar, AppNavbarTickerProps } from './components/layout/Navbar';
 import { DefaultService } from './services/openapi';
 import { usePromiseRefresh } from './hooks/Promise';
 import { AppSidebar } from './components/layout/Sidebar';
 import { Home } from './pages/Home';
-import { ListItem, ListItemPrefix } from '@material-tailwind/react';
 import { Settings } from './pages/Settings';
+import { TokenBalances } from './pages/TokenBalances';
+import { AccountBalances } from './pages/AccountBalances';
+import { ValidatorNodes } from './pages/ValidatorNodes';
 
 function AppRoutes() {
     return (
         <Routes>
             <Route path="/" element={<Home />} />
+            <Route path="/validator-nodes" element={<ValidatorNodes />} />
+            <Route path="/token-balances" element={<TokenBalances />} />
+            <Route path="/account-balances" element={<AccountBalances />} />
             <Route path="/settings" element={<Settings />} />
         </Routes>
     );
@@ -27,6 +33,30 @@ function AppSidebarItems() {
                         <HomeIcon className="h-5 w-5" />
                     </ListItemPrefix>
                     Home
+                </ListItem>
+            </Link>
+            <Link to="/validator-nodes">
+                <ListItem>
+                    <ListItemPrefix>
+                        <ServerStackIcon className="h-5 w-5" />
+                    </ListItemPrefix>
+                    Validator Nodes
+                </ListItem>
+            </Link>
+            <Link to="/token-balances">
+                <ListItem>
+                    <ListItemPrefix>
+                        <ChartBarIcon className="h-5 w-5" />
+                    </ListItemPrefix>
+                    Token Balances
+                </ListItem>
+            </Link>
+            <Link to="/account-balances">
+                <ListItem>
+                    <ListItemPrefix>
+                        <UserIcon className="h-5 w-5" />
+                    </ListItemPrefix>
+                    Account Balances
                 </ListItem>
             </Link>
             <Link to="/settings">
