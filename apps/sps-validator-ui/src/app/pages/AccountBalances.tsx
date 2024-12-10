@@ -57,10 +57,10 @@ export function AccountBalances() {
                     <Typography variant="h5" color="blue-gray" className="mb-2">
                         Account Balances
                     </Typography>
-                    <Typography variant="paragraph">Enter a username to look up their account balances.</Typography>
+                    <Typography variant="paragraph">Enter an account to look up their account balances.</Typography>
 
                     <form className="mt-4 flex gap-4 2xl:max-w-96 2xl:w-1/4 lg:w-2/3 md:w-full" onSubmit={setAccountInParams}>
-                        <Input value={account} onChange={(e) => setAccount(e.target.value)} label="Username" placeholder="Username" className="flex-grow-1" />
+                        <Input value={account} onChange={(e) => setAccount(e.target.value)} label="Account" placeholder="Account" className="flex-grow-1" />
                         <Button className="w-32" type="submit">
                             Search
                         </Button>

@@ -19,9 +19,9 @@ function UsefulLinksCard() {
                 </Typography>
                 <List className="p-0 -mx-2 gap-0 min-w-0">
                     {usefulLinks.map((link, index) => (
-                        <Link key={index} to={link.url}>
+                        <a key={index} href={link.url} target="_blank" rel="noreferrer">
                             <ListItem className="rounded-none border-gray-400 border-b-[1px]">{link.name}</ListItem>
-                        </Link>
+                        </a>
                     ))}
                 </List>
             </CardBody>
