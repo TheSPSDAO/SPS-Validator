@@ -11,3 +11,6 @@ config.ini
 /sqitch/validator-data-latest.zip
 .nx
 coverage
+tmp
+
+vite.config.*.timestamp*
