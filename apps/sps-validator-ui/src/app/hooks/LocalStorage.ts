@@ -7,13 +7,13 @@ export function getLocalStorageValue<T>(key: string, defaultValue: T) {
 }
 
 export const useLocalStorage = <T>(key: string, defaultValue: T) => {
-    const [value, setValue] = useState(() => {
-        return getLocalStorageValue(key, defaultValue);
+    const [value, setValue] = useState<T>(() => {
+        return getLocalStorageValue<T>(key, defaultValue);
     });
 
     useEffect(() => {
         localStorage.setItem(key, JSON.stringify(value));
     }, [key, value]);
 
-    return [value, setValue];
+    return [value, setValue] as const;
 };

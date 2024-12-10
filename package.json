@@ -60,6 +60,8 @@
         "jest-mock-extended": "^3.0.5",
         "jsdom": "~22.1.0",
         "nx": "20.2.1",
+        "openapi-typescript": "^7.4.4",
+        "openapi-typescript-codegen": "^0.29.0",
         "postcss": "8.4.38",
         "prettier": "^2.7.1",
         "supertest": "^6.2.4",

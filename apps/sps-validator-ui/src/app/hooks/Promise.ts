@@ -1,4 +1,4 @@
-import { DependencyList, useCallback, useEffect, useState } from 'react';
+import { DependencyList, useEffect, useState } from 'react';
 
 export type MaybeCancelablePromise<T> = Promise<T> & { cancel?: () => void };
 export type PromiseState<T> = {

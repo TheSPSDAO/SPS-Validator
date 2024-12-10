@@ -5,6 +5,13 @@
     "projectType": "application",
     "tags": [],
     "targets": {
+        "openapi": {
+            "executor": "nx:run-commands",
+            "options": {
+                "cwd": "{projectRoot}",
+                "command": "npx openapi -i openapi.yaml -o src/app/services/openapi"
+            }
+        },
         "build": {
             "executor": "@nx/vite:build",
             "outputs": ["{options.outputPath}"],
@@ -12,6 +19,7 @@
             "options": {
                 "outputPath": "dist/apps/sps-validator-ui"
             },
+            "dependsOn": ["openapi"],
             "configurations": {
                 "development": {
                     "mode": "development"

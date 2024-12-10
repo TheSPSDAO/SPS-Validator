@@ -111,6 +111,7 @@ export class EnabledApiActivator implements ConditionalApiActivator {
             resolver: this.resolver,
             injection_middleware: this.middleware,
         });
+
         return app;
     }
 }

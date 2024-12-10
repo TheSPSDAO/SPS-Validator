@@ -65,19 +65,7 @@ export type ShopTokenConfig = BaseShopItem & {
     token: token;
     item_details_name: string;
 };
-export type CardToken = {
-    token: token;
-    xp: number;
-};
-export type CardConfig = BaseShopItem & {
-    type: ShopItemType.CARD;
-    edition: number;
-    card_detail_id: number;
-    gold: CardToken;
-    common: CardToken;
-    gold_probability?: number;
-};
-export type ShopItem = CardConfig | ShopTokenConfig;
+export type ShopItem = ShopTokenConfig;
 export type Tranche<T extends ShopItem> = T[];
 
 export type NormalizedSaleDiscount = {

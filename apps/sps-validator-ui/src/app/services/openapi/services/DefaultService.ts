@@ -1,3 +1,4 @@
+/* generated using openapi-typescript-codegen -- do not edit */
 /* istanbul ignore file */
 /* tslint:disable */
 /* eslint-disable */
@@ -9,22 +10,20 @@ import type { TokenTransferTransactions } from '../models/TokenTransferTransacti
 import type { Validators } from '../models/Validators';
 import type { ValidatorVotes } from '../models/ValidatorVotes';
 import type { CancelablePromise } from '../core/CancelablePromise';
+import { OpenAPI } from '../core/OpenAPI';
 import { request as __request } from '../core/request';
-
 export class DefaultService {
-
     /**
      * Get the status of the validator node
      * @returns Status Successful operation
      * @throws ApiError
      */
     public static getStatus(): CancelablePromise<Status> {
-        return __request({
+        return __request(OpenAPI, {
             method: 'GET',
-            path: `/status`,
+            url: '/status',
         });
     }
-
     /**
      * Gets the balances of account specified in the query params
      * Returns the list of balances for the specified account name. Will return empty array if the account name was not found.
@@ -35,27 +34,25 @@ export class DefaultService {
     public static getBalances(
         account: string,
     ): CancelablePromise<Balances> {
-        return __request({
+        return __request(OpenAPI, {
             method: 'GET',
-            path: `/balances`,
+            url: '/balances',
             query: {
                 'account': account,
             },
         });
     }
-
     /**
      * Gets the list of validators
      * @returns Validators Successful operation
      * @throws ApiError
      */
     public static getValidators(): CancelablePromise<Validators> {
-        return __request({
+        return __request(OpenAPI, {
             method: 'GET',
-            path: `/validators`,
+            url: '/validators',
         });
     }
-
     /**
      * Gets the votes performed by the specified account
      * @param account Account name
@@ -65,15 +62,14 @@ export class DefaultService {
     public static getVotesByAccount(
         account: string,
     ): CancelablePromise<ValidatorVotes> {
-        return __request({
+        return __request(OpenAPI, {
             method: 'GET',
-            path: `/votes_by_account`,
+            url: '/votes_by_account',
             query: {
                 'account': account,
             },
         });
     }
-
     /**
      * Gets the votes given to the specified validator
      * @param validator Validator
@@ -83,15 +79,14 @@ export class DefaultService {
     public static getVotesByValidator(
         validator: string,
     ): CancelablePromise<ValidatorVotes> {
-        return __request({
+        return __request(OpenAPI, {
             method: 'GET',
-            path: `/votes_by_validator`,
+            url: '/votes_by_validator',
             query: {
                 'validator': validator,
             },
         });
     }
-
     /**
      * Gets the pool parameters of a specific reward pool
      * @param poolName Name of the reward pool
@@ -101,16 +96,18 @@ export class DefaultService {
     public static getPoolParams(
         poolName: string,
     ): CancelablePromise<PoolSettings> {
-        return __request({
+        return __request(OpenAPI, {
             method: 'GET',
-            path: `/pool/${poolName}`,
+            url: '/pool/{poolName}',
+            path: {
+                'poolName': poolName,
+            },
             errors: {
                 404: `Pool not found`,
                 503: `Pool found, but currently not configured correctly`,
             },
         });
     }
-
     /**
      * Gets the reward debt for an account in a specific reward pool
      * @param poolName Name of the reward pool
@@ -122,9 +119,12 @@ export class DefaultService {
         poolName: string,
         account: string,
     ): CancelablePromise<number> {
-        return __request({
+        return __request(OpenAPI, {
             method: 'GET',
-            path: `/pool/${poolName}/reward_debt`,
+            url: '/pool/{poolName}/reward_debt',
+            path: {
+                'poolName': poolName,
+            },
             query: {
                 'account': account,
             },
@@ -134,7 +134,6 @@ export class DefaultService {
             },
         });
     }
-
     /**
      * Gets the token transfers performed in the block
      * @param blockNum Block number
@@ -144,15 +143,17 @@ export class DefaultService {
     public static getTokenTransferTransactions(
         blockNum: number,
     ): CancelablePromise<TokenTransferTransactions> {
-        return __request({
+        return __request(OpenAPI, {
             method: 'GET',
-            path: `/transactions/${blockNum}/token_transfer`,
+            url: '/transactions/{blockNum}/token_transfer',
+            path: {
+                'blockNum': blockNum,
+            },
             errors: {
                 400: `User error`,
             },
         });
     }
-
     /**
      * Get calculated price for a token
      * @param token Token identifier
@@ -162,13 +163,15 @@ export class DefaultService {
     public static getPriceForToken(
         token: string,
     ): CancelablePromise<PriceAtPoint> {
-        return __request({
+        return __request(OpenAPI, {
             method: 'GET',
-            path: `/price_feed/${token}`,
+            url: '/price_feed/{token}',
+            path: {
+                'token': token,
+            },
             errors: {
                 404: `No price known for requested token`,
             },
         });
     }
-
 }

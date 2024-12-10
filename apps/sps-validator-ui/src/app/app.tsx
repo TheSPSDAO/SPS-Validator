@@ -1,17 +1,19 @@
 import { Link, Route, Routes } from 'react-router-dom';
 import { useEffect, useState } from 'react';
-import { CurrencyDollarIcon, HomeIcon, Square3Stack3DIcon } from '@heroicons/react/24/solid';
+import { CurrencyDollarIcon, HomeIcon, Square3Stack3DIcon, CogIcon } from '@heroicons/react/24/solid';
 import { AppNavbar, AppNavbarTickerProps } from './components/layout/Navbar';
 import { DefaultService } from './services/openapi';
 import { usePromiseRefresh } from './hooks/Promise';
 import { AppSidebar } from './components/layout/Sidebar';
 import { Home } from './pages/Home';
 import { ListItem, ListItemPrefix } from '@material-tailwind/react';
+import { Settings } from './pages/Settings';
 
 function AppRoutes() {
     return (
         <Routes>
             <Route path="/" element={<Home />} />
+            <Route path="/settings" element={<Settings />} />
         </Routes>
     );
 }
@@ -19,12 +21,22 @@ function AppRoutes() {
 function AppSidebarItems() {
     return (
         <>
-            <ListItem>
-                <ListItemPrefix>
-                    <HomeIcon className="h-5 w-5" />
-                </ListItemPrefix>
-                <Link to="/">Home</Link>
-            </ListItem>
+            <Link to="/">
+                <ListItem>
+                    <ListItemPrefix>
+                        <HomeIcon className="h-5 w-5" />
+                    </ListItemPrefix>
+                    Home
+                </ListItem>
+            </Link>
+            <Link to="/settings">
+                <ListItem>
+                    <ListItemPrefix>
+                        <CogIcon className="h-5 w-5" />
+                    </ListItemPrefix>
+                    Settings
+                </ListItem>
+            </Link>
             {/* <ListItem>
                 <ListItemPrefix>
                     <ShoppingBagIcon className="h-5 w-5" />

@@ -236,34 +236,7 @@ components:
           type: string
           enum: ['running']
         last_block:
-          type: object
-          required:
-            - block_num
-            - block_id
-            - prev_block_id
-            - l2_block_id
-            - block_time
-            - validator
-            - validator_tx
-          properties:
-            block_num:
-              type: integer
-              format: int64
-            block_id:
-              type: string
-            prev_block_id:
-              type: string
-            l2_block_id:
-              type: string
-            block_time:
-              type: string
-              format: date-time
-            validator:
-              type: string
-              nullable: true
-            validator_tx:
-              type: string
-              nullable: true
+          type: number
 
     Validator:
       type: object
