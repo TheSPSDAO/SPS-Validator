@@ -10,6 +10,7 @@ import { Hive } from './app/services/hive';
 OpenAPI.BASE = getLocalStorageValue('api.url', import.meta.env.VALIDATOR_API_URL || 'http://localhost:3333');
 OpenAPI.WITH_CREDENTIALS = false;
 Hive.PREFIX = getLocalStorageValue('hive.prefix', import.meta.env.VALIDATOR_PREFIX || 'sm_');
+Hive.ACCOUNT = getLocalStorageValue('hive.account', '');
 
 const root = ReactDOM.createRoot(document.getElementById('root') as HTMLElement);
 

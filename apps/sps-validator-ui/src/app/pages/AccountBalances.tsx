@@ -27,7 +27,7 @@ export function AccountBalancesCard({ account }: { account: string }) {
                             {balances.map((balance) => (
                                 <TableRow key={balance.token}>
                                     <TableCell>{balance.token}</TableCell>
-                                    <TableCell>{balance.balance}</TableCell>
+                                    <TableCell>{balance.balance.toLocaleString()}</TableCell>
                                 </TableRow>
                             ))}
                         </TableBody>

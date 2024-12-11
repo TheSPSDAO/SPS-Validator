@@ -9,7 +9,7 @@ export type AppSidebarProps = {
 export function AppSidebar(props: AppSidebarProps) {
     return (
         <List
-            className={`transition-transform fixed lg:flex lg:relative lg:translate-x-0 lg:top-auto bg-white shadow-md z-40 left-0 bottom-0 top-16 ${
+            className={`min-w-[260px] transition-transform fixed lg:flex lg:relative lg:translate-x-0 lg:top-auto bg-white shadow-md z-40 left-0 bottom-0 top-16 ${
                 props.isMobileOpen ? 'translate-x-0 w-full' : '-translate-x-full'
             }`}
         >

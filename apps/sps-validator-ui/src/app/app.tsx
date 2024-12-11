@@ -1,6 +1,6 @@
 import { Link, Route, Routes } from 'react-router-dom';
 import { useEffect, useState } from 'react';
-import { CurrencyDollarIcon, HomeIcon, Square3Stack3DIcon, ServerStackIcon, CogIcon, UserIcon, ChartBarIcon } from '@heroicons/react/24/solid';
+import { CurrencyDollarIcon, HomeIcon, Square3Stack3DIcon, ServerStackIcon, WrenchScrewdriverIcon, CogIcon, UserIcon, ChartBarIcon } from '@heroicons/react/24/solid';
 import { ListItem, ListItemPrefix } from '@material-tailwind/react';
 import { AppNavbar, AppNavbarTickerProps } from './components/layout/Navbar';
 import { DefaultService } from './services/openapi';
@@ -59,12 +59,20 @@ function AppSidebarItems({ closeSidebar }: { closeSidebar: () => void }) {
                     Account Balances
                 </ListItem>
             </Link>
+            <Link to="/validator-nodes/manage" onClick={closeSidebar}>
+                <ListItem>
+                    <ListItemPrefix>
+                        <WrenchScrewdriverIcon className="h-5 w-5" />
+                    </ListItemPrefix>
+                    Manage Validator Node
+                </ListItem>
+            </Link>
             <Link to="/settings" onClick={closeSidebar}>
                 <ListItem>
                     <ListItemPrefix>
                         <CogIcon className="h-5 w-5" />
                     </ListItemPrefix>
-                    Settings
+                    Site Settings
                 </ListItem>
             </Link>
         </>
@@ -102,7 +110,6 @@ export function App() {
     useEffect(() => {
         const listener = () => {
             if (window.innerWidth > 960) {
-                console.log('Closing drawer');
                 setMobileSidebarOpen(false);
             }
         };

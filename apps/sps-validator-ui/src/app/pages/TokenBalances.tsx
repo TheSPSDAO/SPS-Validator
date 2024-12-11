@@ -44,7 +44,7 @@ function TokenBalancesTab({ token }: { token: string }) {
                         <TableRow key={balance.player}>
                             <TableCell>{token}</TableCell>
                             <TableCell>{balance.player}</TableCell>
-                            <TableCell>{balance.balance}</TableCell>
+                            <TableCell>{balance.balance.toLocaleString()}</TableCell>
                         </TableRow>
                     ))}
                 </TableBody>
