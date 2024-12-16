@@ -3,7 +3,7 @@ import { FormEvent, useState } from 'react';
 import { Table, TableHead, TableRow, TableColumn, TableBody, TableCell, TablePager } from '../components/Table';
 import { usePromise } from '../hooks/Promise';
 import { DefaultService } from '../services/openapi';
-import { useSearchParams } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import { ValidatorVotesTable } from '../components/ValidatorVotesTable';
 import { ValidatorStatsTable } from '../components/ValidatorStatsTable';
 
@@ -40,7 +40,7 @@ function ValidatorNodesCard({ className, onNodeSelected }: { className?: string;
                     </Button>
                 </form>
 
-                <Table className="w-full mt-4">
+                <Table className="w-full mt-4 border-2 border-gray-200">
                     <TableHead>
                         <TableRow>
                             <TableColumn>
@@ -71,7 +71,10 @@ function ValidatorNodesCard({ className, onNodeSelected }: { className?: string;
                             <TableRow>
                                 <TableCell colSpan={4}>
                                     <Typography color="blue-gray" className="text-center">
-                                        No validators registered. You can register your validator on this page.
+                                        No validators registered. You can register your validator{' '}
+                                        <Link to="/validator-nodes/manage" className="text-blue-600 underline">
+                                            here.
+                                        </Link>
                                     </Typography>
                                 </TableCell>
                             </TableRow>

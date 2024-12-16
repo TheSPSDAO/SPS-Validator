@@ -1,11 +1,12 @@
 import { BlockRef, BlockRepository, PrefixOpts, ProcessResult, Trx, ValidatorWatch, VirtualPayloadSource } from '@steem-monsters/splinterlands-validator';
-import { inject } from 'tsyringe';
+import { inject, injectable } from 'tsyringe';
 
 export type MissedBlocksOpts = {
     update_account: string;
 };
 export const MissedBlocksOpts: unique symbol = Symbol('MissedBlocksOpts');
 
+@injectable()
 export class SpsUpdateMissedBlocksSource implements VirtualPayloadSource {
     constructor(
         @inject(BlockRepository) private readonly blockRepository: BlockRepository,

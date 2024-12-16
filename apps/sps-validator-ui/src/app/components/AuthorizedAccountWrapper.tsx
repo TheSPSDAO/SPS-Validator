@@ -94,7 +94,7 @@ export function AuthorizedAccountWrapper(props: AuthorizedAccountWrapperProps) {
                             </Typography>
                         )}
                         <div className="flex items-center justify-end">
-                            <Button className="flex flex-row items-center" variant="filled" disabled={!account || progress} onClick={authorize}>
+                            <Button className="flex flex-row items-center" variant="filled" disabled={!workingAccount || progress} onClick={authorize}>
                                 {progress && <Spinner className="me-3 text-sm" />}
                                 Authorize
                             </Button>

@@ -4,7 +4,6 @@ import TokenTransfer from './token_transfer';
 import { EventLog, EventTypes } from '../event_log';
 import { IAction } from '../../actions/action';
 import { BalanceEntity, BaseRepository, Handle, Trx } from '../../db/tables';
-import type { BurnOpts } from '../../actions/burn';
 import { Bookkeeping } from '../bookkeeping';
 
 type BalanceEntry = {
@@ -27,7 +26,7 @@ export type GetTokenBalancesResult = {
 };
 
 export class BalanceRepository extends BaseRepository {
-    public constructor(handle: Handle, private readonly burnOpts: BurnOpts, private readonly balanceHistory: BalanceHistoryRepository, private readonly bookkeeping: Bookkeeping) {
+    public constructor(handle: Handle, private readonly balanceHistory: BalanceHistoryRepository, private readonly bookkeeping: Bookkeeping, private readonly burnAccount: string) {
         super(handle);
     }
 
@@ -62,7 +61,7 @@ export class BalanceRepository extends BaseRepository {
         const query = this.query(BalanceEntity, trx)
             .where('token', token)
             .andWhere('balance', '>', String(0))
-            .andWhere('player', '!=', this.burnOpts.burned_ledger_account)
+            .andWhere('player', '!=', this.burnAccount) // this is wrong. need to check other accounts too
             .sum('balance', 'supply');
         const record = await query.getSingleOrNull();
         if (record?.supply !== null) {

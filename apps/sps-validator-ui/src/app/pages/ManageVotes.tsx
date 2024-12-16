@@ -6,6 +6,7 @@ import { usePromise } from '../hooks/Promise';
 import { DefaultService, ValidatorConfig, ValidatorVote } from '../services/openapi';
 import { Table, TableBody, TableCell, TableColumn, TableHead, TablePager, TableRow } from '../components/Table';
 import { TxLookupService } from '../services/TxLookupService';
+import { Link } from 'react-router-dom';
 
 function VoteCard({ account, votes, config, reloadVotes }: { account: string; votes: ValidatorVote[]; config: ValidatorConfig; reloadVotes: () => void }) {
     const [progress, setProgress] = useState<boolean>(false);
@@ -71,7 +72,7 @@ function VoteCard({ account, votes, config, reloadVotes }: { account: string; vo
                     </Button>
                 </form>
 
-                <Table className="w-full mt-4">
+                <Table className="w-full mt-4 border-2 border-gray-200 ">
                     <TableHead>
                         <TableRow>
                             <TableColumn>
@@ -102,7 +103,10 @@ function VoteCard({ account, votes, config, reloadVotes }: { account: string; vo
                             <TableRow>
                                 <TableCell colSpan={4}>
                                     <Typography color="blue-gray" className="text-center">
-                                        No validators registered. You can register your validator on this page.
+                                        No validators registered. You can register your validator{' '}
+                                        <Link to="/validator-nodes/manage" className="text-blue-600 underline">
+                                            here.
+                                        </Link>
                                     </Typography>
                                 </TableCell>
                             </TableRow>
@@ -176,7 +180,7 @@ function MyVotesCard({ account, votes, config, reloadVotes }: { account: string;
                         </Typography>
                     )}
                 </div>
-                <Table className="w-full mt-4">
+                <Table className="w-full mt-4 border-2 border-gray-200">
                     <TableHead>
                         <TableRow>
                             <TableColumn>Validator</TableColumn>
@@ -216,7 +220,7 @@ export function ManageVotes() {
     };
     return (
         <AuthorizedAccountWrapper title="Manage Votes" onAuthorized={setAccount} onAuthorizing={() => setAccount(undefined)}>
-            <div className="grid grid-cols-1 lg:grid-cols-2">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
                 {!loaded && !error && <Spinner className="w-full col-span-full" />}
                 {error && (
                     <Card className="col-span-full">

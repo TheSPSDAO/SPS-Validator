@@ -238,8 +238,8 @@ export class CompositionRoot extends null {
         container.register<PoolSerializer>(PoolSerializer, { useToken: SpsConfigLoader });
 
         // Action construction
-        container.register<SpsUpdateMissedBlocksSource>(SpsUpdateMissedBlocksSource, { useToken: SpsUpdateMissedBlocksSource });
-        container.register<SpsClearBurnedTokensSource>(SpsClearBurnedTokensSource, { useToken: SpsClearBurnedTokensSource });
+        container.register(SpsUpdateMissedBlocksSource, { useClass: SpsUpdateMissedBlocksSource });
+        container.register(SpsClearBurnedTokensSource, { useClass: SpsClearBurnedTokensSource });
         container.register<TopLevelVirtualPayloadSource>(TopLevelVirtualPayloadSource, { useToken: VirtualPayloadSource });
         container.register<TopActionRouter>(TopActionRouter, { useToken: RouterImpl });
         container.register<VirtualActionRouter>(VirtualActionRouter, { useToken: VirtualRouterImpl });

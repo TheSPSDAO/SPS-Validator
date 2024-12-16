@@ -16,7 +16,7 @@ export function AccountBalancesCard({ account }: { account: string }) {
                 </Typography>
                 {loading && <Typography variant="paragraph">Loading...</Typography>}
                 {balances && (
-                    <Table className="w-full mt-4">
+                    <Table className="w-full mt-4 border-2 border-gray-200">
                         <TableHead>
                             <TableRow>
                                 <TableColumn>Token</TableColumn>

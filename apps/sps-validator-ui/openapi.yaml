@@ -534,7 +534,7 @@ components:
                 - player
             properties:
                 id:
-                    type: string;
+                    type: string
                 block_id:
                     type: string
                 prev_block_id:

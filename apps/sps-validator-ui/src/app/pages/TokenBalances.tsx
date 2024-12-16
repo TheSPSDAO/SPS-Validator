@@ -24,7 +24,7 @@ function TokenBalancesTab({ token }: { token: string }) {
 
     return (
         <>
-            <Table className="w-full">
+            <Table className="w-full border-2 border-gray-200">
                 <TableHead>
                     <TableRow>
                         <TableColumn>Token</TableColumn>
