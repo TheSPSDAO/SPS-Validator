@@ -20,7 +20,7 @@ warn_customized_network() {
 }
 
 ensure_db() {
-  DOCKER_COMPOSE_NAME=$DOCKER_COMPOSE_NAME docker compose -f "${COMPOSE_FILE}" up --build -d pg
+  DOCKER_NAME=$DOCKER_COMPOSE_NAME docker compose -f "${COMPOSE_FILE}" up --build -d pg
 }
 
 ensure_migrations() {
