@@ -232,6 +232,12 @@ const schema = {
         default: '$TOKEN_STAKING_REWARDS',
         env: 'STAKING_REWARDS_ACCOUNT',
     },
+    missed_blocks_account: {
+        doc: 'Default system account to track all missed blocks',
+        nullable: false,
+        default: '$MISSED_BLOCKS',
+        env: 'MISSED_BLOCKS_ACCOUNT',
+    },
     enable_check_ins: {
         doc: 'Enable check ins. Must have validator account and validator key set as well.',
         format: Boolean,

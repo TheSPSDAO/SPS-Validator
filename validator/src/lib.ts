@@ -96,7 +96,6 @@ export { BlockRangeConfig, Route } from './libs/routing';
 export type { BlockRangeOpts } from './libs/routing';
 export * as Schema from './actions/schema';
 export type { OperationData } from './entities/operation';
-export { BurnOpts, ClearBurnedTokensSource } from './actions/burn';
 export { isDefined } from './libs/guards';
 export type { BookkeepingConfig } from './entities/bookkeeping';
 export { Bookkeeping, BookkeepingWatch, BookkeepingFromConfig, BookkeepingDefault } from './entities/bookkeeping';

@@ -48,6 +48,14 @@ export class ValidatorRepository extends BaseRepository {
         return new EventLog(EventTypes.UPSERT, this, ValidatorRepository.into(record!));
     }
 
+    public async incrementMissedBlocks(account: string, increment: number, trx?: Trx) {
+        const record = await this.query(Validator_, trx)
+            .where('account_name', account)
+            .useKnexQueryBuilder((query) => query.increment('missed_blocks', increment))
+            .updateItemWithReturning({}, ['account_name', 'missed_blocks', 'is_active', 'post_url', 'total_votes']);
+        return [new EventLog(EventTypes.UPDATE, this, ValidatorRepository.into(record))];
+    }
+
     public async getValidators(params?: GetValidatorsParams, trx?: Trx) {
         let q = this.query(Validator_, trx).orderBy('total_votes', 'desc').orderBy('account_name');
         let countQuery = this.query(Validator_, trx);

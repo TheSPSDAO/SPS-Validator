@@ -8,7 +8,7 @@ import { ConfiguredSynchronisationPoint, SpsSynchronisationConfig, StartupSync }
 import { DefaultMiddleware, EnabledApiActivator, SnapshotMiddleware, UnmanagedCacheMiddleware } from './api';
 import { SpsSnapshot, SpsUnmanagedSnapshot } from './snapshot';
 import { RouterImpl, SpsLookupWrapper, VirtualPayloadSource, VirtualRouterImpl } from './actions';
-import { SpsClearBurnedTokensSource } from './actions/burn';
+import { BurnOpts, SpsClearBurnedTokensSource } from './actions/burn';
 import { SpsPrimer } from './primer';
 import { SpsDelayedSocket, SpsSocketWrapper } from './socket';
 import { TypedKnex } from '@wwwouter/typed-knex';
@@ -39,8 +39,6 @@ import {
     BalanceRepository,
     BlockProcessor,
     BlockRepository,
-    BurnOpts,
-    ClearBurnedTokensSource,
     ConditionalApiActivator,
     ConfigLoader,
     ConfigRepository,
@@ -121,6 +119,7 @@ import { SpsValidatorLicenseManager } from './features/validator/validator_licen
 import { SpsValidatorCheckInRepository } from './entities/validator/validator_check_in';
 import { ValidatorCheckInWatch } from './features/validator/validator_license.config';
 import { ValidatorCheckInPlugin } from './features/validator/validator_check_in.plugin';
+import { MissedBlocksOpts, SpsUpdateMissedBlocksSource } from './actions/missed_blocks';
 
 // Only use re-exported `container` to ensure composition root was loaded.
 export { container, singleton, inject, injectable } from 'tsyringe';
@@ -160,6 +159,7 @@ export class CompositionRoot extends null {
         container.register<HiveStreamOptions>(HiveStreamOptions, { useToken: ConfigType });
         container.register<HiveOptions>(HiveOptions, { useToken: ConfigType });
         container.register<BurnOpts>(BurnOpts, { useToken: ConfigType });
+        container.register<MissedBlocksOpts>(MissedBlocksOpts, { useToken: ConfigType });
         container.register<StakingConfiguration>(StakingConfiguration, { useToken: ConfigType });
 
         // Hive
@@ -238,7 +238,8 @@ export class CompositionRoot extends null {
         container.register<PoolSerializer>(PoolSerializer, { useToken: SpsConfigLoader });
 
         // Action construction
-        container.register<ClearBurnedTokensSource>(ClearBurnedTokensSource, { useToken: SpsClearBurnedTokensSource });
+        container.register<SpsUpdateMissedBlocksSource>(SpsUpdateMissedBlocksSource, { useToken: SpsUpdateMissedBlocksSource });
+        container.register<SpsClearBurnedTokensSource>(SpsClearBurnedTokensSource, { useToken: SpsClearBurnedTokensSource });
         container.register<TopLevelVirtualPayloadSource>(TopLevelVirtualPayloadSource, { useToken: VirtualPayloadSource });
         container.register<TopActionRouter>(TopActionRouter, { useToken: RouterImpl });
         container.register<VirtualActionRouter>(VirtualActionRouter, { useToken: VirtualRouterImpl });

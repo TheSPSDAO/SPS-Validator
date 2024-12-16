@@ -98,6 +98,10 @@ export class BlockRepository extends BaseRepository {
         return this.query(BlockEntity, trx).where('block_num', block_num).getFirstOrNull();
     }
 
+    public async getMissedBlocks(block_num: number, trx?: Trx): Promise<BlockEntity[]> {
+        return this.query(BlockEntity, trx).where('block_num', '<', block_num).whereNull('validation_tx').getMany();
+    }
+
     public async insertValidation(block_num: number, validation_tx: string, trx?: Trx): Promise<EventLog<BlockEntity>> {
         const block = await this.query(BlockEntity, trx).where('block_num', block_num).updateItemWithReturning({ validation_tx });
         return new EventLog(EventTypes.UPDATE, BlockEntity, block);
