@@ -62,7 +62,7 @@ export function AccountBalances() {
                     <form className="mt-4 flex gap-4 2xl:max-w-96 2xl:w-1/4 lg:w-2/3 md:w-full" onSubmit={setAccountInParams}>
                         <Input value={account} onChange={(e) => setAccount(e.target.value)} label="Account" placeholder="Account" className="flex-grow-1" />
                         <Button className="w-32" type="submit">
-                            Search
+                            Lookup
                         </Button>
                     </form>
                 </CardBody>

@@ -8,6 +8,9 @@ import type { PoolSettings } from '../models/PoolSettings';
 import type { PriceAtPoint } from '../models/PriceAtPoint';
 import type { Status } from '../models/Status';
 import type { TokenTransferTransactions } from '../models/TokenTransferTransactions';
+import type { Transaction } from '../models/Transaction';
+import type { Validator } from '../models/Validator';
+import type { ValidatorConfig } from '../models/ValidatorConfig';
 import type { Validators } from '../models/Validators';
 import type { ValidatorVotes } from '../models/ValidatorVotes';
 import type { CancelablePromise } from '../core/CancelablePromise';
@@ -123,6 +126,23 @@ export class DefaultService {
         });
     }
     /**
+     * Gets a validator
+     * @param account
+     * @returns Validator Successful operation
+     * @throws ApiError
+     */
+    public static getValidator(
+        account?: string,
+    ): CancelablePromise<Validator> {
+        return __request(OpenAPI, {
+            method: 'GET',
+            url: '/validator',
+            query: {
+                'account': account,
+            },
+        });
+    }
+    /**
      * Gets the votes performed by the specified account
      * @param account Account name
      * @returns ValidatorVotes Successful operation
@@ -154,6 +174,17 @@ export class DefaultService {
             query: {
                 'validator': validator,
             },
+        });
+    }
+    /**
+     * Gets the validator configuration
+     * @returns ValidatorConfig Successful operation
+     * @throws ApiError
+     */
+    public static getValidatorConfig(): CancelablePromise<ValidatorConfig> {
+        return __request(OpenAPI, {
+            method: 'GET',
+            url: '/validator_config',
         });
     }
     /**
@@ -220,6 +251,23 @@ export class DefaultService {
             },
             errors: {
                 400: `User error`,
+            },
+        });
+    }
+    /**
+     * Looks up a transaction by ID
+     * @param id Transaction ID
+     * @returns Transaction Successful operation
+     * @throws ApiError
+     */
+    public static getTransaction(
+        id: string,
+    ): CancelablePromise<Transaction> {
+        return __request(OpenAPI, {
+            method: 'GET',
+            url: '/transactions/lookup',
+            query: {
+                'id': id,
             },
         });
     }

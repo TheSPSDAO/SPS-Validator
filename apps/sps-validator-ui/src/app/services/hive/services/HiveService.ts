@@ -29,6 +29,18 @@ export class HiveService {
         }
     }
 
+    public static authorize(account: string): Promise<boolean> {
+        return new Promise((resolve, reject) => {
+            if (!window.hive_keychain) {
+                return reject(new Error(NO_HIVE_KEYCHAIN_EXTENSION_ERROR_MESSAGE));
+            }
+
+            window.hive_keychain.requestSignBuffer(account, 'auth_check', 'Active', (result) => {
+                resolve(result.success);
+            });
+        });
+    }
+
     public static async getHeadBlock(): Promise<{ num: number; time: Date }> {
         const client = new Client(['https://anyx.io']);
 
@@ -79,7 +91,7 @@ export class HiveService {
         });
     }
 
-    public static registerAsValidator(payload: RegisterPayload, account: string, msg?: string): Promise<CustomJsonSuccessResult | CustomJsonErrorResult> {
+    public static updateValidator(payload: RegisterPayload, account: string, msg?: string): Promise<CustomJsonSuccessResult | CustomJsonErrorResult> {
         const display_msg = msg ?? `Register as a validator`;
 
         return new Promise((resolve, reject) => {

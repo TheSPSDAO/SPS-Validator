@@ -147,6 +147,25 @@ paths:
                             schema:
                                 $ref: "#/components/schemas/Validators"
 
+    /validator:
+        get:
+            tags:
+                - Default
+            summary: Gets a validator
+            operationId: getValidator
+            parameters:
+                - in: query
+                  name: account
+                  schema:
+                      type: string
+            responses:
+                200:
+                    description: Successful operation
+                    content:
+                        application/json:
+                            schema:
+                                $ref: "#/components/schemas/Validator"
+
     /votes_by_account:
         get:
             tags:
@@ -187,6 +206,21 @@ paths:
                         application/json:
                             schema:
                                 $ref: "#/components/schemas/ValidatorVotes"
+
+    /validator_config:
+        get:
+            tags:
+                - Default
+            summary: Gets the validator configuration
+            operationId: getValidatorConfig
+            responses:
+                200:
+                    description: Successful operation
+                    content:
+                        application/json:
+                            schema:
+                                $ref: "#/components/schemas/ValidatorConfig"
+
     /pool/{poolName}:
         get:
             tags:
@@ -243,6 +277,7 @@ paths:
                     description: Missing account query parameter
                 404:
                     description: Pool not found
+
     /transactions/{blockNum}/token_transfer:
         get:
             tags:
@@ -265,6 +300,28 @@ paths:
                                 $ref: "#/components/schemas/TokenTransferTransactions"
                 400:
                     description: User error
+
+    /transactions/lookup:
+        get:
+            tags:
+                - Default
+            summary: Looks up a transaction by ID
+            operationId: getTransaction
+            parameters:
+                - in: query
+                  name: id
+                  schema:
+                      type: string
+                  required: true
+                  description: Transaction ID
+            responses:
+                "200":
+                    description: Successful operation
+                    content:
+                        application/json:
+                            schema:
+                                $ref: "#/components/schemas/Transaction"
+
     /price_feed/{token}:
         get:
             tags:
@@ -393,6 +450,38 @@ components:
             items:
                 $ref: "#/components/schemas/ValidatorVote"
 
+        ValidatorConfig:
+            type: object
+            required:
+                - reward_start_block
+                - tokens_per_block
+                - reward_token
+                - min_validators
+                - reduction_blocks
+                - max_block_age
+                - reduction_pct
+                - max_votes
+                - num_top_validators
+            properties:
+                reward_start_block:
+                    type: number
+                tokens_per_block:
+                    type: number
+                reward_token:
+                    type: string
+                min_validators:
+                    type: number
+                reduction_blocks:
+                    type: number
+                max_block_age:
+                    type: number
+                reduction_pct:
+                    type: number
+                max_votes:
+                    type: number
+                num_top_validators:
+                    type: number
+
         TokenTransferTransaction:
             type: object
             required:
@@ -433,6 +522,40 @@ components:
             type: array
             items:
                 $ref: "#/components/schemas/TokenTransferTransaction"
+
+        Transaction:
+            type: object
+            required:
+                - id
+                - block_id
+                - prev_block_id
+                - block_num
+                - type
+                - player
+            properties:
+                id:
+                    type: string;
+                block_id:
+                    type: string
+                prev_block_id:
+                    type: string
+                block_num:
+                    type: integer
+                type:
+                    type: string
+                player:
+                    type: string
+                data:
+                    type: string
+                success:
+                    type: boolean
+                error:
+                    type: string
+                created_date:
+                    type: string
+                    format: date-time
+                result:
+                    type: string
 
         NoPriceAtPoint:
             type: object

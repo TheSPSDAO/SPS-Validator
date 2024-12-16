@@ -2,7 +2,7 @@ import { Card, CardBody, List, ListItem, Spinner, Typography } from '@material-t
 import { Link } from 'react-router-dom';
 import { usePromise } from '../hooks/Promise';
 import { DefaultService } from '../services/openapi';
-import { useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Table, TableHead, TableRow, TableColumn, TableBody, TableCell } from '../components/Table';
 
 const usefulLinks = [
@@ -18,8 +18,8 @@ function UsefulLinksCard() {
                     Useful Links
                 </Typography>
                 <List className="p-0 -mx-2 gap-0 min-w-0">
-                    {usefulLinks.map((link, index) => (
-                        <a key={index} href={link.url} target="_blank" rel="noreferrer">
+                    {usefulLinks.map((link) => (
+                        <a key={link.url} href={link.url} target="_blank" rel="noopener noreferrer">
                             <ListItem className="rounded-none border-gray-400 border-b-[1px]">{link.name}</ListItem>
                         </a>
                     ))}
@@ -48,8 +48,8 @@ function MetricsCard() {
         <Card>
             <CardBody className="flex flex-col items-center justify-around gap-6">
                 {metrics.map((metric, index) => (
-                    <>
-                        <div key={metric.label} className="text-center">
+                    <React.Fragment key={metric.label}>
+                        <div className="text-center">
                             <Typography color="blue-gray" className="text-2xl">
                                 {metric.value}
                             </Typography>
@@ -58,7 +58,7 @@ function MetricsCard() {
                             </Typography>
                         </div>
                         {index < metrics.length - 1 && <div className="w-full h-[1px] border-gray-400 border-b-[1px]"></div>}
-                    </>
+                    </React.Fragment>
                 ))}
             </CardBody>
         </Card>
@@ -108,7 +108,7 @@ export function TopValidatorsTable(props: TopValidatorsTableProps) {
                         <TableCell colSpan={4}>
                             <Typography color="blue-gray" className="text-center">
                                 No validators registered.{' '}
-                                <Link to="/validators" className="text-blue-600 underline">
+                                <Link to="/validator-nodes/manage" className="text-blue-600 underline">
                                     Register now.
                                 </Link>
                             </Typography>
@@ -119,11 +119,17 @@ export function TopValidatorsTable(props: TopValidatorsTableProps) {
                     result?.validators?.map((validator) => (
                         <TableRow key={validator.account_name}>
                             <TableCell>
-                                <a href={validator.post_url ?? undefined} target="_blank" rel="noreferrer">
-                                    {validator.account_name}
-                                </a>
+                                <span>
+                                    {validator.account_name} (
+                                    {validator.post_url && (
+                                        <a href={validator.post_url} target="_blank" rel="noreferrer">
+                                            {validator.account_name}
+                                        </a>
+                                    )}
+                                    {!validator.post_url && 'no post url set'})
+                                </span>
                             </TableCell>
-                            <TableCell>{validator.is_active}</TableCell>
+                            <TableCell>{validator.is_active ? 'Yes' : 'No'}</TableCell>
                             <TableCell>{validator.missed_blocks.toLocaleString()}</TableCell>
                             <TableCell>{validator.total_votes.toLocaleString()}</TableCell>
                         </TableRow>

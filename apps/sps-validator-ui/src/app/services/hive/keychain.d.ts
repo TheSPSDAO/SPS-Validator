@@ -43,6 +43,8 @@ interface Keychain {
     For now I only added what I needed.
      */
     requestCustomJson(account: string | null, id: string, key: Key, json: string, display_msg: string, callback: RequestCustomJsonCallback, rpc: string | null = null): void;
+
+    requestSignBuffer(account: string, message: string, key: Key, callback: (result: { success: boolean }) => void): void;
 }
 
 export declare global {

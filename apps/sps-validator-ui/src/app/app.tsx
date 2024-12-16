@@ -1,6 +1,17 @@
 import { Link, Route, Routes } from 'react-router-dom';
 import { useEffect, useState } from 'react';
-import { CurrencyDollarIcon, HomeIcon, Square3Stack3DIcon, ServerStackIcon, WrenchScrewdriverIcon, CogIcon, UserIcon, ChartBarIcon } from '@heroicons/react/24/solid';
+import {
+    CurrencyDollarIcon,
+    HomeIcon,
+    Square3Stack3DIcon,
+    ServerStackIcon,
+    WrenchScrewdriverIcon,
+    CogIcon,
+    UserIcon,
+    ChartBarIcon,
+    EnvelopeIcon,
+    EnvelopeOpenIcon,
+} from '@heroicons/react/24/solid';
 import { ListItem, ListItemPrefix } from '@material-tailwind/react';
 import { AppNavbar, AppNavbarTickerProps } from './components/layout/Navbar';
 import { DefaultService } from './services/openapi';
@@ -11,14 +22,20 @@ import { Settings } from './pages/Settings';
 import { TokenBalances } from './pages/TokenBalances';
 import { AccountBalances } from './pages/AccountBalances';
 import { ValidatorNodes } from './pages/ValidatorNodes';
+import { AccountVotes } from './pages/AccountVotes';
+import { ManageValidatorNode } from './pages/ManageValidatorNode';
+import { ManageVotes } from './pages/ManageVotes';
 
 function AppRoutes() {
     return (
         <Routes>
             <Route path="/" element={<Home />} />
             <Route path="/validator-nodes" element={<ValidatorNodes />} />
+            <Route path="/validator-nodes/manage" element={<ManageValidatorNode />} />
             <Route path="/token-balances" element={<TokenBalances />} />
             <Route path="/account-balances" element={<AccountBalances />} />
+            <Route path="/account-votes" element={<AccountVotes />} />
+            <Route path="/account-votes/manage" element={<ManageVotes />} />
             <Route path="/settings" element={<Settings />} />
         </Routes>
     );
@@ -43,6 +60,30 @@ function AppSidebarItems({ closeSidebar }: { closeSidebar: () => void }) {
                     Validator Nodes
                 </ListItem>
             </Link>
+            <Link to="/validator-nodes/manage" onClick={closeSidebar}>
+                <ListItem>
+                    <ListItemPrefix>
+                        <WrenchScrewdriverIcon className="h-5 w-5" />
+                    </ListItemPrefix>
+                    Manage Validator Node
+                </ListItem>
+            </Link>
+            <Link to="/account-votes" onClick={closeSidebar}>
+                <ListItem>
+                    <ListItemPrefix>
+                        <EnvelopeIcon className="h-5 w-5" />
+                    </ListItemPrefix>
+                    Account Votes
+                </ListItem>
+            </Link>
+            <Link to="/account-votes/manage" onClick={closeSidebar}>
+                <ListItem>
+                    <ListItemPrefix>
+                        <EnvelopeOpenIcon className="h-5 w-5" />
+                    </ListItemPrefix>
+                    Manage Votes
+                </ListItem>
+            </Link>
             <Link to="/token-balances" onClick={closeSidebar}>
                 <ListItem>
                     <ListItemPrefix>
@@ -57,14 +98,6 @@ function AppSidebarItems({ closeSidebar }: { closeSidebar: () => void }) {
                         <UserIcon className="h-5 w-5" />
                     </ListItemPrefix>
                     Account Balances
-                </ListItem>
-            </Link>
-            <Link to="/validator-nodes/manage" onClick={closeSidebar}>
-                <ListItem>
-                    <ListItemPrefix>
-                        <WrenchScrewdriverIcon className="h-5 w-5" />
-                    </ListItemPrefix>
-                    Manage Validator Node
                 </ListItem>
             </Link>
             <Link to="/settings" onClick={closeSidebar}>

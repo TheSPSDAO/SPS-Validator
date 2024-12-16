@@ -12,7 +12,7 @@ import { Middleware } from './middleware';
 import { TransactionMode, TransactionStarter } from '../db/transaction';
 import { Resolver } from '../utilities/dependency-injection';
 import { isStringArray } from '../utilities/guards';
-import { PoolsHelper } from '../config';
+import { PoolsHelper, ValidatorWatch } from '../config';
 import { Shop } from '../libs/shop';
 
 type ApiOptions = {
@@ -32,14 +32,6 @@ export function registerApiRoutes(app: Router, opts: ApiOptions): void {
     if (health_checker) {
         enableHealthChecker(app);
     }
-
-    app.get('/throw', async (req, res, next) => {
-        try {
-            throw new Error('This is a test error');
-        } catch (err) {
-            next(err);
-        }
-    });
 
     app.get('/status', async (req, res, next) => {
         try {
@@ -134,6 +126,23 @@ export function registerApiRoutes(app: Router, opts: ApiOptions): void {
         }
     });
 
+    app.get('/validator', async (req, res, next) => {
+        try {
+            const trxStarter = req.resolver.resolve(TransactionStarter);
+            const Validator = req.resolver.resolve(ValidatorRepository);
+            const account = typeof req.query.account === 'string' ? req.query.account : undefined;
+            if (account === undefined) {
+                res.status(400).end();
+                return;
+            }
+            await trxStarter.withTransaction(TransactionMode.Reporting, async (trx?: Trx) => {
+                res.json(await Validator.lookup(account, trx));
+            });
+        } catch (err) {
+            next(err);
+        }
+    });
+
     app.get('/votes_by_account', async (req, res, next) => {
         try {
             const trxStarter = req.resolver.resolve(TransactionStarter);
@@ -153,6 +162,19 @@ export function registerApiRoutes(app: Router, opts: ApiOptions): void {
             await trxStarter.withTransaction(TransactionMode.Reporting, async (trx?: Trx) => {
                 res.json(await ValidatorVote.lookupByValidator(req.query.validator as string, trx));
             });
+        } catch (err) {
+            next(err);
+        }
+    });
+
+    app.get('/validator_config', async (req, res, next) => {
+        try {
+            const watcher = req.resolver.resolve<ValidatorWatch>(ValidatorWatch);
+            if (!watcher.validator) {
+                res.status(503).end();
+                return;
+            }
+            res.json(watcher.validator);
         } catch (err) {
             next(err);
         }
@@ -288,6 +310,28 @@ export function registerApiRoutes(app: Router, opts: ApiOptions): void {
                     return;
                 }
 
+                res.status(200).json(data);
+            });
+        } catch (err) {
+            next(err);
+        }
+    });
+
+    app.get('/transactions/lookup', async (req, res, next) => {
+        try {
+            const trxStarter = req.resolver.resolve(TransactionStarter);
+            const TransactionRepository = req.resolver.resolve(TransactionRepository_);
+            const id = typeof req.query.id === 'string' ? req.query.id : undefined;
+            if (id === undefined) {
+                res.status(400).end();
+                return;
+            }
+            await trxStarter.withTransaction(TransactionMode.Reporting, async (trx?: Trx) => {
+                const data = await TransactionRepository.lookupByTrxId(id, trx);
+                if (data === null) {
+                    res.status(404).end();
+                    return;
+                }
                 res.status(200).json(data);
             });
         } catch (err) {

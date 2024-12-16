@@ -17,6 +17,9 @@ export function Settings() {
         setPrefix(workingPrefix);
         setApi(workingApi);
         setAccount(workingAccount);
+        Hive.PREFIX = workingPrefix;
+        Hive.ACCOUNT = workingAccount;
+        OpenAPI.BASE = workingApi;
     }, [workingPrefix, workingApi, workingAccount]);
 
     return (
