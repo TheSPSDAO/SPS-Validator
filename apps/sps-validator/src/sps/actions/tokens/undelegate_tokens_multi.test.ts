@@ -208,7 +208,7 @@ test.dbOnly('undelegate without authority fails.', async () => {
     expect(active_delegation_record_after.last_undelegation_date).toBeNull();
     expect(active_delegation_record_after.last_undelegation_tx).toBeNull();
 
-    expect(active_delegation1_record_after.amount).toBe(amount_delegated.toString());
+    expect(Number(active_delegation1_record_after.amount)).toBe(amount_delegated);
     expect(active_delegation1_record_after.last_undelegation_date).toBeNull();
     expect(active_delegation1_record_after.last_undelegation_tx).toBeNull();
 });

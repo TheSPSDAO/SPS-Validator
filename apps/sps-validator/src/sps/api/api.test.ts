@@ -357,7 +357,7 @@ describe('Token API endpoints', () => {
         ${'OTH'}          | ${200} |  ${['alluser', 'othuser']}
         ${'SPSP'}         | ${200} |  ${[]}
     `(`Checking tokens for [$param] should have [$users] listed with HTTP status [$status]`, async ({ param, status, users }) => {
-        const response = await fixture.request.get(`/tokens/${param}`);
+        const response = await fixture.request.get(`/tokens/${param}`).query({ systemAccounts: 'true' });
         expect(response.status).toBe(status);
         const bodyUsers = response.body?.balances.map((e: any) => e.player);
         expect(bodyUsers).toEqual(expect.arrayContaining(users));

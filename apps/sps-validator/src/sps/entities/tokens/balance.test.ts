@@ -68,14 +68,11 @@ test.dbOnly('Increments balances correctly', async () => {
     const is_bookkeeping_account = jest.fn();
     const repo = new BalanceRepository(
         fixture.handle,
-        {
-            burn_account: '',
-            burned_ledger_account: '',
-        },
         { insert: () => [] } as unknown as BalanceHistoryRepository,
         {
             is_bookkeeping_account,
         },
+        '',
     );
 
     is_bookkeeping_account.mockReturnValue(false);
@@ -111,14 +108,11 @@ test.dbOnly('Does not go negative on system account that is not a bookkeeping ac
     const is_bookkeeping_account = jest.fn();
     const repo = new BalanceRepository(
         fixture.handle,
-        {
-            burn_account: '',
-            burned_ledger_account: '',
-        },
         { insert: () => [] } as unknown as BalanceHistoryRepository,
         {
             is_bookkeeping_account,
         },
+        '',
     );
 
     is_bookkeeping_account.mockReturnValue(false);
@@ -158,14 +152,11 @@ test.dbOnly('Does go negative on system account that is a bookkeeping account', 
     const is_bookkeeping_account = jest.fn();
     const repo = new BalanceRepository(
         fixture.handle,
-        {
-            burn_account: '',
-            burned_ledger_account: '',
-        },
         { insert: () => [] } as unknown as BalanceHistoryRepository,
         {
             is_bookkeeping_account,
         },
+        '',
     );
 
     is_bookkeeping_account.mockReturnValue(true);
@@ -201,14 +192,11 @@ test.dbOnly('Does go negative on account that is a bookkeeping account', async (
     const is_bookkeeping_account = jest.fn();
     const repo = new BalanceRepository(
         fixture.handle,
-        {
-            burn_account: '',
-            burned_ledger_account: '',
-        },
         { insert: () => [] } as unknown as BalanceHistoryRepository,
         {
             is_bookkeeping_account,
         },
+        '',
     );
 
     is_bookkeeping_account.mockReturnValue(true);

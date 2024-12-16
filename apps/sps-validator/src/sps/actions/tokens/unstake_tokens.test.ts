@@ -112,5 +112,5 @@ test.dbOnly('Simple unstake staked tokens with posting auth', async () => {
         ),
     ).resolves.toBeUndefined();
     const unstaking = await fixture.testHelper.getUnstakingRecord('steemmonsters');
-    expect(unstaking?.total_qty).toBe('13');
+    expect(Number(unstaking?.total_qty)).toBe(13);
 });
