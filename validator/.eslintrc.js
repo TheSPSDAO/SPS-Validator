@@ -1,10 +1,10 @@
-const { join } = require("path");
+const { join } = require('path');
 module.exports = {
     parser: '@typescript-eslint/parser',
     parserOptions: {
         ecmaVersion: 2022,
-        //project: join(__dirname, "./tsconfig.lib.json"),
-        sourceType: "module",
+        project: join(__dirname, './tsconfig.lib.json'),
+        sourceType: 'module',
     },
     plugins: ['@typescript-eslint/eslint-plugin', 'etc'],
     extends: ['../.eslintrc.json', 'plugin:@typescript-eslint/recommended'],
@@ -12,7 +12,7 @@ module.exports = {
     env: {
         node: true,
     },
-    ignorePatterns: ['.eslintrc.js', 'node_modules/', 'jest.config.js'],
+    ignorePatterns: ['.eslintrc.js', 'node_modules/', 'jest.config.js', '*.test.ts', '*.spec.ts'],
     rules: {
         // Off because it's a dumb rule.
         '@typescript-eslint/interface-name-prefix': 'off',
@@ -26,29 +26,29 @@ module.exports = {
         '@typescript-eslint/no-unused-vars': [
             'warn',
             {
-                'argsIgnorePattern': "^_",
-                'varsIgnorePattern': "^_",
+                argsIgnorePattern: '^_',
+                varsIgnorePattern: '^_',
             },
         ],
 
         // Exported const enums are problematic for libary usage
-        "etc/no-const-enum": [
-            "error",
+        'etc/no-const-enum': [
+            'error',
             {
-                "allowLocal": true
+                allowLocal: true,
             },
         ],
         // Prettier too dumb to understand that auto-crlf exists in git
         'prettier/prettier': [
             'error',
             {
-                'endOfLine': 'auto',
+                endOfLine: 'auto',
             },
         ],
         'no-constant-condition': [
             'error',
             {
-                'checkLoops': false,
+                checkLoops: false,
             },
         ],
     },

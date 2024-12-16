@@ -51,7 +51,7 @@ export class PromiseManager implements VirtualPayloadSource {
         private readonly promiseRepository: PromiseRepository,
     ) {}
 
-    async process(block: BlockRef, trx?: Trx): Promise<ProcessResult[]> {
+    async process(block: BlockRef): Promise<ProcessResult[]> {
         return [
             [
                 'custom_json',

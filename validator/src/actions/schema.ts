@@ -1,7 +1,6 @@
-import { object, string, number, boolean, array, AnyObjectSchema, date, Asserts } from 'yup';
+import { object, string, number, boolean, array, AnyObjectSchema, Asserts } from 'yup';
 import { isHiveAccount, isSystemAccount } from '../utilities/accounts';
 import { Result } from '@steem-monsters/lib-monad';
-export { object, string, number, boolean, array, mixed, date } from 'yup';
 export type { AnyObjectSchema, InferType } from 'yup';
 
 function isEmptyOrValidSystemAccount(value: string | undefined): boolean {

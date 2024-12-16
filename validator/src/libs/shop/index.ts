@@ -104,11 +104,6 @@ const price_schema = object({
 // Only to assert types. Can be replaced by const price_schema: ObjectSchema<PriceEntry> = ...
 type _price = type_check<PriceEntry, InferType<typeof price_schema>>;
 
-const card_token_schema = object({
-    token: string().strict().required(),
-    xp: number().integer().required(),
-});
-
 const shop_schema = object({
     start_date: date()
         .required()
@@ -143,10 +138,6 @@ const token_schema = shop_schema.concat(
 
 // Only to assert types. Can be replaced by const price_schema: ObjectSchema<ShopTokenConfig> = ...
 type _token = type_check<ShopTokenConfig, InferType<typeof token_schema>>;
-
-function burn(t: Omit<SaleTransfer, 'to'>): SaleTransfer {
-    return { ...t, to: Defaults.burnAccount };
-}
 
 export type SaleResult = SaleTransfer;
 export type TypeItemNormal = { element: 'price' | 'discount' | 'bonus' | 'purchased'; token: string; amount: number };

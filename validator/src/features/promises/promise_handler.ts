@@ -65,6 +65,7 @@ export abstract class PromiseHandler {
      * When a promise is cancelled, it is first reversed, so most of the
      * time this method does not have to be implemented.
      */
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     validateCancelPromise(request: HandlerCompletePromiseRequest, promise: PromiseEntity, action: IAction, trx?: Trx): Promise<Result<void, Error>> {
         return Promise.resolve(Result.OkVoid());
     }
@@ -74,6 +75,7 @@ export abstract class PromiseHandler {
      * When a promise is cancelled, it is first reversed, so most of the
      * time this method does not have to be implemented.
      */
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     cancelPromise(request: HandlerCompletePromiseRequest, promise: PromiseEntity, action: IAction, trx?: Trx): Promise<EventLog[]> {
         return Promise.resolve([]);
     }
