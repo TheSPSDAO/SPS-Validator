@@ -74,7 +74,7 @@ test.dbOnly('Simple delegate tokens.', async () => {
     const sysacc_SPSP_OUT_balance_after = (await fixture.testHelper.getDummyToken(DELEGATION_ACCOUNT, TOKENS.SPSP_OUT))!.balance;
     const sysacc_SPSP_IN_balance_after = (await fixture.testHelper.getDummyToken(DELEGATION_ACCOUNT, TOKENS.SPSP_IN))!.balance;
 
-    expect(active_delegation_record.amount).toBe(amount_to_delegate.toString());
+    expect(Number(active_delegation_record.amount)).toBe(amount_to_delegate);
     expect(delegator_SPSP_balance_after).toBe(initial_staked_amount);
     expect(delegator_SPSP_OUT_balance_after).toBe(amount_to_delegate);
     expect(delegator_SPSP_IN_balance_after).toBe(0);
@@ -111,7 +111,7 @@ test.dbOnly('Simple delegate tokens to whitelisted system account.', async () =>
     const sysacc_SPSP_OUT_balance_after = (await fixture.testHelper.getDummyToken(DELEGATION_ACCOUNT, TOKENS.SPSP_OUT))!.balance;
     const sysacc_SPSP_IN_balance_after = (await fixture.testHelper.getDummyToken(DELEGATION_ACCOUNT, TOKENS.SPSP_IN))!.balance;
 
-    expect(active_delegation_record.amount).toBe(amount_to_delegate.toString());
+    expect(Number(active_delegation_record.amount)).toBe(amount_to_delegate);
     expect(delegator_SPSP_balance_after).toBe(initial_staked_amount);
     expect(delegator_SPSP_OUT_balance_after).toBe(amount_to_delegate);
     expect(delegator_SPSP_IN_balance_after).toBe(0);
@@ -149,7 +149,7 @@ test.dbOnly('Simple delegate tokens with authority.', async () => {
     const sysacc_SPSP_OUT_balance_after = (await fixture.testHelper.getDummyToken(DELEGATION_ACCOUNT, TOKENS.SPSP_OUT))!.balance;
     const sysacc_SPSP_IN_balance_after = (await fixture.testHelper.getDummyToken(DELEGATION_ACCOUNT, TOKENS.SPSP_IN))!.balance;
 
-    expect(active_delegation_record.amount).toBe(amount_to_delegate.toString());
+    expect(Number(active_delegation_record.amount)).toBe(amount_to_delegate);
     expect(delegator_SPSP_balance_after).toBe(initial_staked_amount);
     expect(delegator_SPSP_OUT_balance_after).toBe(amount_to_delegate);
     expect(delegator_SPSP_IN_balance_after).toBe(0);
