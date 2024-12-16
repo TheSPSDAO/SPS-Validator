@@ -94,7 +94,7 @@ test.dbOnly('Simple undelegate multi tokens.', async () => {
     const sysacc_SPSP_OUT_balance_after = (await fixture.testHelper.getDummyToken(DELEGATION_ACCOUNT, TOKENS.SPSP_OUT))!.balance;
     const sysacc_SPSP_IN_balance_after = (await fixture.testHelper.getDummyToken(DELEGATION_ACCOUNT, TOKENS.SPSP_IN))!.balance;
 
-    expect(active_delegation_record_after.amount).toBe(delegation_amount_after.toString());
+    expect(Number(active_delegation_record_after.amount)).toBe(delegation_amount_after);
     expect(active_delegation_record_after.last_undelegation_date).toBeTruthy();
     expect(active_delegation_record_after.last_delegation_tx).toBeTruthy();
 

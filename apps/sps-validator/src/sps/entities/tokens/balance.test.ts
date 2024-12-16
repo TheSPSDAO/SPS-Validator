@@ -42,7 +42,7 @@ test.dbOnly('Inserting double with onConflict and merge prevents error', async (
             .query(BalanceEntity)
             .useKnexQueryBuilder((q) => q.onConflict(['player', 'token']).merge())
             .insertItemWithReturning({ player, token }),
-    ).resolves.toMatchObject({ player, token, balance: '0' });
+    ).resolves.toMatchObject({ player, token, balance: '0.000' });
 });
 
 test.dbOnly('Inserting double with onConflict and merge propagates any existing value', async () => {
@@ -54,14 +54,14 @@ test.dbOnly('Inserting double with onConflict and merge propagates any existing 
             .query(BalanceEntity)
             .useKnexQueryBuilder((q) => q.onConflict(['player', 'token']).merge())
             .insertItemWithReturning({ player, token, balance: '12' }),
-    ).resolves.toMatchObject({ player, token, balance: '12' });
+    ).resolves.toMatchObject({ player, token, balance: '12.000' });
 
     await expect(
         fixture.handle
             .query(BalanceEntity)
             .useKnexQueryBuilder((q) => q.onConflict(['player', 'token']).merge())
             .insertItemWithReturning({ player, token }),
-    ).resolves.toMatchObject({ player, token, balance: '12' });
+    ).resolves.toMatchObject({ player, token, balance: '12.000' });
 });
 
 test.dbOnly('Increments balances correctly', async () => {
