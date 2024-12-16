@@ -165,7 +165,7 @@ function ManageCard({ account, validator, reloadValidator }: { account: string; 
                 <Card className="col-span-full">
                     <CardBody>
                         <Typography variant="h5" color="blue-gray" className="mb-2">
-                            Manage Validator Node - {account}
+                            Validator Node Stats - {account}
                         </Typography>
                         <ValidatorStatsTable validator={validator} className="w-full mt-4" />
                     </CardBody>
@@ -173,7 +173,7 @@ function ManageCard({ account, validator, reloadValidator }: { account: string; 
                 <Card className="col-span-full">
                     <CardBody>
                         <Typography variant="h5" color="blue-gray" className="mb-2">
-                            Votes On Your Node
+                            Votes On Your Validator Node - {account}
                         </Typography>
                         <ValidatorVotesTable account={account} className="w-full" />
                     </CardBody>
