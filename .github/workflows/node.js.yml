@@ -42,9 +42,11 @@ jobs:
       # Set timestamps to last git modification date
       - name: restore timestamps
         uses: chetan/git-restore-mtime-action@v2
+
       - name: Overwrite validator/structure.sql if needed
         working-directory: scripts
         run: ./ci-lazy-regenerate-structure.sh
+
       - run: npm ci --silent
         env:
           NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
