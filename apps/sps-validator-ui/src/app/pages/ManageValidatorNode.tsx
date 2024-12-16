@@ -7,6 +7,8 @@ import { usePromise } from '../hooks/Promise';
 import { Link } from 'react-router-dom';
 import { TxLookupService } from '../services/TxLookupService';
 import { Table, TableBody, TableCell, TableColumn, TableHead, TableRow } from '../components/Table';
+import { ValidatorVotesTable } from '../components/ValidatorVotesTable';
+import { ValidatorStatsTable } from '../components/ValidatorStatsTable';
 
 function LoadingCard() {
     return (
@@ -124,74 +126,6 @@ function RegisterCard({ account, registered }: { account: string; registered: ()
     );
 }
 
-function VotesTable({ account, className }: { account: string; className: string }) {
-    const [votes, loading] = usePromise(() => DefaultService.getVotesByValidator(account), [account]);
-    if (loading) {
-        return <Spinner className="w-full" />;
-    }
-    const totalVotes = votes?.reduce((acc, vote) => acc + vote.vote_weight, 0) ?? 0;
-    return (
-        <Table className={className}>
-            <TableHead>
-                <TableRow>
-                    <TableColumn>Account</TableColumn>
-                    <TableColumn>Vote Weight (total: {totalVotes.toLocaleString()})</TableColumn>
-                </TableRow>
-            </TableHead>
-            <TableBody>
-                {votes?.length === 0 && (
-                    <TableRow>
-                        <TableCell colSpan={2} className="text-center">
-                            No votes
-                        </TableCell>
-                    </TableRow>
-                )}
-                {votes?.map((vote) => (
-                    <TableRow key={vote.voter}>
-                        <TableCell>{vote.voter}</TableCell>
-                        <TableCell>{vote.vote_weight}</TableCell>
-                    </TableRow>
-                ))}
-            </TableBody>
-        </Table>
-    );
-}
-
-function StatsTable({ validator }: { validator: Validator }) {
-    return (
-        <Table className="w-full mt-5 border-2 border-gray-200">
-            <TableHead>
-                <TableRow>
-                    <TableColumn>Field</TableColumn>
-                    <TableColumn>Value</TableColumn>
-                </TableRow>
-            </TableHead>
-            <TableBody>
-                <TableRow>
-                    <TableCell>Account</TableCell>
-                    <TableCell>{validator.account_name}</TableCell>
-                </TableRow>
-                <TableRow>
-                    <TableCell>Active</TableCell>
-                    <TableCell>{validator.is_active ? 'Yes' : 'No'}</TableCell>
-                </TableRow>
-                <TableRow>
-                    <TableCell>Post URL</TableCell>
-                    <TableCell>{validator.post_url ? validator.post_url : 'Not Set'}</TableCell>
-                </TableRow>
-                <TableRow>
-                    <TableCell>Missed Blocks</TableCell>
-                    <TableCell>{validator.missed_blocks}</TableCell>
-                </TableRow>
-                <TableRow>
-                    <TableCell>Total Votes</TableCell>
-                    <TableCell>{validator.total_votes}</TableCell>
-                </TableRow>
-            </TableBody>
-        </Table>
-    );
-}
-
 function ManageCard({ account, validator, reloadValidator }: { account: string; validator: Validator; reloadValidator: () => void }) {
     const [isActive, setIsActive] = useState<boolean>(validator.is_active);
     const [postUrl, setPostUrl] = useState<string>(validator.post_url ?? '');
@@ -202,19 +136,19 @@ function ManageCard({ account, validator, reloadValidator }: { account: string; 
         setProgress(true);
         setError('');
         try {
-            const updated = await HiveService.updateValidator(
+            const broadcastResult = await HiveService.updateValidator(
                 {
                     is_active: isActive,
                     post_url: postUrl,
                 },
                 account,
             );
-            if (!updated.success || updated.error) {
-                throw new Error(updated.error ?? 'Failed to update validator node');
+            if (!broadcastResult.success || broadcastResult.error) {
+                throw new Error(broadcastResult.error ?? 'Failed to update validator node');
             }
-            const result = await TxLookupService.waitForTx(updated.result.id);
-            if (!result.success) {
-                throw new Error(result.error! ?? 'Failed to update validator node');
+            const txResult = await TxLookupService.waitForTx(broadcastResult.result.id);
+            if (!txResult.success) {
+                throw new Error(txResult.error! ?? 'Failed to update validator node');
             }
             reloadValidator();
         } catch (err) {
@@ -233,7 +167,7 @@ function ManageCard({ account, validator, reloadValidator }: { account: string; 
                         <Typography variant="h5" color="blue-gray" className="mb-2">
                             Manage Validator Node - {account}
                         </Typography>
-                        <StatsTable validator={validator} />
+                        <ValidatorStatsTable validator={validator} className="w-full mt-4" />
                     </CardBody>
                 </Card>
                 <Card className="col-span-full">
@@ -241,7 +175,7 @@ function ManageCard({ account, validator, reloadValidator }: { account: string; 
                         <Typography variant="h5" color="blue-gray" className="mb-2">
                             Votes On Your Node
                         </Typography>
-                        <VotesTable account={account} className="w-full" />
+                        <ValidatorVotesTable account={account} className="w-full" />
                     </CardBody>
                 </Card>
             </div>
@@ -258,7 +192,7 @@ function ManageCard({ account, validator, reloadValidator }: { account: string; 
                             <div>
                                 <Input
                                     size="lg"
-                                    label="Node URL"
+                                    label="Post URL"
                                     placeholder="URL that your node will be accessible from (not required)"
                                     value={postUrl}
                                     disabled={progress}
@@ -279,7 +213,7 @@ function ManageCard({ account, validator, reloadValidator }: { account: string; 
                             </Typography>
                         )}
                         <div className="flex items-center justify-end">
-                            <Button variant="filled" disabled={progress} onClick={update}>
+                            <Button className="flex flex-row items-center" variant="filled" disabled={progress} onClick={update}>
                                 {progress && <Spinner className="me-3 text-sm" />}
                                 Update
                             </Button>

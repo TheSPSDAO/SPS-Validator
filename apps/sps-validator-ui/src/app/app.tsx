@@ -11,6 +11,7 @@ import {
     ChartBarIcon,
     EnvelopeIcon,
     EnvelopeOpenIcon,
+    PencilSquareIcon,
 } from '@heroicons/react/24/solid';
 import { ListItem, ListItemPrefix } from '@material-tailwind/react';
 import { AppNavbar, AppNavbarTickerProps } from './components/layout/Navbar';
@@ -79,7 +80,7 @@ function AppSidebarItems({ closeSidebar }: { closeSidebar: () => void }) {
             <Link to="/account-votes/manage" onClick={closeSidebar}>
                 <ListItem>
                     <ListItemPrefix>
-                        <EnvelopeOpenIcon className="h-5 w-5" />
+                        <PencilSquareIcon className="h-5 w-5" />
                     </ListItemPrefix>
                     Manage Votes
                 </ListItem>

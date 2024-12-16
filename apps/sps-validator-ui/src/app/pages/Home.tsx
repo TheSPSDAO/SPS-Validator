@@ -67,7 +67,6 @@ function MetricsCard() {
 
 export type TopValidatorsTableProps = {
     limit?: number;
-    className?: string;
 };
 
 export function TopValidatorsTable(props: TopValidatorsTableProps) {
@@ -77,7 +76,7 @@ export function TopValidatorsTable(props: TopValidatorsTableProps) {
     }
     const noValidators = result?.validators === undefined || result.validators.length === 0;
     return (
-        <Table className={props.className}>
+        <Table className="w-full mt-5 border-2 border-gray-200">
             <TableHead>
                 <TableRow>
                     <TableColumn>
@@ -120,7 +119,10 @@ export function TopValidatorsTable(props: TopValidatorsTableProps) {
                         <TableRow key={validator.account_name}>
                             <TableCell>
                                 <span>
-                                    {validator.account_name} (
+                                    <Link to={`/validator-nodes?node=${encodeURIComponent(validator.account_name)}`} className="text-blue-600 underline">
+                                        {validator.account_name}
+                                    </Link>{' '}
+                                    (
                                     {validator.post_url && (
                                         <a href={validator.post_url} target="_blank" rel="noreferrer">
                                             {validator.account_name}
@@ -202,7 +204,7 @@ export function Home() {
                         <Typography variant="h5" color="blue-gray" className="mb-2">
                             Top Validators
                         </Typography>
-                        <TopValidatorsTable limit={10} className="w-full mt-5 border-2 border-gray-200" />
+                        <TopValidatorsTable limit={10} />
                     </CardBody>
                 </Card>
 

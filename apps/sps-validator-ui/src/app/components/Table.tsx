@@ -29,7 +29,7 @@ export function TableRow(props: TableRowProps) {
 }
 
 export type TableColumnProps = {
-    children: React.ReactNode;
+    children?: React.ReactNode;
     className?: string;
 };
 
@@ -73,7 +73,7 @@ export type TablePagerProps = {
 export function TablePager(props: TablePagerProps) {
     const pageCount = Math.ceil(props.count / props.limit);
     if (pageCount <= 1) {
-        return;
+        return null;
     }
 
     const getItemProps = (page: number) => ({

@@ -19,6 +19,7 @@ export function usePromise<T>(fn: () => MaybeCancelablePromise<T>, deps?: Depend
 
     useEffect(() => {
         setLoading(true);
+        setError(null);
         const promise = fn();
         promise
             .then((result) => {
