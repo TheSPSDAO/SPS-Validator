@@ -157,7 +157,7 @@ test.dbOnly('Simple undelegate multi tokens with authority.', async () => {
     const sysacc_SPSP_OUT_balance_after = (await fixture.testHelper.getDummyToken(DELEGATION_ACCOUNT, TOKENS.SPSP_OUT))!.balance;
     const sysacc_SPSP_IN_balance_after = (await fixture.testHelper.getDummyToken(DELEGATION_ACCOUNT, TOKENS.SPSP_IN))!.balance;
 
-    expect(active_delegation_record_after.amount).toBe(delegation_amount_after.toString());
+    expect(Number(active_delegation_record_after.amount)).toBe(delegation_amount_after);
     expect(active_delegation_record_after.last_undelegation_date).toBeTruthy();
     expect(active_delegation_record_after.last_delegation_tx).toBeTruthy();
 
@@ -204,7 +204,7 @@ test.dbOnly('undelegate without authority fails.', async () => {
     const active_delegation1_record_after = (await fixture.testHelper.getActiveDelegationRecord(delegator, delegatee1, TOKENS.SPSP))!;
 
     // No changes
-    expect(active_delegation_record_after.amount).toBe(amount_delegated.toString());
+    expect(Number(active_delegation_record_after.amount)).toBe(amount_delegated);
     expect(active_delegation_record_after.last_undelegation_date).toBeNull();
     expect(active_delegation_record_after.last_undelegation_tx).toBeNull();
 
@@ -237,11 +237,11 @@ test.dbOnly('undelegate more than delegated amount fails.', async () => {
     const active_delegation1_record_after = (await fixture.testHelper.getActiveDelegationRecord(delegator, delegatee1, TOKENS.SPSP))!;
 
     // No changes
-    expect(active_delegation_record_after.amount).toBe(amount_delegated.toString());
+    expect(Number(active_delegation_record_after.amount)).toBe(amount_delegated);
     expect(active_delegation_record_after.last_undelegation_date).toBeNull();
     expect(active_delegation_record_after.last_undelegation_tx).toBeNull();
 
-    expect(active_delegation1_record_after.amount).toBe(amount_delegated.toString());
+    expect(Number(active_delegation1_record_after.amount)).toBe(amount_delegated);
     expect(active_delegation1_record_after.last_undelegation_date).toBeNull();
     expect(active_delegation1_record_after.last_undelegation_tx).toBeNull();
 });
@@ -270,11 +270,11 @@ test.dbOnly('undelegate negative amount fails.', async () => {
     const active_delegation1_record_after = (await fixture.testHelper.getActiveDelegationRecord(delegator, delegatee1, TOKENS.SPSP))!;
 
     // No changes
-    expect(active_delegation_record_after.amount).toBe(amount_delegated.toString());
+    expect(Number(active_delegation_record_after.amount)).toBe(amount_delegated);
     expect(active_delegation_record_after.last_undelegation_date).toBeNull();
     expect(active_delegation_record_after.last_undelegation_tx).toBeNull();
 
-    expect(active_delegation1_record_after.amount).toBe(amount_delegated.toString());
+    expect(Number(active_delegation1_record_after.amount)).toBe(amount_delegated);
     expect(active_delegation1_record_after.last_undelegation_date).toBeNull();
     expect(active_delegation1_record_after.last_undelegation_tx).toBeNull();
 });
@@ -303,11 +303,11 @@ test.dbOnly('Token delegation using posting key fails.', async () => {
     const active_delegation1_record_after = (await fixture.testHelper.getActiveDelegationRecord(delegator, delegatee1, TOKENS.SPSP))!;
 
     // No changes
-    expect(active_delegation_record_after.amount).toBe(amount_delegated.toString());
+    expect(Number(active_delegation_record_after.amount)).toBe(amount_delegated);
     expect(active_delegation_record_after.last_undelegation_date).toBeNull();
     expect(active_delegation_record_after.last_undelegation_tx).toBeNull();
 
-    expect(active_delegation1_record_after.amount).toBe(amount_delegated.toString());
+    expect(Number(active_delegation1_record_after.amount)).toBe(amount_delegated);
     expect(active_delegation1_record_after.last_undelegation_date).toBeNull();
     expect(active_delegation1_record_after.last_undelegation_tx).toBeNull();
 });

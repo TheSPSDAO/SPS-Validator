@@ -65,7 +65,7 @@ test.dbOnly('Simple token_unstaking on-chain operation of currently unstaked tok
     ).resolves.toBeUndefined();
     const unstaking = await fixture.testHelper.getUnstakingRecord('steemmonsters');
     const balance = await fixture.testHelper.getDummyToken('steemmonsters');
-    expect(unstaking?.total_qty).toBe('121');
+    expect(Number(unstaking?.total_qty)).toBe(121);
     // 0 or undefined are both fine
     expect(balance?.balance).toBeFalsy();
 });

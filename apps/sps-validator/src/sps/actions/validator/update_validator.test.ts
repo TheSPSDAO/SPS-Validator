@@ -38,7 +38,7 @@ test.dbOnly('Non-boolean is_active does not crash', async () => {
     await fixture.opsHelper.processOp('update_validator', 'steemmonsters', {
         is_active: 'bagel',
     });
-    const validators = await fixture.Validator.getValidators();
+    const { validators } = await fixture.Validator.getValidators();
     expect(validators?.length).toBe(0);
 });
 
@@ -47,7 +47,7 @@ test.dbOnly('Non-string post_url does not crash', async () => {
         is_active: true,
         post_url: 12,
     });
-    const validators = await fixture.Validator.getValidators();
+    const { validators } = await fixture.Validator.getValidators();
     expect(validators?.length).toBe(0);
 });
 
@@ -55,7 +55,9 @@ test.dbOnly('Inserting new validator works', async () => {
     await fixture.opsHelper.processOp('update_validator', 'steemmonsters', {
         is_active: true,
     });
-    const [validator] = await fixture.Validator.getValidators();
+    const {
+        validators: [validator],
+    } = await fixture.Validator.getValidators();
     expect(validator?.account_name).toBe('steemmonsters');
 });
 
@@ -68,7 +70,7 @@ test.dbOnly('Inserting new validator with posting auth does not work', async () 
         },
         { is_active: false },
     );
-    const validators = await fixture.Validator.getValidators();
+    const { validators } = await fixture.Validator.getValidators();
     expect(validators?.length).toBe(0);
 });
 
@@ -81,7 +83,9 @@ test.dbOnly('Upserting validator state works', async () => {
         },
         { transaction: 'insert_update_validator' },
     );
-    let [validator] = await fixture.Validator.getValidators();
+    const {
+        validators: [validator],
+    } = await fixture.Validator.getValidators();
     expect(validator.is_active).toBe(true);
     await fixture.opsHelper.processOp(
         'update_validator',
@@ -91,6 +95,8 @@ test.dbOnly('Upserting validator state works', async () => {
         },
         { transaction: 'upsert_update_validator' },
     );
-    [validator] = await fixture.Validator.getValidators();
-    expect(validator.is_active).toBe(false);
+    const {
+        validators: [validator2],
+    } = await fixture.Validator.getValidators();
+    expect(validator2.is_active).toBe(false);
 });

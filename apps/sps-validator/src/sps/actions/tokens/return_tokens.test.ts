@@ -80,7 +80,7 @@ test.dbOnly('Simple return_tokens.', async () => {
     const sysacc_SPSP_OUT_balance_after = (await fixture.testHelper.getDummyToken(DELEGATION_ACCOUNT, TOKENS.SPSP_OUT))!.balance;
     const sysacc_SPSP_IN_balance_after = (await fixture.testHelper.getDummyToken(DELEGATION_ACCOUNT, TOKENS.SPSP_IN))!.balance;
 
-    expect(active_delegation_record_after.amount).toBe(delegation_amount_after.toString());
+    expect(Number(active_delegation_record_after.amount)).toBe(delegation_amount_after);
     expect(active_delegation_record_after.last_undelegation_date).toBeTruthy();
     expect(active_delegation_record_after.last_delegation_tx).toBeTruthy();
 
@@ -131,7 +131,7 @@ test.dbOnly('Simple return_tokens with authority.', async () => {
     const sysacc_SPSP_OUT_balance_after = (await fixture.testHelper.getDummyToken(DELEGATION_ACCOUNT, TOKENS.SPSP_OUT))!.balance;
     const sysacc_SPSP_IN_balance_after = (await fixture.testHelper.getDummyToken(DELEGATION_ACCOUNT, TOKENS.SPSP_IN))!.balance;
 
-    expect(active_delegation_record_after.amount).toBe(delegation_amount_after.toString());
+    expect(Number(active_delegation_record_after.amount)).toBe(delegation_amount_after);
     expect(active_delegation_record_after.last_undelegation_date).toBeTruthy();
     expect(active_delegation_record_after.last_undelegation_tx).toBeTruthy();
 
@@ -171,7 +171,7 @@ test.dbOnly('return_tokens without authority fails.', async () => {
     const active_delegation_record_after = (await fixture.testHelper.getActiveDelegationRecord(delegator, delegatee, TOKENS.SPSP))!;
 
     // No changes
-    expect(active_delegation_record_after.amount).toBe(amount_delegated.toString());
+    expect(Number(active_delegation_record_after.amount)).toBe(amount_delegated);
     expect(active_delegation_record_after.last_undelegation_date).toBeNull();
     expect(active_delegation_record_after.last_undelegation_tx).toBeNull();
 });
@@ -197,7 +197,7 @@ test.dbOnly('return_tokens more than delegated amount fails.', async () => {
     const active_delegation_record_after = (await fixture.testHelper.getActiveDelegationRecord(delegator, delegatee, TOKENS.SPSP))!;
 
     // No changes
-    expect(active_delegation_record_after.amount).toBe(amount_delegated.toString());
+    expect(Number(active_delegation_record_after.amount)).toBe(amount_delegated);
     expect(active_delegation_record_after.last_undelegation_date).toBeNull();
     expect(active_delegation_record_after.last_undelegation_tx).toBeNull();
 });
@@ -223,7 +223,7 @@ test.dbOnly('return_tokens negative amount fails.', async () => {
     const active_delegation_record_after = (await fixture.testHelper.getActiveDelegationRecord(delegator, delegatee, TOKENS.SPSP))!;
 
     // No changes
-    expect(active_delegation_record_after.amount).toBe(amount_delegated.toString());
+    expect(Number(active_delegation_record_after.amount)).toBe(amount_delegated);
     expect(active_delegation_record_after.last_undelegation_date).toBeNull();
     expect(active_delegation_record_after.last_undelegation_tx).toBeNull();
 });
@@ -248,7 +248,7 @@ test.dbOnly('return_tokens using posting key succeeds.', async () => {
 
     const active_delegation_record_after = (await fixture.testHelper.getActiveDelegationRecord(delegator, delegatee, TOKENS.SPSP))!;
 
-    expect(active_delegation_record_after.amount).toBe('0');
+    expect(Number(active_delegation_record_after.amount)).toBe(0);
     expect(active_delegation_record_after.last_undelegation_date).toBeTruthy();
     expect(active_delegation_record_after.last_undelegation_tx).toBeTruthy();
 });

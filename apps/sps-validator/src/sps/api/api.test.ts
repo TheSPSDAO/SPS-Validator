@@ -336,7 +336,7 @@ describe('Token API endpoints', () => {
         const response = await fixture.request.get(`/tokens`).query(query);
         expect(response.status).toBe(status);
         if (response.ok) {
-            const bodyUsersWithToken = response.body?.map((e: any) => {
+            const bodyUsersWithToken = response.body.balances?.map((e: any) => {
                 return { player: e.player, token: e.token };
             });
             const usersWithToken = users.map((u: string) => {
@@ -359,7 +359,7 @@ describe('Token API endpoints', () => {
     `(`Checking tokens for [$param] should have [$users] listed with HTTP status [$status]`, async ({ param, status, users }) => {
         const response = await fixture.request.get(`/tokens/${param}`);
         expect(response.status).toBe(status);
-        const bodyUsers = response.body?.map((e: any) => e.player);
+        const bodyUsers = response.body?.balances.map((e: any) => e.player);
         expect(bodyUsers).toEqual(expect.arrayContaining(users));
     });
 
