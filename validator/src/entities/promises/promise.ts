@@ -34,6 +34,11 @@ export class PromiseRepository extends BaseRepository {
         return result;
     }
 
+    async countExpiredPromises(now: Date, trx?: Trx) {
+        const count = await this.query(PromiseEntity, trx).where('status', 'fulfilled').where('fulfilled_expiration', '<=', now).getCount();
+        return count;
+    }
+
     async getExpiredPromises(now: Date, trx?: Trx): Promise<PromiseEntity[]> {
         const result = await this.query(PromiseEntity, trx).where('status', 'fulfilled').where('fulfilled_expiration', '<=', now).getMany();
         return result;

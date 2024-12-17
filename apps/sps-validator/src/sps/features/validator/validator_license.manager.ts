@@ -50,7 +50,12 @@ export class SpsValidatorLicenseManager implements VirtualPayloadSource {
         });
     }
 
-    async process(): Promise<ProcessResult[]> {
+    async process(block: BlockRef, trx?: Trx): Promise<ProcessResult[]> {
+        const expiredBlockNum = this.getExpiredBlockNum(block.block_num);
+        const expiredCheckIns = await this.checkInRepository.countExpired(expiredBlockNum, trx);
+        if (expiredCheckIns === 0) {
+            return [];
+        }
         return [
             [
                 'custom_json',
@@ -224,7 +229,7 @@ export class SpsValidatorLicenseManager implements VirtualPayloadSource {
         const results: EventLog[] = [];
 
         // get all active check-ins that are not valid
-        const expiredBlockNum = action.op.block_num - this.#checkInConfig!.check_in_window_blocks - this.#checkInConfig!.check_in_interval_blocks;
+        const expiredBlockNum = this.getExpiredBlockNum(action.op.block_num);
         const expiredCheckIns = await this.checkInRepository.getExpired(expiredBlockNum, trx);
 
         for (const checkIn of expiredCheckIns) {
@@ -232,6 +237,10 @@ export class SpsValidatorLicenseManager implements VirtualPayloadSource {
         }
 
         return results;
+    }
+
+    private getExpiredBlockNum(block_num: number) {
+        return block_num - this.#checkInConfig!.check_in_window_blocks - this.#checkInConfig!.check_in_interval_blocks;
     }
 
     private async expireCheckIn(account: string, action: IAction, trx?: Trx) {

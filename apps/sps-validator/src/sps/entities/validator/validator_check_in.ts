@@ -23,6 +23,13 @@ export class SpsValidatorCheckInRepository extends BaseRepository {
     /**
      * Gets check ins that last checked in before the block_num
      */
+    async countExpired(block_num: number, trx?: Trx) {
+        return this.query(ValidatorCheckInEntity, trx).where('last_check_in_block_num', '<', block_num).where('status', 'active').getCount();
+    }
+
+    /**
+     * Gets check ins that last checked in before the block_num
+     */
     async getExpired(block_num: number, trx?: Trx) {
         return this.query(ValidatorCheckInEntity, trx).where('last_check_in_block_num', '<', block_num).where('status', 'active').getMany();
     }
