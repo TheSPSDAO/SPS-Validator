@@ -14,14 +14,16 @@ jobs:
               uses: actions/checkout@v3
 
             - name: Install and Build
-              env:
-                  PUBLIC_URL: https://thespsdao.github.io/SPS-Validator
-                  REACT_APP_BASEPATH: splinterlands-validator
               run: |
                   npm ci
                   npx nx openapi sps-validator-ui
                   npx nx build sps-validator-ui --configuration=production
                   cp dist/apps/sps-validator-ui/index.html dist/apps/sps-validator-ui/404.html
+              env:
+                  ASSET_URL: https://thespsdao.github.io/SPS-Validator
+                  APP_BASEPATH: SPS-Validator
+                  VALIDATOR_PREFIX: sl-qavsm_
+                  VALIDATOR_API_URL: https://splinterlands-validator.validator.qa.splinterlands.com
 
             - name: Upload static files as artifact
               id: deployment
