@@ -403,6 +403,14 @@ const check_in_validator = new Schema.Schema(
 
 const expire_check_ins = new Schema.Schema('expire_check_ins', object({}));
 
+const update_missed_blocks = new Schema.Schema(
+    'update_missed_blocks',
+    object({
+        account: Schema.hiveAccount.required(),
+        missed_blocks: number().integer().positive().required(),
+    }),
+);
+
 export {
     token_award,
     token_transfer,
@@ -445,4 +453,5 @@ export {
     check_in_validator,
     expire_check_ins,
     return_tokens,
+    update_missed_blocks,
 };

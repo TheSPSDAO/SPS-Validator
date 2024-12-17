@@ -4,12 +4,13 @@
     "projectType": "library",
     "targets": {
         "build": {
-            "executor": "@nx/js:tsc",
+            "executor": "@nx/esbuild:esbuild",
             "outputs": ["{options.outputPath}"],
             "options": {
                 "outputPath": "dist/libs/validator",
                 "tsConfig": "validator/tsconfig.lib.json",
-                "packageJson": "validator/package.json",
+                "platform": "node",
+                "format": ["cjs"],
                 "main": "validator/src/lib.ts",
                 "assets": ["validator/licenses/*"]
             }

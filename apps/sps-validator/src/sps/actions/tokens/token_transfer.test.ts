@@ -53,7 +53,7 @@ test.dbOnly('Unsupported token_transfer is ignored.', async () => {
     ).resolves.toBeUndefined();
     const balance1 = await fixture.testHelper.getDummyToken('steemmonsters');
     const balance2 = await fixture.testHelper.getDummyToken('steemmonsters2');
-    expect([balance1?.balance, balance2?.balance]).toStrictEqual([90, 10]);
+    expect([balance1?.balance, balance2?.balance]).toStrictEqual([100, undefined]);
 });
 
 test.dbOnly('Non Hive account token_transfer is ignored.', async () => {

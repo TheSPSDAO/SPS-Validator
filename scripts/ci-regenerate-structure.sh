@@ -8,6 +8,7 @@ SQITCH_DIR="${ROOT_DIR}/sqitch"
 COMPOSE_FILE="${ROOT_DIR}/docker-compose.yml"
 VALIDATOR_DIR="${ROOT_DIR}"
 PGPASSWORD=${POSTGRES_PASSWORD:-postgres}
+DOCKER_COMPOSE_NAME="splinterlands-validator"
 DOCKER_COMPOSE_NETWORK_DEFAULT=validator:postgres
 DOCKER_COMPOSE_NETWORK=${DOCKER_COMPOSE_NETWORK:-$DOCKER_COMPOSE_NETWORK_DEFAULT}
 
@@ -19,7 +20,7 @@ warn_customized_network() {
 }
 
 ensure_db() {
-  docker compose -f "${COMPOSE_FILE}" up --build -d pg
+  DOCKER_NAME=$DOCKER_COMPOSE_NAME docker compose -f "${COMPOSE_FILE}" up --build -d pg
 }
 
 ensure_migrations() {

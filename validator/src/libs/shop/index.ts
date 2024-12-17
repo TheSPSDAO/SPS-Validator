@@ -3,7 +3,6 @@ import { ActionIdentifier, ErrorType } from '../../entities/errors';
 import {
     BalanceGetter,
     BonusEntry,
-    CardConfig,
     DiscountEntry,
     DistributionEntry,
     NormalizedSaleDiscount,
@@ -20,7 +19,6 @@ import {
     Time,
     Tranche,
 } from './types';
-import { CardDistribution } from './card-distribution';
 import { PRNG } from 'seedrandom';
 import { sha256 } from 'js-sha256';
 import { PriceFeedError } from '../../utilities/price_feed';
@@ -106,11 +104,6 @@ const price_schema = object({
 // Only to assert types. Can be replaced by const price_schema: ObjectSchema<PriceEntry> = ...
 type _price = type_check<PriceEntry, InferType<typeof price_schema>>;
 
-const card_token_schema = object({
-    token: string().strict().required(),
-    xp: number().integer().required(),
-});
-
 const shop_schema = object({
     start_date: date()
         .required()
@@ -146,31 +139,6 @@ const token_schema = shop_schema.concat(
 // Only to assert types. Can be replaced by const price_schema: ObjectSchema<ShopTokenConfig> = ...
 type _token = type_check<ShopTokenConfig, InferType<typeof token_schema>>;
 
-const card_schema = shop_schema.concat(
-    object({
-        type: mixed<ShopItemType.CARD>().oneOf([ShopItemType.CARD]).required(),
-        edition: number().integer().required(),
-        card_detail_id: number().integer().required(),
-        common: card_token_schema.required(),
-        gold: card_token_schema.required(),
-        gold_probability: number()
-            .min(0)
-            .max(1)
-            .when('supply', {
-                is: Supply.UNLIMITED,
-                then: (schema) => schema.required(),
-                otherwise: (schema) => schema.transform(() => undefined),
-            }),
-    }),
-);
-
-// Only to assert types. Can be replaced by const price_schema: ObjectSchema<CardConfig> = ...
-type _card = type_check<CardConfig, InferType<typeof card_schema>>;
-
-function burn(t: Omit<SaleTransfer, 'to'>): SaleTransfer {
-    return { ...t, to: Defaults.burnAccount };
-}
-
 export type SaleResult = SaleTransfer;
 export type TypeItemNormal = { element: 'price' | 'discount' | 'bonus' | 'purchased'; token: string; amount: number };
 export type TypeItemConverted = Omit<TypeItemNormal, 'element'> & { element: `${TypeItemNormal['element']}_converted`; paid_token: string; conversion_rate: number };
@@ -194,11 +162,6 @@ export class Shop<Cookie = void> {
     // Could perhaps be renamed to be 'internal sales'
     private readonly tokenSales = new Map<string | symbol, ShopTokenConfig | Tranche<ShopTokenConfig>>();
 
-    // Card sales are not meant to be dealt with entirely by the validator; just the payment should be taken care of via the action.
-    // Some external process watching the output of the validator node should affect the correct changes, such as printing and transferring a card NFT to the right player.
-    // Could perhaps be renamed to be 'external sales'
-    private readonly cardSales = new Map<string | symbol, CardConfig | Tranche<CardConfig>>();
-
     constructor(
         // TODO: this clock now uses the _last_ time. It might rather use the current time instead?
         private readonly time: Time,
@@ -208,7 +171,6 @@ export class Shop<Cookie = void> {
 
     clear() {
         this.tokenSales.clear();
-        this.cardSales.clear();
     }
 
     static from(v: unknown) {
@@ -217,8 +179,6 @@ export class Shop<Cookie = void> {
             switch (v.type) {
                 case ShopItemType.TOKEN:
                     return token_schema.validateSync(token_schema.cast(v));
-                case ShopItemType.CARD:
-                    return card_schema.validateSync(card_schema.cast(v));
             }
         }
         throw new ShopError(`Unknown shop configuration object at runtime. (Currently only tokens are supported).`);
@@ -226,20 +186,6 @@ export class Shop<Cookie = void> {
 
     private static basicMatches(item1: ShopItem, item2: ShopItem) {
         return item1.balance_account === item2.balance_account && item1.requires_spellbook === item2.requires_spellbook;
-    }
-
-    private static cardMatches(card: CardConfig, shopItem: ShopItem): shopItem is CardConfig {
-        return (
-            this.basicMatches(card, shopItem) &&
-            shopItem.type === ShopItemType.CARD &&
-            card.card_detail_id === shopItem.card_detail_id &&
-            card.common.token === shopItem.common.token &&
-            card.gold.token === shopItem.gold.token
-        );
-    }
-
-    private static everyCardMatches(card: CardConfig, shopItems: ShopItem[]): shopItems is CardConfig[] {
-        return shopItems.every((v) => this.cardMatches(card, v));
     }
 
     private static tokenMatches(token: ShopTokenConfig, shopItem: ShopItem): shopItem is ShopTokenConfig {
@@ -274,15 +220,7 @@ export class Shop<Cookie = void> {
             }
 
             const marker = values[0];
-            let balanceTotal: number;
-            if (marker.type === ShopItemType.TOKEN) {
-                balanceTotal = await this.balanceGetter.getBalance(marker.balance_account, marker.token, cookie);
-            } else {
-                const remainingCommon = await this.balanceGetter.getBalance(marker.balance_account, marker.common.token, cookie);
-                const remainingGold = await this.balanceGetter.getBalance(marker.balance_account, marker.gold.token, cookie);
-                balanceTotal = remainingCommon + remainingGold;
-            }
-
+            const balanceTotal = await this.balanceGetter.getBalance(marker.balance_account, marker.token, cookie);
             let tranche = values.find((p) => p.tranche_reserves && balanceTotal > p.tranche_reserves);
 
             if (!tranche) {
@@ -300,22 +238,15 @@ export class Shop<Cookie = void> {
             if (values.supply === Supply.UNLIMITED) {
                 return [values, undefined];
             }
-            if (values.type === ShopItemType.TOKEN) {
-                // TODO: Refine typings.
-                const remaining = await this.balanceGetter.getBalance(values.balance_account, values.token, cookie);
-                return [values, remaining];
-            } else {
-                // TODO: Rewrite with new helper to use one query?
-                const remainingCommon = await this.balanceGetter.getBalance(values.balance_account, values.common.token, cookie);
-                const remainingGold = await this.balanceGetter.getBalance(values.balance_account, values.gold.token, cookie);
-                return [values, remainingGold + remainingCommon];
-            }
+            // TODO: Refine typings.
+            const remaining = await this.balanceGetter.getBalance(values.balance_account, values.token, cookie);
+            return [values, remaining];
         }
     }
 
     registerSale(id: string | symbol, config0: ShopItem, ...restTranchesConfig: ShopItem[]) {
         // TODO: Currently assume all shop items are sane (e.g. have no duplicated token PriceEntry).
-        const duplicateSaleKey = this.tokenSales.has(id) || this.cardSales.has(id);
+        const duplicateSaleKey = this.tokenSales.has(id);
         if (duplicateSaleKey) {
             throw new ShopError(`A sale with key [${String(id)}] has already been registered.`);
         }
@@ -345,21 +276,13 @@ export class Shop<Cookie = void> {
                 } else {
                     throw new ShopError('Not all shopitems in tranch seem to match');
                 }
-            } else {
-                if (Shop.everyCardMatches(config0, restTranchesConfig)) {
-                    this.cardSales.set(id, [config0, ...restTranchesConfig]);
-                } else {
-                    throw new ShopError('Not all shopitems in tranch seem to match');
-                }
             }
         } else {
             if (config0.type === ShopItemType.TOKEN) {
                 this.tokenSales.set(id, config0);
-            } else {
-                this.cardSales.set(id, config0);
             }
         }
-        const registeredSaleKey = this.tokenSales.has(id) || this.cardSales.has(id);
+        const registeredSaleKey = this.tokenSales.has(id);
         if (!registeredSaleKey) {
             throw new ShopError(`No sale with key [${String(id)}] seems to have been registered.`);
         }
@@ -443,7 +366,7 @@ export class Shop<Cookie = void> {
     }
 
     async currentSupply(id: string | symbol, cookie?: Cookie) {
-        const matchingShopItem = this.tokenSales.get(id) || this.cardSales.get(id);
+        const matchingShopItem = this.tokenSales.get(id);
         if (!matchingShopItem) {
             return;
         }
@@ -455,18 +378,14 @@ export class Shop<Cookie = void> {
     }
 
     hasEntry(id: string | symbol) {
-        return this.tokenSales.has(id) || this.cardSales.has(id);
+        return this.tokenSales.has(id);
     }
 
     private static itemHash(item: ShopItem) {
-        if (item.type === ShopItemType.CARD) {
-            return sha256(`${item.type}.${item.card_detail_id}.${JSON.stringify(item.price)}`);
-        } else {
-            return sha256(`${item.type}.${item.token}.${JSON.stringify(item.price)}`);
-        }
+        return sha256(`${item.type}.${item.token}.${JSON.stringify(item.price)}`);
     }
 
-    private static applyBonus(sale: Sale, shopItem: ShopTokenConfig | CardConfig): Bonus {
+    private static applyBonus(sale: Sale, shopItem: ShopTokenConfig): Bonus {
         if (sale.bonus_token === undefined) {
             return Bonus.Empty();
         }
@@ -505,7 +424,7 @@ export class Shop<Cookie = void> {
      * Returns a validated record of all side-effects that need to be persisted in the database.
      */
     async precalculateSale(player: string, sale: Sale, aid: ActionIdentifier, rng: PRNG, cookie?: Cookie): Promise<{ result: SaleResult[]; report: SaleReport }> {
-        const matchingShopItem = this.tokenSales.get(sale.id) || this.cardSales.get(sale.id);
+        const matchingShopItem = this.tokenSales.get(sale.id);
         if (!matchingShopItem) {
             throw new SaleError(`Sale [${String(sale.id)}] does not seem to exist`, aid, ErrorType.NoSuchSale);
         }
@@ -652,29 +571,6 @@ export class Shop<Cookie = void> {
             // Tokens can just be transferred
             results.push({ from: balance_account, to: player, token: item.token, amount: total_qty });
             purchaseReports.push(...purchaseReport(item.token, total_qty));
-        } else {
-            // Card tokens are burned: an external process should print and award NFTs based on confirmed burnings.
-
-            // Everything breaks if a CardItem ever has identical `cardItem.common.token === cardItem.gold.token`, so don't do that.
-            if (item.gold.token === item.common.token) {
-                throw new ShopError(`Common and gold token for card sale [${String(sale.id)}] is not unique.`);
-            }
-
-            const cardDistribution = await CardDistribution.from_item(this.balanceGetter, item, rng, cookie);
-            const counts: Record<string, number> = {};
-
-            for (const cardToken of cardDistribution.next(sale.qty)) {
-                counts[cardToken.token] = (counts[cardToken.token] || 0) + 1;
-            }
-
-            const golds: number = counts[item.gold.token] || 0;
-            const commons: number = counts[item.common.token] || 0;
-            if (golds) {
-                results.push(burn({ from: item.balance_account, token: item.gold.token, amount: golds }));
-            }
-            if (commons) {
-                results.push(burn({ from: item.balance_account, token: item.common.token, amount: commons }));
-            }
         }
 
         const report: SaleReport = new EventLog(

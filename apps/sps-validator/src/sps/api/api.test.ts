@@ -1,7 +1,7 @@
-import * as supertest from 'supertest';
+import supertest from 'supertest';
 import type { SuperTest, Test } from 'supertest';
 import { SpsConfigLoader } from '../config';
-import * as express from 'express';
+import express from 'express';
 import { Fixture as BaseFixture } from '../../__tests__/fixture';
 import { inject, injectable } from 'tsyringe';
 import { container } from '../../__tests__/test-composition-root';
@@ -48,7 +48,7 @@ describe('Price feed API endpoint', () => {
         await fixture.testHelper.insertExistingAdmins(['someadmin1', 'someadmin2', 'someadmin3']);
         await fixture.loader.load();
     });
-    // NB test instead of it here as that has pg-mem set up.
+
     test.dbOnly.each`
         token        | status | price
         ${'SPS'}     | ${404} | ${undefined}
@@ -226,10 +226,12 @@ describe('Pool settings endpoints', () => {
 
 describe('Balance API endpoint', () => {
     beforeEach(async () => {
-        await fixture.testHelper.setLiquidSPSBalance('richuser', 7331);
-        await fixture.testHelper.setDummyToken('richuser', 1, 'DEC');
-        await fixture.testHelper.setLiquidSPSBalance('pooruser', 1);
-        await fixture.testHelper.setDummyToken('pooruser', 3, 'DEC');
+        await Promise.all([
+            fixture.testHelper.setLiquidSPSBalance('richuser', 7331),
+            fixture.testHelper.setDummyToken('richuser', 1, 'DEC'),
+            fixture.testHelper.setLiquidSPSBalance('pooruser', 1),
+            fixture.testHelper.setDummyToken('pooruser', 3, 'DEC'),
+        ]);
         await fixture.loader.load();
     });
 
@@ -310,12 +312,14 @@ describe('Shop API', () => {
 
 describe('Token API endpoints', () => {
     beforeEach(async () => {
-        await fixture.testHelper.setMintedBalance('$MINTER', -200);
-        await fixture.testHelper.setDummyToken('alluser', 7, 'SPS');
-        await fixture.testHelper.setDummyToken('alluser', 7, 'DEC');
-        await fixture.testHelper.setDummyToken('alluser', 7, 'OTH');
-        await fixture.testHelper.setDummyToken('decuser', 7, 'DEC');
-        await fixture.testHelper.setDummyToken('othuser', 7, 'OTH');
+        await Promise.all([
+            fixture.testHelper.setMintedBalance('$MINTER', -200),
+            fixture.testHelper.setDummyToken('alluser', 7, 'SPS'),
+            fixture.testHelper.setDummyToken('alluser', 7, 'DEC'),
+            fixture.testHelper.setDummyToken('alluser', 7, 'OTH'),
+            fixture.testHelper.setDummyToken('decuser', 7, 'DEC'),
+            fixture.testHelper.setDummyToken('othuser', 7, 'OTH'),
+        ]);
         await fixture.loader.load();
     });
 
@@ -332,7 +336,7 @@ describe('Token API endpoints', () => {
         const response = await fixture.request.get(`/tokens`).query(query);
         expect(response.status).toBe(status);
         if (response.ok) {
-            const bodyUsersWithToken = response.body?.map((e: any) => {
+            const bodyUsersWithToken = response.body.balances?.map((e: any) => {
                 return { player: e.player, token: e.token };
             });
             const usersWithToken = users.map((u: string) => {
@@ -353,9 +357,9 @@ describe('Token API endpoints', () => {
         ${'OTH'}          | ${200} |  ${['alluser', 'othuser']}
         ${'SPSP'}         | ${200} |  ${[]}
     `(`Checking tokens for [$param] should have [$users] listed with HTTP status [$status]`, async ({ param, status, users }) => {
-        const response = await fixture.request.get(`/tokens/${param}`);
+        const response = await fixture.request.get(`/tokens/${param}`).query({ systemAccounts: 'true' });
         expect(response.status).toBe(status);
-        const bodyUsers = response.body?.map((e: any) => e.player);
+        const bodyUsers = response.body?.balances.map((e: any) => e.player);
         expect(bodyUsers).toEqual(expect.arrayContaining(users));
     });
 

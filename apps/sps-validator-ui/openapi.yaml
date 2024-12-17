@@ -1,0 +1,597 @@
+openapi: 3.1.0
+info:
+    title: Splinterlands Validator
+    description: "This is a Splinterlands Validator API Server"
+    contact:
+        email: matt@splinterlands.com
+    license:
+        name: MIT
+        url: https://choosealicense.com/licenses/mit/
+    version: 1.0.0
+servers:
+    - url: http://localhost:3333/
+paths:
+    /status:
+        get:
+            tags:
+                - Default
+            summary: Get the status of the validator node
+            operationId: getStatus
+            responses:
+                200:
+                    description: Successful operation
+                    content:
+                        application/json:
+                            schema:
+                                $ref: "#/components/schemas/Status"
+    /balances:
+        get:
+            tags:
+                - Default
+            summary: Gets the balances of account specified in the query params
+            description: Returns the list of balances for the specified account name. Will return empty array if the account name was not found.
+            operationId: getBalances
+            parameters:
+                - in: query
+                  name: account
+                  schema:
+                      type: string
+                  required: true
+                  description: Account name
+            responses:
+                200:
+                    description: Successful operation
+                    content:
+                        application/json:
+                            schema:
+                                $ref: "#/components/schemas/Balances"
+
+    /tokens/{token}:
+        get:
+            tags:
+                - Default
+            summary: Gets balances of the token
+            description: Returns the list of accounts with a balance of the specified token.
+            operationId: getBalancesByToken
+            parameters:
+                - in: path
+                  name: token
+                  schema:
+                      type: string
+                  required: true
+                  description: Name of the token
+                - in: query
+                  name: limit
+                  schema:
+                      type: number
+                  description: The number of results to return
+                - in: query
+                  name: skip
+                  schema:
+                      type: number
+                  description: The number of results to skip
+                - in: query
+                  name: systemAccounts
+                  schema:
+                      type: boolean
+                  description: Include system accounts?
+            responses:
+                200:
+                    description: Successful operation
+                    content:
+                        application/json:
+                            schema:
+                                $ref: "#/components/schemas/BalancesCount"
+
+    /tokens:
+        get:
+            tags:
+                - Default
+            summary: Gets balances of the token
+            description: Returns the list of accounts with a balance of the specified token.
+            operationId: getBalancesByTokens
+            parameters:
+                - in: query
+                  name: token
+                  schema:
+                      type: string
+                  required: true
+                  description: Name of the tokens. Can be specified multiple times to get balances for multiple tokens.
+                - in: query
+                  name: limit
+                  schema:
+                      type: number
+                  description: The number of results to return
+                - in: query
+                  name: skip
+                  schema:
+                      type: number
+                  description: The number of results to skip
+                - in: query
+                  name: systemAccounts
+                  schema:
+                      type: boolean
+                  description: Include system accounts?
+            responses:
+                200:
+                    description: Successful operation
+                    content:
+                        application/json:
+                            schema:
+                                $ref: "#/components/schemas/BalancesCount"
+
+    /validators:
+        get:
+            tags:
+                - Default
+            summary: Gets the list of validators
+            operationId: getValidators
+            parameters:
+                - in: query
+                  name: limit
+                  schema:
+                      type: integer
+                - in: query
+                  name: skip
+                  schema:
+                      type: integer
+                - in: query
+                  name: search
+                  schema:
+                      type: string
+            responses:
+                200:
+                    description: Successful operation
+                    content:
+                        application/json:
+                            schema:
+                                $ref: "#/components/schemas/Validators"
+
+    /validator:
+        get:
+            tags:
+                - Default
+            summary: Gets a validator
+            operationId: getValidator
+            parameters:
+                - in: query
+                  name: account
+                  schema:
+                      type: string
+            responses:
+                200:
+                    description: Successful operation
+                    content:
+                        application/json:
+                            schema:
+                                $ref: "#/components/schemas/Validator"
+
+    /votes_by_account:
+        get:
+            tags:
+                - Default
+            summary: Gets the votes performed by the specified account
+            operationId: getVotesByAccount
+            parameters:
+                - in: query
+                  name: account
+                  schema:
+                      type: string
+                  required: true
+                  description: Account name
+            responses:
+                200:
+                    description: Successful operation
+                    content:
+                        application/json:
+                            schema:
+                                $ref: "#/components/schemas/ValidatorVotes"
+    /votes_by_validator:
+        get:
+            tags:
+                - Default
+            summary: Gets the votes given to the specified validator
+            operationId: getVotesByValidator
+            parameters:
+                - in: query
+                  name: validator
+                  schema:
+                      type: string
+                  required: true
+                  description: Validator
+            responses:
+                200:
+                    description: Successful operation
+                    content:
+                        application/json:
+                            schema:
+                                $ref: "#/components/schemas/ValidatorVotes"
+
+    /validator_config:
+        get:
+            tags:
+                - Default
+            summary: Gets the validator configuration
+            operationId: getValidatorConfig
+            responses:
+                200:
+                    description: Successful operation
+                    content:
+                        application/json:
+                            schema:
+                                $ref: "#/components/schemas/ValidatorConfig"
+
+    /pool/{poolName}:
+        get:
+            tags:
+                - Default
+            summary: Gets the pool parameters of a specific reward pool
+            operationId: getPoolParams
+            parameters:
+                - in: path
+                  name: poolName
+                  schema:
+                      type: string
+                  required: true
+                  description: Name of the reward pool
+            responses:
+                200:
+                    description: Correctly configured pool params
+                    content:
+                        application/json:
+                            schema:
+                                $ref: "#/components/schemas/PoolSettings"
+                404:
+                    description: Pool not found
+                503:
+                    description: Pool found, but currently not configured correctly
+    /pool/{poolName}/reward_debt:
+        get:
+            tags:
+                - Default
+            summary: Gets the reward debt for an account in a specific reward pool
+            operationId: getRewardDebt
+            parameters:
+                - in: path
+                  name: poolName
+                  schema:
+                      type: string
+                  required: true
+                  description: Name of the reward pool
+                - in: query
+                  name: account
+                  schema:
+                      type: string
+                  required: true
+                  description: Account name
+            responses:
+                200:
+                    description: Current reward debt of account in pool
+                    content:
+                        application/json:
+                            schema:
+                                type: number
+                204:
+                    description: No reward debt for this account in pool
+                400:
+                    description: Missing account query parameter
+                404:
+                    description: Pool not found
+
+    /transactions/{blockNum}/token_transfer:
+        get:
+            tags:
+                - Default
+            summary: Gets the token transfers performed in the block
+            operationId: getTokenTransferTransactions
+            parameters:
+                - in: path
+                  name: blockNum
+                  schema:
+                      type: integer
+                  required: true
+                  description: Block number
+            responses:
+                200:
+                    description: Successful operation
+                    content:
+                        application/json:
+                            schema:
+                                $ref: "#/components/schemas/TokenTransferTransactions"
+                400:
+                    description: User error
+
+    /transactions/lookup:
+        get:
+            tags:
+                - Default
+            summary: Looks up a transaction by ID
+            operationId: getTransaction
+            parameters:
+                - in: query
+                  name: id
+                  schema:
+                      type: string
+                  required: true
+                  description: Transaction ID
+            responses:
+                "200":
+                    description: Successful operation
+                    content:
+                        application/json:
+                            schema:
+                                $ref: "#/components/schemas/Transaction"
+
+    /price_feed/{token}:
+        get:
+            tags:
+                - Default
+            summary: Get calculated price for a token
+            operationId: getPriceForToken
+            parameters:
+                - in: path
+                  name: token
+                  schema:
+                      type: string
+                  required: true
+                  description: Token identifier
+            responses:
+                200:
+                    description: Successful operation
+                    content:
+                        application/json:
+                            schema:
+                                $ref: "#/components/schemas/PriceAtPoint"
+                404:
+                    description: No price known for requested token
+                    content:
+                        application/json:
+                            schema:
+                                $ref: "#/components/schemas/NoPriceAtPoint"
+
+components:
+    schemas:
+        Balance:
+            type: object
+            required:
+                - player
+                - token
+                - balance
+            properties:
+                player:
+                    type: string
+                    default: ""
+                token:
+                    type: string
+                balance:
+                    type: number
+                    format: double
+
+        Balances:
+            type: array
+            items:
+                $ref: "#/components/schemas/Balance"
+
+        BalancesCount:
+            type: object
+            properties:
+                count:
+                    type: integer
+                    format: int64
+                balances:
+                    type: array
+                    items:
+                        $ref: "#/components/schemas/Balance"
+
+        Status:
+            type: object
+            required:
+                - status
+                - last_block
+            properties:
+                status:
+                    type: string
+                    enum: ["running"]
+                last_block:
+                    type: number
+
+        Validator:
+            type: object
+            required:
+                - account_name
+                - is_active
+                - post_url
+                - total_votes
+                - missed_blocks
+            properties:
+                account_name:
+                    type: string
+                is_active:
+                    type: boolean
+                post_url:
+                    type: string
+                    format: uri
+                    nullable: true
+                total_votes:
+                    type: number
+                    format: double
+                missed_blocks:
+                    type: integer
+                    format: int64
+
+        Validators:
+            type: object
+            properties:
+                validators:
+                    type: array
+                    items:
+                        $ref: "#/components/schemas/Validator"
+                count:
+                    type: integer
+                    format: int64
+
+        ValidatorVote:
+            type: object
+            required:
+                - voter
+                - validator
+                - vote_weight
+            properties:
+                voter:
+                    type: string
+                validator:
+                    type: string
+                vote_weight:
+                    type: number
+                    format: double
+
+        ValidatorVotes:
+            type: array
+            items:
+                $ref: "#/components/schemas/ValidatorVote"
+
+        ValidatorConfig:
+            type: object
+            required:
+                - reward_start_block
+                - tokens_per_block
+                - reward_token
+                - min_validators
+                - reduction_blocks
+                - max_block_age
+                - reduction_pct
+                - max_votes
+                - num_top_validators
+            properties:
+                reward_start_block:
+                    type: number
+                tokens_per_block:
+                    type: number
+                reward_token:
+                    type: string
+                min_validators:
+                    type: number
+                reduction_blocks:
+                    type: number
+                max_block_age:
+                    type: number
+                reduction_pct:
+                    type: number
+                max_votes:
+                    type: number
+                num_top_validators:
+                    type: number
+
+        TokenTransferTransaction:
+            type: object
+            required:
+                - id
+                - success
+                - from
+                - to
+                - qty
+                - token
+                - memo
+            properties:
+                id:
+                    type: string
+                success:
+                    type: boolean
+                from:
+                    type: string
+                to:
+                    type: string
+                qty:
+                    type: number
+                token:
+                    type: string
+                memo:
+                    type: string
+                error:
+                    type: object
+                    required:
+                        - message
+                        - code
+                    properties:
+                        message:
+                            type: string
+                        code:
+                            type: number
+
+        TokenTransferTransactions:
+            type: array
+            items:
+                $ref: "#/components/schemas/TokenTransferTransaction"
+
+        Transaction:
+            type: object
+            required:
+                - id
+                - block_id
+                - prev_block_id
+                - block_num
+                - type
+                - player
+            properties:
+                id:
+                    type: string
+                block_id:
+                    type: string
+                prev_block_id:
+                    type: string
+                block_num:
+                    type: integer
+                type:
+                    type: string
+                player:
+                    type: string
+                data:
+                    type: string
+                success:
+                    type: boolean
+                error:
+                    type: string
+                created_date:
+                    type: string
+                    format: date-time
+                result:
+                    type: string
+
+        NoPriceAtPoint:
+            type: object
+            required:
+                - token
+                - block_time
+            properties:
+                token:
+                    type: string
+                block_time:
+                    type: string
+                    format: date-time
+
+        PriceAtPoint:
+            allOf:
+                - $ref: "#/components/schemas/NoPriceAtPoint"
+                - type: object
+                  required:
+                      - price
+                  properties:
+                      price:
+                          type: number
+
+        PoolSettings:
+            type: object
+            required:
+                - acc_tokens_per_share
+                - tokens_per_block
+                - start_block
+                - last_reward_block
+            properties:
+                acc_tokens_per_share:
+                    type: number
+                tokens_per_block:
+                    type: number
+                start_block:
+                    type: number
+                last_reward_block:
+                    type: number

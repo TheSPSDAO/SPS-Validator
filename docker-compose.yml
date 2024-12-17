@@ -9,16 +9,17 @@ services:
       - pgdata:/var/lib/postgresql/data
     networks:
       - "postgres"
-    environment:
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
-      POSTGRES_USER: ${POSTGRES_USER:-postgres}
-      POSTGRES_DB: ${POSTGRES_DB:-postgres}
+    restart: on-failure
     healthcheck:
       test: ["CMD-SHELL", "pg_isready", "-d", "${POSTGRES_DB:-postgres}"]
       interval: 30s
       timeout: 60s
       retries: 5
       start_period: 80s
+    environment:
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_DB: ${POSTGRES_DB:-postgres}
 
   validator:
     build:
@@ -29,6 +30,7 @@ services:
     networks:
       - "postgres"
       - "validator"
+    restart: on-failure
     environment:
       API_PORT: "3333"
       POSTGRES_PASSWORD: ${APP_PASSWORD:-validator}
@@ -74,11 +76,13 @@ services:
 
   ui:
     build:
-      context: ./ui
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: ./apps/sps-validator-ui/Dockerfile
+      no_cache: true
       args:
         VALIDATOR_API_URL: "http://localhost:3333"
         VALIDATOR_PREFIX: "${CUSTOM_JSON_PREFIX:-sm_}"
+    restart: on-failure
     ports:
       - "8888:80"
     networks:

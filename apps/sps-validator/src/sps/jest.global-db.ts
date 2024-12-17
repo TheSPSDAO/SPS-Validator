@@ -1,7 +1,7 @@
 import { PostgreSqlContainer, StartedPostgreSqlContainer } from '@testcontainers/postgresql';
-import * as fs from 'fs';
+import fs from 'fs';
 import knex from 'knex';
-import * as path from 'path';
+import path from 'path';
 
 const TEMPLATE_DB_NAME = 'sps_validator_test_template';
 
@@ -15,7 +15,7 @@ export class JestGlobalDb {
     }
 
     async init() {
-        this.postgresContainer = await new PostgreSqlContainer().withDatabase(TEMPLATE_DB_NAME).start();
+        this.postgresContainer = await new PostgreSqlContainer().withReuse().withDatabase(TEMPLATE_DB_NAME).start();
 
         // create template db
         const knexInstance = knex({

@@ -28,4 +28,4 @@ const t = Lazy.from(() => lazy_container.value.resolve<TestWrapper>(TestWrapper)
 Object.defineProperty(test, 'dbOnly', { get: () => t.value });
 
 // we're using testcontainers now so test timeouts need to be pretty high.
-jest.setTimeout(60_000);
+jest.setTimeout(60_000 * 5);

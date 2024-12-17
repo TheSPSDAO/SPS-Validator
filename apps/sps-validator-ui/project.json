@@ -1,0 +1,84 @@
+{
+    "name": "sps-validator-ui",
+    "$schema": "../../node_modules/nx/schemas/project-schema.json",
+    "sourceRoot": "apps/sps-validator-ui/src",
+    "projectType": "application",
+    "tags": [],
+    "targets": {
+        "openapi": {
+            "executor": "nx:run-commands",
+            "options": {
+                "cwd": "{projectRoot}",
+                "command": "npx openapi -i openapi.yaml -o src/app/services/openapi"
+            }
+        },
+        "build": {
+            "executor": "@nx/vite:build",
+            "outputs": ["{options.outputPath}"],
+            "defaultConfiguration": "production",
+            "options": {
+                "outputPath": "dist/apps/sps-validator-ui"
+            },
+            "dependsOn": ["openapi"],
+            "configurations": {
+                "development": {
+                    "mode": "development"
+                },
+                "production": {
+                    "mode": "production"
+                }
+            }
+        },
+        "serve": {
+            "executor": "@nx/vite:dev-server",
+            "defaultConfiguration": "development",
+            "options": {
+                "buildTarget": "sps-validator-ui:build"
+            },
+            "configurations": {
+                "development": {
+                    "buildTarget": "sps-validator-ui:build:development",
+                    "hmr": true
+                },
+                "production": {
+                    "buildTarget": "sps-validator-ui:build:production",
+                    "hmr": false
+                }
+            }
+        },
+        "preview": {
+            "dependsOn": ["build"],
+            "executor": "@nx/vite:preview-server",
+            "defaultConfiguration": "development",
+            "options": {
+                "buildTarget": "sps-validator-ui:build"
+            },
+            "configurations": {
+                "development": {
+                    "buildTarget": "sps-validator-ui:build:development"
+                },
+                "production": {
+                    "buildTarget": "sps-validator-ui:build:production"
+                }
+            }
+        },
+        "test": {
+            "executor": "@nx/vite:test",
+            "outputs": ["{options.reportsDirectory}"],
+            "options": {
+                "reportsDirectory": "../../coverage/apps/sps-validator-ui"
+            }
+        },
+        "lint": {
+            "executor": "@nx/eslint:lint"
+        },
+        "serve-static": {
+            "executor": "@nx/web:file-server",
+            "dependsOn": ["build"],
+            "options": {
+                "buildTarget": "sps-validator-ui:build",
+                "spa": true
+            }
+        }
+    }
+}

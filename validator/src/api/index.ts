@@ -12,7 +12,7 @@ import { Middleware } from './middleware';
 import { TransactionMode, TransactionStarter } from '../db/transaction';
 import { Resolver } from '../utilities/dependency-injection';
 import { isStringArray } from '../utilities/guards';
-import { PoolsHelper } from '../config';
+import { PoolsHelper, ValidatorWatch } from '../config';
 import { Shop } from '../libs/shop';
 
 type ApiOptions = {
@@ -21,291 +21,421 @@ type ApiOptions = {
     resolver: Resolver;
 };
 
+// @ts-expect-error
+BigInt.prototype.toJSON = function () {
+    return this.toString();
+};
+
 export function registerApiRoutes(app: Router, opts: ApiOptions): void {
     const { health_checker, injection_middleware, resolver } = opts;
-    // Register middleware doing DI in requests. Also makes sure we see consistent, filled caches.
     app.use(injection_middleware.attachResolver(resolver));
     if (health_checker) {
         enableHealthChecker(app);
     }
 
-    // Get the current status of the validator node
-    app.get('/status', async (req, res) => {
-        const lastBlockCache = req.resolver.resolve<LastBlockCache>(LastBlockCache);
-        res.json({
-            status: 'running',
-            last_block: lastBlockCache.value?.block_num || 0,
-        });
+    app.get('/status', async (req, res, next) => {
+        try {
+            const lastBlockCache = req.resolver.resolve<LastBlockCache>(LastBlockCache);
+            res.json({
+                status: 'running',
+                last_block: lastBlockCache.value?.block_num || 0,
+            });
+        } catch (err) {
+            next(err);
+        }
     });
 
-    app.get('/shop/:saleName', async (req, res) => {
-        const { saleName } = req.params;
-        const trxStarter = req.resolver.resolve(TransactionStarter);
-        const licenseShop = req.resolver.resolve<Shop<Trx>>(Shop);
+    app.get('/shop/:saleName', async (req, res, next) => {
+        try {
+            const { saleName } = req.params;
+            const trxStarter = req.resolver.resolve(TransactionStarter);
+            const licenseShop = req.resolver.resolve<Shop<Trx>>(Shop);
 
-        if (licenseShop.hasEntry(saleName)) {
-            await trxStarter.withTransaction(TransactionMode.Reporting, async (trx?: Trx) => {
-                try {
-                    const info = await licenseShop.currentSupply(saleName, trx);
-                    if (info) {
-                        res.status(200).json(info);
-                    } else {
-                        res.status(404).end();
+            if (licenseShop.hasEntry(saleName)) {
+                await trxStarter.withTransaction(TransactionMode.Reporting, async (trx?: Trx) => {
+                    try {
+                        const info = await licenseShop.currentSupply(saleName, trx);
+                        if (info) {
+                            res.status(200).json(info);
+                        } else {
+                            res.status(404).end();
+                        }
+                    } catch (e: unknown) {
+                        res.status(503).end();
                     }
-                } catch (e: unknown) {
+                });
+            } else {
+                res.status(404).end();
+            }
+        } catch (err) {
+            next(err);
+        }
+    });
+
+    app.get('/balances', async (req, res, next) => {
+        try {
+            const account = typeof req.query.account === 'string' ? req.query.account : undefined;
+            if (account === undefined) {
+                res.status(400).end();
+                return;
+            }
+
+            const trxStarter = req.resolver.resolve(TransactionStarter);
+            const Balance = req.resolver.resolve(BalanceRepository);
+            await trxStarter.withTransaction(TransactionMode.Reporting, async (trx?: Trx) => {
+                res.json(await Balance.getBalances(account, trx));
+            });
+        } catch (err) {
+            next(err);
+        }
+    });
+
+    app.get('/:token/balances', async (req, res, next) => {
+        try {
+            const MAX = 100;
+            const accounts = typeof req.query.accounts === 'string' ? req.query.accounts.split(',').slice(0, MAX) : [];
+            const token = typeof req.params.token === 'string' ? req.params.token.toUpperCase() : undefined;
+            if (accounts.length <= 0 || !token) {
+                res.status(400).end();
+                return;
+            }
+
+            const trxStarter = req.resolver.resolve(TransactionStarter);
+            const Balance = req.resolver.resolve(BalanceRepository);
+            await trxStarter.withTransaction(TransactionMode.Reporting, async (trx?: Trx) => {
+                res.json(await Balance.getMultipleBalancesByToken(token, accounts, trx));
+            });
+        } catch (err) {
+            next(err);
+        }
+    });
+
+    app.get('/validators', async (req, res, next) => {
+        try {
+            const trxStarter = req.resolver.resolve(TransactionStarter);
+            const Validator = req.resolver.resolve(ValidatorRepository);
+            const skip = typeof req.query.skip === 'string' ? parseInt(req.query.skip, 10) : 0;
+            const limit = typeof req.query.limit === 'string' ? parseInt(req.query.limit, 10) : 100;
+            const active = typeof req.query.active === 'string' ? req.query.active.toLowerCase() === 'true' : undefined;
+            const search = typeof req.query.search === 'string' ? req.query.search : undefined;
+            await trxStarter.withTransaction(TransactionMode.Reporting, async (trx?: Trx) => {
+                res.json(await Validator.getValidators({ count: true, skip, limit, is_active: active, search }, trx));
+            });
+        } catch (err) {
+            next(err);
+        }
+    });
+
+    app.get('/validator', async (req, res, next) => {
+        try {
+            const trxStarter = req.resolver.resolve(TransactionStarter);
+            const Validator = req.resolver.resolve(ValidatorRepository);
+            const account = typeof req.query.account === 'string' ? req.query.account : undefined;
+            if (account === undefined) {
+                res.status(400).end();
+                return;
+            }
+            await trxStarter.withTransaction(TransactionMode.Reporting, async (trx?: Trx) => {
+                res.json(await Validator.lookup(account, trx));
+            });
+        } catch (err) {
+            next(err);
+        }
+    });
+
+    app.get('/votes_by_account', async (req, res, next) => {
+        try {
+            const trxStarter = req.resolver.resolve(TransactionStarter);
+            const ValidatorVote = req.resolver.resolve(ValidatorVoteRepository);
+            await trxStarter.withTransaction(TransactionMode.Reporting, async (trx?: Trx) => {
+                res.json(await ValidatorVote.lookupByVoter(req.query.account as string, trx));
+            });
+        } catch (err) {
+            next(err);
+        }
+    });
+
+    app.get('/votes_by_validator', async (req, res, next) => {
+        try {
+            const trxStarter = req.resolver.resolve(TransactionStarter);
+            const ValidatorVote = req.resolver.resolve(ValidatorVoteRepository);
+            await trxStarter.withTransaction(TransactionMode.Reporting, async (trx?: Trx) => {
+                res.json(await ValidatorVote.lookupByValidator(req.query.validator as string, trx));
+            });
+        } catch (err) {
+            next(err);
+        }
+    });
+
+    app.get('/validator_config', async (req, res, next) => {
+        try {
+            const watcher = req.resolver.resolve<ValidatorWatch>(ValidatorWatch);
+            if (!watcher.validator) {
+                res.status(503).end();
+                return;
+            }
+            res.json(watcher.validator);
+        } catch (err) {
+            next(err);
+        }
+    });
+
+    app.get('/pool/:poolName', async (req, res, next) => {
+        try {
+            const { poolName } = req.params;
+            const poolsHelper = req.resolver.resolve(PoolsHelper);
+            if (!poolsHelper.isPool(poolName)) {
+                res.status(404).end();
+                return;
+            }
+            const trxStarter = req.resolver.resolve(TransactionStarter);
+            const StakingRewards = req.resolver.resolve(StakingRewardsRepository);
+            await trxStarter.withTransaction(TransactionMode.Reporting, async (trx?: Trx) => {
+                const params = await StakingRewards.getPoolParameters(poolName, trx);
+                if (params !== null) {
+                    res.status(200).json(params);
+                } else {
                     res.status(503).end();
                 }
             });
-        } else {
-            res.status(404).end();
+        } catch (err) {
+            next(err);
         }
     });
 
-    // Get token balances for a specified account name
-    app.get('/balances', async (req, res) => {
-        const account = typeof req.query.account === 'string' ? req.query.account : undefined;
-        if (account === undefined) {
-            res.status(400).end();
-            return;
-        }
-
-        const trxStarter = req.resolver.resolve(TransactionStarter);
-        const Balance = req.resolver.resolve(BalanceRepository);
-        await trxStarter.withTransaction(TransactionMode.Reporting, async (trx?: Trx) => {
-            res.json(await Balance.getBalances(account, trx));
-        });
-    });
-
-    // Get token balances for up to 100 accounts
-    app.get('/:token/balances', async (req, res) => {
-        const MAX = 100;
-        const accounts = typeof req.query.accounts === 'string' ? req.query.accounts.split(',').slice(0, MAX) : [];
-        const token = typeof req.params.token === 'string' ? req.params.token.toUpperCase() : undefined;
-        if (accounts.length <= 0 || !token) {
-            res.status(400).end();
-            return;
-        }
-
-        const trxStarter = req.resolver.resolve(TransactionStarter);
-        const Balance = req.resolver.resolve(BalanceRepository);
-        await trxStarter.withTransaction(TransactionMode.Reporting, async (trx?: Trx) => {
-            res.json(await Balance.getMultipleBalancesByToken(token, accounts, trx));
-        });
-    });
-
-    // Get the current list of SPS validators
-    app.get('/validators', async (req, res) => {
-        const trxStarter = req.resolver.resolve(TransactionStarter);
-        const Validator = req.resolver.resolve(ValidatorRepository);
-        await trxStarter.withTransaction(TransactionMode.Reporting, async (trx?: Trx) => {
-            res.json(await Validator.getValidators(trx));
-        });
-    });
-
-    // Get the list of validators that the specified account votes on
-    app.get('/votes_by_account', async (req, res) => {
-        const trxStarter = req.resolver.resolve(TransactionStarter);
-        const ValidatorVote = req.resolver.resolve(ValidatorVoteRepository);
-        await trxStarter.withTransaction(TransactionMode.Reporting, async (trx?: Trx) => {
-            res.json(await ValidatorVote.lookupByVoter(req.query.account as string, trx));
-        });
-    });
-
-    // Get the list of acconts voting for the specified validator
-    app.get('/votes_by_validator', async (req, res) => {
-        const trxStarter = req.resolver.resolve(TransactionStarter);
-        const ValidatorVote = req.resolver.resolve(ValidatorVoteRepository);
-        await trxStarter.withTransaction(TransactionMode.Reporting, async (trx?: Trx) => {
-            res.json(await ValidatorVote.lookupByValidator(req.query.validator as string, trx));
-        });
-    });
-
-    app.get('/pool/:poolName', async (req, res) => {
-        const { poolName } = req.params;
-        const poolsHelper = req.resolver.resolve(PoolsHelper);
-        if (!poolsHelper.isPool(poolName)) {
-            res.status(404).end();
-            return;
-        }
-        const trxStarter = req.resolver.resolve(TransactionStarter);
-        const StakingRewards = req.resolver.resolve(StakingRewardsRepository);
-        await trxStarter.withTransaction(TransactionMode.Reporting, async (trx?: Trx) => {
-            const params = await StakingRewards.getPoolParameters(poolName, trx);
-            if (params !== null) {
-                res.status(200).json(params);
-            } else {
-                // No record for this pool, that should have records; transient error due to broken db config?
-                res.status(503).end();
-            }
-        });
-    });
-
-    app.get('/pool/:poolName/reward_debt', async (req, res) => {
-        const { poolName } = req.params;
-        const poolsHelper = req.resolver.resolve(PoolsHelper);
-        if (!poolsHelper.isPool(poolName)) {
-            res.status(404).end();
-            return;
-        }
-
-        const account = typeof req.query.account === 'string' ? req.query.account : undefined;
-        if (account === undefined) {
-            res.status(400).end();
-            return;
-        }
-
-        const trxStarter = req.resolver.resolve(TransactionStarter);
-        const StakingRewards = req.resolver.resolve(StakingRewardsRepository);
-        await trxStarter.withTransaction(TransactionMode.Reporting, async (trx?: Trx) => {
-            const debt = await StakingRewards.getRewardDebt(poolName, account, trx);
-            // Not currently possible to be undefined due to defaults chosen elsewhere
-            if (debt !== undefined) {
-                res.status(200).json(debt);
-            } else {
-                // No record for this player + pool_name: send empty response
-                res.status(204).end();
-            }
-        });
-    });
-
-    app.get('/pool/:poolName/account_info', async (req, res) => {
-        const { poolName } = req.params;
-        const poolsHelper = req.resolver.resolve(PoolsHelper);
-        if (!poolsHelper.isPool(poolName)) {
-            res.status(404).end();
-            return;
-        }
-
-        const account = typeof req.query.account === 'string' ? req.query.account : undefined;
-        if (account === undefined) {
-            res.status(400).end();
-            return;
-        }
-
-        const trxStarter = req.resolver.resolve(TransactionStarter);
-        const StakingRewards = req.resolver.resolve(StakingRewardsRepository);
-        await trxStarter.withTransaction(TransactionMode.Reporting, async (trx?: Trx) => {
-            const debt = await StakingRewards.getAccountStakedInfo(poolName, account, trx);
-            // Not currently possible to be undefined due to defaults chosen elsewhere
-            if (debt !== undefined) {
-                res.status(200).json(debt);
-            } else {
-                // TODO this doesn't happen because of the repository - but confirm before removing.
-                // No record for this player + pool_name: send empty response
-                res.status(204).end();
-            }
-        });
-    });
-
-    app.get('/transactions/:blockNum/token_transfer', async (req, res) => {
-        const blockNum = Number(req.params.blockNum);
-
-        if (!Number.isInteger(blockNum)) {
-            res.status(400).end();
-            return;
-        }
-
-        const lastBlockCache = req.resolver.resolve<LastBlockCache>(LastBlockCache);
-        const trxStarter = req.resolver.resolve(TransactionStarter);
-        const TransactionRepository = req.resolver.resolve(TransactionRepository_);
-        await trxStarter.withTransaction(TransactionMode.Reporting, async (trx?: Trx) => {
-            const data = await TransactionRepository.lookupTokenTransferByBlockNum(blockNum, trx);
-
-            if (data.length === 0 && lastBlockCache.value !== null && lastBlockCache.value.block_num < blockNum) {
-                // Return 404 when a block has not been processed yet.
+    app.get('/pool/:poolName/reward_debt', async (req, res, next) => {
+        try {
+            const { poolName } = req.params;
+            const poolsHelper = req.resolver.resolve(PoolsHelper);
+            if (!poolsHelper.isPool(poolName)) {
                 res.status(404).end();
                 return;
             }
 
-            // TODO: Can be cached (by intermediates) as it's immutable data, when we've seen the block.
-            // We should set headers for intermediate caches to cache it.
-            res.status(200).json(data);
-        });
+            const account = typeof req.query.account === 'string' ? req.query.account : undefined;
+            if (account === undefined) {
+                res.status(400).end();
+                return;
+            }
+
+            const trxStarter = req.resolver.resolve(TransactionStarter);
+            const StakingRewards = req.resolver.resolve(StakingRewardsRepository);
+            await trxStarter.withTransaction(TransactionMode.Reporting, async (trx?: Trx) => {
+                const debt = await StakingRewards.getRewardDebt(poolName, account, trx);
+                if (debt !== undefined) {
+                    res.status(200).json(debt);
+                } else {
+                    res.status(204).end();
+                }
+            });
+        } catch (err) {
+            next(err);
+        }
     });
 
-    app.get('/transactions/:blockNum', async (req, res) => {
-        const blockNum = Number(req.params.blockNum);
-
-        if (!Number.isInteger(blockNum)) {
-            res.status(400).end();
-            return;
-        }
-
-        const lastBlockCache = req.resolver.resolve<LastBlockCache>(LastBlockCache);
-        const trxStarter = req.resolver.resolve(TransactionStarter);
-        const TransactionRepository = req.resolver.resolve(TransactionRepository_);
-        await trxStarter.withTransaction(TransactionMode.Reporting, async (trx?: Trx) => {
-            const data = await TransactionRepository.lookupByBlockNum(blockNum, trx);
-
-            if (data.length === 0 && lastBlockCache.value !== null && lastBlockCache.value.block_num < blockNum) {
-                // Return 404 when a block has not been processed yet.
+    app.get('/pool/:poolName/account_info', async (req, res, next) => {
+        try {
+            const { poolName } = req.params;
+            const poolsHelper = req.resolver.resolve(PoolsHelper);
+            if (!poolsHelper.isPool(poolName)) {
                 res.status(404).end();
                 return;
             }
 
-            // TODO: Can be cached (by intermediates) as it's immutable data, when we've seen the block.
-            // We should set headers for intermediate caches to cache it.
-            res.status(200).json(data);
-        });
-    });
-
-    app.get('/price_feed/:token', async (req, res) => {
-        const token = req.params.token;
-        // TODO: Timezone correction for blockchain time?
-        const lastBlockCache = req.resolver.resolve<LastBlockCache>(LastBlockCache);
-        const date = lastBlockCache.value?.block_time || new Date();
-        const trxStarter = req.resolver.resolve<TransactionStarter>(TransactionStarter);
-        const feed = req.resolver.resolve<PriceFeedConsumer>(PriceFeedConsumer);
-        await trxStarter.withTransaction(TransactionMode.Reporting, async (trx?: Trx) => {
-            try {
-                const price = await feed.getPriceAtPoint(token, date, trx);
-                if (price !== undefined) {
-                    res.status(200).json({ token, date, price });
-                } else {
-                    res.status(404).json({ token, date });
-                }
-            } catch (e: unknown) {
-                if (e instanceof PriceFeedError) {
-                    res.status(404).json({ token, date });
-                } else {
-                    // Should not happen, but oh well
-                    throw e;
-                }
+            const account = typeof req.query.account === 'string' ? req.query.account : undefined;
+            if (account === undefined) {
+                res.status(400).end();
+                return;
             }
-        });
-    });
 
-    // Get token balances for specific token
-    app.get('/tokens/:token', async (req, res) => {
-        const token = req.params.token;
-        const trxStarter = req.resolver.resolve(TransactionStarter);
-        const Balance = req.resolver.resolve(BalanceRepository);
-        await trxStarter.withTransaction(TransactionMode.Reporting, async (trx?: Trx) => {
-            res.json(await Balance.getTokenBalances([token], trx));
-        });
-    });
-
-    // Get all token balances for specific token(s), via query param
-    app.get('/tokens', async (req, res) => {
-        const tokens = typeof req.query.token === 'string' ? [req.query.token] : isStringArray(req.query.token) ? req.query.token : undefined;
-        if (tokens === undefined || tokens.length === 0) {
-            res.status(400).end();
-            return;
+            const trxStarter = req.resolver.resolve(TransactionStarter);
+            const StakingRewards = req.resolver.resolve(StakingRewardsRepository);
+            await trxStarter.withTransaction(TransactionMode.Reporting, async (trx?: Trx) => {
+                const debt = await StakingRewards.getAccountStakedInfo(poolName, account, trx);
+                if (debt !== undefined) {
+                    res.status(200).json(debt);
+                } else {
+                    res.status(204).end();
+                }
+            });
+        } catch (err) {
+            next(err);
         }
-
-        const trxStarter = req.resolver.resolve(TransactionStarter);
-        const Balance = req.resolver.resolve(BalanceRepository);
-        await trxStarter.withTransaction(TransactionMode.Reporting, async (trx?: Trx) => {
-            res.json(await Balance.getTokenBalances(tokens, trx));
-        });
     });
 
-    app.get('/tokens/:token/supply', async (req, res) => {
-        const token = req.params.token;
-        const trxStarter = req.resolver.resolve<TransactionStarter>(TransactionStarter);
-        const Balance = req.resolver.resolve(BalanceRepository);
-        await trxStarter.withTransaction(TransactionMode.Reporting, async (trx?: Trx) => {
-            res.json(await Balance.getSupply(token, trx));
-        });
+    app.get('/transactions/:blockNum/token_transfer', async (req, res, next) => {
+        try {
+            const blockNum = Number(req.params.blockNum);
+
+            if (!Number.isInteger(blockNum)) {
+                res.status(400).end();
+                return;
+            }
+
+            const lastBlockCache = req.resolver.resolve<LastBlockCache>(LastBlockCache);
+            const trxStarter = req.resolver.resolve(TransactionStarter);
+            const TransactionRepository = req.resolver.resolve(TransactionRepository_);
+            await trxStarter.withTransaction(TransactionMode.Reporting, async (trx?: Trx) => {
+                const data = await TransactionRepository.lookupTokenTransferByBlockNum(blockNum, trx);
+
+                if (data.length === 0 && lastBlockCache.value !== null && lastBlockCache.value.block_num < blockNum) {
+                    res.status(404).end();
+                    return;
+                }
+
+                res.status(200).json(data);
+            });
+        } catch (err) {
+            next(err);
+        }
+    });
+
+    app.get('/transactions/:blockNum', async (req, res, next) => {
+        try {
+            const blockNum = Number(req.params.blockNum);
+
+            if (!Number.isInteger(blockNum)) {
+                res.status(400).end();
+                return;
+            }
+
+            const lastBlockCache = req.resolver.resolve<LastBlockCache>(LastBlockCache);
+            const trxStarter = req.resolver.resolve(TransactionStarter);
+            const TransactionRepository = req.resolver.resolve(TransactionRepository_);
+            await trxStarter.withTransaction(TransactionMode.Reporting, async (trx?: Trx) => {
+                const data = await TransactionRepository.lookupByBlockNum(blockNum, trx);
+
+                if (data.length === 0 && lastBlockCache.value !== null && lastBlockCache.value.block_num < blockNum) {
+                    res.status(404).end();
+                    return;
+                }
+
+                res.status(200).json(data);
+            });
+        } catch (err) {
+            next(err);
+        }
+    });
+
+    app.get('/transactions/lookup', async (req, res, next) => {
+        try {
+            const trxStarter = req.resolver.resolve(TransactionStarter);
+            const TransactionRepository = req.resolver.resolve(TransactionRepository_);
+            const id = typeof req.query.id === 'string' ? req.query.id : undefined;
+            if (id === undefined) {
+                res.status(400).end();
+                return;
+            }
+            await trxStarter.withTransaction(TransactionMode.Reporting, async (trx?: Trx) => {
+                const data = await TransactionRepository.lookupByTrxId(id, trx);
+                if (data === null) {
+                    res.status(404).end();
+                    return;
+                }
+                res.status(200).json(data);
+            });
+        } catch (err) {
+            next(err);
+        }
+    });
+
+    app.get('/price_feed/:token', async (req, res, next) => {
+        try {
+            const token = req.params.token;
+            const lastBlockCache = req.resolver.resolve<LastBlockCache>(LastBlockCache);
+            const date = lastBlockCache.value?.block_time || new Date();
+            const trxStarter = req.resolver.resolve<TransactionStarter>(TransactionStarter);
+            const feed = req.resolver.resolve<PriceFeedConsumer>(PriceFeedConsumer);
+            await trxStarter.withTransaction(TransactionMode.Reporting, async (trx?: Trx) => {
+                try {
+                    const price = await feed.getPriceAtPoint(token, date, trx);
+                    if (price !== undefined) {
+                        res.status(200).json({ token, date, price });
+                    } else {
+                        res.status(404).json({ token, date });
+                    }
+                } catch (e: unknown) {
+                    if (e instanceof PriceFeedError) {
+                        res.status(404).json({ token, date });
+                    } else {
+                        throw e;
+                    }
+                }
+            });
+        } catch (err) {
+            next(err);
+        }
+    });
+
+    app.get('/tokens/:token', async (req, res, next) => {
+        try {
+            const token = req.params.token;
+            const trxStarter = req.resolver.resolve(TransactionStarter);
+            const Balance = req.resolver.resolve(BalanceRepository);
+            const limit = typeof req.query.limit === 'string' ? parseInt(req.query.limit, 10) : undefined;
+            const skip = typeof req.query.skip === 'string' ? parseInt(req.query.skip, 10) : undefined;
+            const systemAccounts = typeof req.query.systemAccounts === 'string' ? req.query.systemAccounts.toLowerCase() === 'true' : false;
+            await trxStarter.withTransaction(TransactionMode.Reporting, async (trx?: Trx) => {
+                res.json(
+                    await Balance.getTokenBalances(
+                        {
+                            tokens: [token],
+                            limit,
+                            skip,
+                            systemAccounts,
+                            count: true,
+                        },
+                        trx,
+                    ),
+                );
+            });
+        } catch (err) {
+            next(err);
+        }
+    });
+
+    app.get('/tokens', async (req, res, next) => {
+        try {
+            const tokens = typeof req.query.token === 'string' ? [req.query.token] : isStringArray(req.query.token) ? req.query.token : undefined;
+            if (tokens === undefined || tokens.length === 0) {
+                res.status(400).end();
+                return;
+            }
+
+            const limit = typeof req.query.limit === 'string' ? parseInt(req.query.limit, 10) : undefined;
+            const skip = typeof req.query.skip === 'string' ? parseInt(req.query.skip, 10) : undefined;
+            const systemAccounts = typeof req.query.systemAccounts === 'string' ? req.query.systemAccounts.toLowerCase() === 'true' : false;
+            const trxStarter = req.resolver.resolve(TransactionStarter);
+            const Balance = req.resolver.resolve(BalanceRepository);
+            await trxStarter.withTransaction(TransactionMode.Reporting, async (trx?: Trx) => {
+                res.json(
+                    await Balance.getTokenBalances(
+                        {
+                            tokens,
+                            limit,
+                            skip,
+                            systemAccounts,
+                            count: true,
+                        },
+                        trx,
+                    ),
+                );
+            });
+        } catch (err) {
+            next(err);
+        }
+    });
+
+    app.get('/tokens/:token/supply', async (req, res, next) => {
+        try {
+            const token = req.params.token;
+            const trxStarter = req.resolver.resolve<TransactionStarter>(TransactionStarter);
+            const Balance = req.resolver.resolve(BalanceRepository);
+            await trxStarter.withTransaction(TransactionMode.Reporting, async (trx?: Trx) => {
+                res.json(await Balance.getSupply(token, trx));
+            });
+        } catch (err) {
+            next(err);
+        }
     });
 }

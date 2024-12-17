@@ -11,7 +11,7 @@ import { SocketLike } from '../socket';
 import { Cloneable, Prime } from '../utilities/traits';
 import { log, LogLevel } from '../utils';
 import { PRNG } from 'seedrandom';
-import * as seedrandom from 'seedrandom';
+import seedrandom from 'seedrandom';
 
 export class TransactionRepository extends BaseRepository {
     public constructor(handle: Handle, private readonly socket: SocketLike) {
@@ -96,6 +96,10 @@ export class BlockRepository extends BaseRepository {
 
     public async getByBlockNum(block_num: number, trx?: Trx): Promise<BlockEntity | null> {
         return this.query(BlockEntity, trx).where('block_num', block_num).getFirstOrNull();
+    }
+
+    public async getMissedBlocks(block_num: number, trx?: Trx): Promise<BlockEntity[]> {
+        return this.query(BlockEntity, trx).where('block_num', '<', block_num).whereNull('validation_tx').getMany();
     }
 
     public async insertValidation(block_num: number, validation_tx: string, trx?: Trx): Promise<EventLog<BlockEntity>> {

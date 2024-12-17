@@ -1,10 +1,9 @@
 {
-  "extends": "./tsconfig.json",
-  "compilerOptions": {
-    "outDir": "../../dist/out-tsc",
-    "module": "commonjs",
-    "types": ["node"]
-  },
-  "exclude": ["jest.config.ts", "**/*.spec.ts", "**/*.test.ts"],
-  "include": ["**/*.ts"]
+    "extends": "./tsconfig.json",
+    "compilerOptions": {
+        "outDir": "../../dist/out-tsc",
+        "types": ["node"]
+    },
+    "exclude": ["jest.config.ts", "src/jest.global-db.ts", "src/jest.global-setup.ts", "src/jest.global-teardown.ts", "src/jest.setup.ts", "**/*.spec.ts", "**/*.test.ts"],
+    "include": ["src/**/*.ts"]
 }

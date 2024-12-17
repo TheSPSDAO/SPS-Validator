@@ -2,15 +2,15 @@ import { container } from '../__tests__/test-composition-root';
 import { Fixture as BaseFixture } from '../__tests__/action-fixture';
 import { inject, injectable } from 'tsyringe';
 
-import * as presale from '../__tests__/shop/license_tranches/presale.json';
-import * as tranche1 from '../__tests__/shop/license_tranches/tranche_1.json';
-import * as tranche2 from '../__tests__/shop/license_tranches/tranche_2.json';
-import * as tranche3 from '../__tests__/shop/license_tranches/tranche_3.json';
-import * as tranche4 from '../__tests__/shop/license_tranches/tranche_4.json';
-import * as tranche5 from '../__tests__/shop/license_tranches/tranche_5.json';
-import * as tranche6 from '../__tests__/shop/license_tranches/tranche_6.json';
-import * as tranche7 from '../__tests__/shop/license_tranches/tranche_7.json';
-import * as seedrandom from 'seedrandom';
+import presale from '../__tests__/shop/license_tranches/presale.json';
+import tranche1 from '../__tests__/shop/license_tranches/tranche_1.json';
+import tranche2 from '../__tests__/shop/license_tranches/tranche_2.json';
+import tranche3 from '../__tests__/shop/license_tranches/tranche_3.json';
+import tranche4 from '../__tests__/shop/license_tranches/tranche_4.json';
+import tranche5 from '../__tests__/shop/license_tranches/tranche_5.json';
+import tranche6 from '../__tests__/shop/license_tranches/tranche_6.json';
+import tranche7 from '../__tests__/shop/license_tranches/tranche_7.json';
+import seedrandom from 'seedrandom';
 import { BalanceRepository, LastBlockCache, RawPriceFeed, Shop, Trx, SaleError, ShopItemType, Supply, ShopTokenConfig, BlockEntity } from '@steem-monsters/splinterlands-validator';
 import { TOKENS } from './features/tokens';
 

@@ -1,6 +1,6 @@
 // This seems to be the most technically correct way to import convict.
-import convict = require('convict');
-import validators = require('convict-format-with-validator');
+import convict from 'convict';
+import validators from 'convict-format-with-validator';
 import { DB_Connection, LogLevel } from '@steem-monsters/splinterlands-validator';
 import isURL from 'format-validator/lib/isURL';
 
@@ -231,6 +231,12 @@ const schema = {
         nullable: false,
         default: '$TOKEN_STAKING_REWARDS',
         env: 'STAKING_REWARDS_ACCOUNT',
+    },
+    missed_blocks_account: {
+        doc: 'Default system account to track all missed blocks',
+        nullable: false,
+        default: '$MISSED_BLOCKS',
+        env: 'MISSED_BLOCKS_ACCOUNT',
     },
     enable_check_ins: {
         doc: 'Enable check ins. Must have validator account and validator key set as well.',

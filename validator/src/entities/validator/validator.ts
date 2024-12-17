@@ -12,6 +12,14 @@ export type ValidatorEntry = {
     missed_blocks: number;
 };
 
+export type GetValidatorsParams = {
+    limit?: number;
+    skip?: number;
+    is_active?: boolean;
+    count?: boolean;
+    search?: string;
+};
+
 export class ValidatorRepository extends BaseRepository {
     public constructor(handle: Handle, private readonly watcher: ValidatorWatch) {
         super(handle);
@@ -40,11 +48,59 @@ export class ValidatorRepository extends BaseRepository {
         return new EventLog(EventTypes.UPSERT, this, ValidatorRepository.into(record!));
     }
 
-    public getValidators(trx?: Trx, limit?: number) {
+    public async incrementMissedBlocks(account: string, increment: number, trx?: Trx) {
+        const record = await this.query(Validator_, trx)
+            .where('account_name', account)
+            .useKnexQueryBuilder((query) => query.increment('missed_blocks', increment))
+            .updateItemWithReturning({}, ['account_name', 'missed_blocks', 'is_active', 'post_url', 'total_votes']);
+        return [new EventLog(EventTypes.UPDATE, this, ValidatorRepository.into(record))];
+    }
+
+    public async getValidators(params?: GetValidatorsParams, trx?: Trx) {
+        let q = this.query(Validator_, trx).orderBy('total_votes', 'desc').orderBy('account_name');
+        let countQuery = this.query(Validator_, trx);
+
+        if (params?.is_active !== undefined) {
+            q = q.where('is_active', params.is_active);
+            countQuery = countQuery.where('is_active', params.is_active);
+        }
+        if (params?.limit !== undefined) {
+            q = q.limit(params.limit);
+        }
+        if (params?.skip !== undefined) {
+            q = q.offset(params.skip);
+        }
+
+        if (params?.search) {
+            q = q.where('account_name', 'ilike', `%${params.search}%`);
+            countQuery = countQuery.where('account_name', 'ilike', `%${params.search}%`);
+        }
+
+        const count = params?.count ? await countQuery.getCount() : undefined;
+        // count only query
+        if (params?.limit === 0 && params?.skip === 0) {
+            return {
+                validators: [],
+                count,
+            };
+        }
+
+        const validators = await q.getMany();
+        return {
+            validators,
+            count,
+        };
+    }
+
+    public getValidatorsWithCount(trx?: Trx, limit?: number, skip?: number) {
         let q = this.query(Validator_, trx).orderBy('total_votes', 'desc').orderBy('account_name');
 
         if (limit !== undefined) {
             q = q.limit(limit);
+        }
+
+        if (skip !== undefined) {
+            q = q.offset(skip);
         }
 
         return q.getMany();

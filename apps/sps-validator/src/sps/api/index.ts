@@ -1,6 +1,6 @@
 import { DependencyContainer, inject, injectable } from 'tsyringe';
 import { Request, Response } from 'express-serve-static-core';
-import * as express from 'express';
+import express, { ErrorRequestHandler } from 'express';
 import { NextFunction } from 'express';
 import helmet from 'helmet';
 import {
@@ -92,6 +92,17 @@ export class EnabledApiActivator implements ConditionalApiActivator {
     perhapsEnableApi() {
         const app = express();
 
+        app.use(function (error, req, res, next) {
+            if (error) {
+                utils.log(`API Error: ${error}`);
+                res.status(500).json({
+                    message: 'An error occurred during the request.',
+                });
+            } else {
+                next();
+            }
+        } as ErrorRequestHandler);
+
         //  secures API - see: https://www.securecoding.com/blog/using-helmetjs
         if (this.cfg.helmetjs) {
             app.use(helmet({ hidePoweredBy: true }));
@@ -111,6 +122,7 @@ export class EnabledApiActivator implements ConditionalApiActivator {
             resolver: this.resolver,
             injection_middleware: this.middleware,
         });
+
         return app;
     }
 }

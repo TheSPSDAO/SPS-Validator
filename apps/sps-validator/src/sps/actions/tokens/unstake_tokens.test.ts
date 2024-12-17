@@ -39,7 +39,7 @@ test.dbOnly('Simple unstake staked tokens ', async () => {
         }),
     ).resolves.toBeUndefined();
     const unstaking = await fixture.testHelper.getUnstakingRecord('steemmonsters');
-    expect(unstaking?.total_qty).toBe('10');
+    expect(Number(unstaking?.total_qty)).toBe(10);
 });
 
 test.dbOnly('Too much unstake staked tokens ', async () => {
@@ -76,7 +76,7 @@ test.dbOnly('Double unstake', async () => {
         }),
     ).resolves.toBeUndefined();
     let unstaking = await fixture.testHelper.getUnstakingRecord('steemmonsters');
-    expect(unstaking?.total_qty).toBe('11');
+    expect(Number(unstaking?.total_qty)).toBe(11);
     await expect(
         fixture.opsHelper.processOp('unstake_tokens', 'steemmonsters', {
             token: TOKENS.SPS,
@@ -84,7 +84,7 @@ test.dbOnly('Double unstake', async () => {
         }),
     ).resolves.toBeUndefined();
     unstaking = await fixture.testHelper.getUnstakingRecord('steemmonsters');
-    expect(unstaking?.total_qty).toBe('11');
+    expect(Number(unstaking?.total_qty)).toBe(11);
 });
 
 test.dbOnly('Unstake unrelated tokens ', async () => {
@@ -112,5 +112,5 @@ test.dbOnly('Simple unstake staked tokens with posting auth', async () => {
         ),
     ).resolves.toBeUndefined();
     const unstaking = await fixture.testHelper.getUnstakingRecord('steemmonsters');
-    expect(unstaking?.total_qty).toBe('13');
+    expect(Number(unstaking?.total_qty)).toBe(13);
 });

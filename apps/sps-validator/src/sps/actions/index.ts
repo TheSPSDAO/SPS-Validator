@@ -1,4 +1,5 @@
 import { inject, singleton } from 'tsyringe';
+import { LookupWrapper, PoolClaimPayloads, PromiseManager, TokenUnstakingRepository, ValidatorWatch } from '@steem-monsters/splinterlands-validator';
 import { Router as ConfigUpdateRouter } from './config_update';
 import { Router as TestActionRouter } from './test_action';
 import { Router as TokenTransferRouter } from './tokens/token_transfer';
@@ -36,9 +37,11 @@ import { Router as ReversePromiseRouter } from './promises/reverse_promise';
 import { Router as CancelPromiseRouter } from './promises/cancel_promise';
 import { Router as CompletePromiseRouter } from './promises/complete_promise';
 import { Router as ExpirePromisesRouter } from './promises/expire_promises';
-import { ClearBurnedTokensSource, LookupWrapper, PoolClaimPayloads, PromiseManager, TokenUnstakingRepository, ValidatorWatch } from '@steem-monsters/splinterlands-validator';
+import { Router as UpdateMissedBlocksRouter } from './validator/update_missed_blocks';
 import { MakeMultiRouter, MakeVirtualPayloadSource } from './utils';
 import { SpsValidatorLicenseManager } from '../features/validator/validator_license.manager';
+import { SpsClearBurnedTokensSource } from './burn';
+import { SpsUpdateMissedBlocksSource } from './missed_blocks';
 
 export const RouterImpl = MakeMultiRouter(
     TestActionRouter,
@@ -76,10 +79,17 @@ export const RouterImpl = MakeMultiRouter(
 );
 export type RouterImpl = InstanceType<typeof RouterImpl>;
 
-export const VirtualRouterImpl = MakeMultiRouter(TokenUnstakingRouter, ClaimPoolRouter, BurnRouter, ExpirePromisesRouter, ExpireCheckInsRouter);
+export const VirtualRouterImpl = MakeMultiRouter(TokenUnstakingRouter, ClaimPoolRouter, BurnRouter, ExpirePromisesRouter, ExpireCheckInsRouter, UpdateMissedBlocksRouter);
 export type VirtualRouterImpl = InstanceType<typeof VirtualRouterImpl>;
 
-export const VirtualPayloadSource = MakeVirtualPayloadSource(TokenUnstakingRepository, PoolClaimPayloads, ClearBurnedTokensSource, PromiseManager, SpsValidatorLicenseManager);
+export const VirtualPayloadSource = MakeVirtualPayloadSource(
+    TokenUnstakingRepository,
+    PoolClaimPayloads,
+    SpsClearBurnedTokensSource,
+    PromiseManager,
+    SpsValidatorLicenseManager,
+    SpsUpdateMissedBlocksSource,
+);
 export type VirtualPayloadSource = InstanceType<typeof VirtualPayloadSource>;
 
 @singleton()

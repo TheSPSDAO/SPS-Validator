@@ -49,7 +49,7 @@ test.dbOnly('Ignore cancel for different token with cancel_unstake_tokens.', asy
         }),
     ).resolves.toBeUndefined();
     const unstaking = await fixture.testHelper.getUnstakingRecord('steemmonsters');
-    expect(unstaking?.total_qty).toBe('144');
+    expect(Number(unstaking?.total_qty)).toBe(144);
 });
 
 test.dbOnly('Ignore cancel when there is no unstaking with cancel_unstake_tokens.', () => {

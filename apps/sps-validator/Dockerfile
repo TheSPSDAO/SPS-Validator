@@ -1,8 +1,8 @@
-FROM alpine:3.18 AS utils
+FROM alpine:3.20 AS utils
 RUN apk add --no-cache dumb-init
 
 ######################################################################
-FROM node:20-alpine3.18 AS dev-dependencies
+FROM node:23.3-alpine3.20 AS dev-dependencies
 ######################################################################
 WORKDIR /app
 # Required to compile secp256k1 C++
@@ -15,7 +15,7 @@ RUN npm ci --silent
 RUN rm -f .npmrc
 
 ######################################################################
-FROM node:20-alpine3.18 AS builder
+FROM node:23.3-alpine3.20 AS builder
 ######################################################################
 WORKDIR /app
 COPY --from=dev-dependencies /app /app
@@ -23,11 +23,11 @@ COPY package.json package-lock.json nx.json tsconfig.base.json ./
 COPY monad ./monad
 COPY validator ./validator
 COPY atom ./atom
-COPY apps ./apps
+COPY apps/sps-validator ./apps/sps-validator
 RUN npx nx run sps-validator:build:production
 
 ######################################################################
-FROM node:20-alpine3.18 AS prod-dependencies
+FROM node:23.3-alpine3.20 AS prod-dependencies
 ######################################################################
 WORKDIR /app
 # Required to compile secp256k1 C++
@@ -41,11 +41,11 @@ RUN npm ci --silent --omit=dev
 RUN rm -f .npmrc
 
 ######################################################################
-FROM node:20-alpine3.18 AS final
+FROM node:23.3-alpine3.20 AS final
 ######################################################################
 COPY --from=utils /usr/bin/dumb-init /usr/bin/dumb-init
 WORKDIR /app
 ENV NODE_ENV=production
 COPY --from=prod-dependencies /app  .
 COPY --from=builder /app/dist/apps/sps-validator ./dist
-ENTRYPOINT ["/usr/bin/dumb-init", "--", "node", "./dist/main.js"]
+ENTRYPOINT ["/usr/bin/dumb-init", "--", "node", "./dist/main.cjs"]

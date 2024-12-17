@@ -7,12 +7,11 @@ name: Node.js CI
 on:
   push:
     branches:
-      - main
+      - master
       - release-*
   pull_request:
     branches:
-      - main
-      - sm-validator
+      - master
       - release-*
 
 jobs:
@@ -25,12 +24,13 @@ jobs:
       packages: read
     strategy:
       matrix:
-        node-version: [20.x]
+        node-version: [23.x]
         # See supported Node.js release schedule at https://nodejs.org/en/about/releases/
     steps:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
+
       - name: Use Node.js ${{ matrix.node-version }}
         uses: actions/setup-node@v4
         with:
@@ -38,15 +38,19 @@ jobs:
           cache: 'npm'
           cache-dependency-path: package-lock.json
           registry-url: 'https://npm.pkg.github.com'
+
       # Set timestamps to last git modification date
       - name: restore timestamps
         uses: chetan/git-restore-mtime-action@v2
+
       - name: Overwrite validator/structure.sql if needed
         working-directory: scripts
         run: ./ci-lazy-regenerate-structure.sh
+
       - run: npm ci --silent
         env:
           NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
       - run: npm run lint validator-lib
       - run: npm run lint sps-validator
       - run: npm run lint lib-monad

@@ -1,7 +1,9 @@
 {
     "extends": "../tsconfig.base.json",
     "compilerOptions": {
-        "module": "commonjs",
+        "target": "ES2022",
+        "lib": ["ES2022"],
+        "module": "CommonJS",
         "forceConsistentCasingInFileNames": true,
         "strict": true,
         "noImplicitOverride": true,
@@ -14,6 +16,9 @@
     "references": [
         {
             "path": "./tsconfig.lib.json"
+        },
+        {
+            "path": "./tsconfig.spec.json"
         }
     ]
 }

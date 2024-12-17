@@ -2,11 +2,11 @@ import { emoji_payload, garbage_payload } from '../../../__tests__/db-helpers';
 import { Fixture as BaseFixture } from '../../../__tests__/action-fixture';
 import { inject, injectable } from 'tsyringe';
 import { container } from '../../../__tests__/test-composition-root';
-import { BurnOpts, ClearBurnedTokensSource } from '@steem-monsters/splinterlands-validator';
+import { BurnOpts, SpsClearBurnedTokensSource } from '../burn';
 
 @injectable()
 class Fixture extends BaseFixture {
-    constructor(@inject(BurnOpts) readonly burnOpts: BurnOpts, @inject(ClearBurnedTokensSource) readonly clearBurnedTokensSource: ClearBurnedTokensSource) {
+    constructor(@inject(BurnOpts) readonly burnOpts: BurnOpts, @inject(SpsClearBurnedTokensSource) readonly clearBurnedTokensSource: SpsClearBurnedTokensSource) {
         super();
     }
 }
