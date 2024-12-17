@@ -301,7 +301,7 @@ paths:
                 400:
                     description: User error
 
-    /transactions/lookup:
+    /transaction:
         get:
             tags:
                 - Default

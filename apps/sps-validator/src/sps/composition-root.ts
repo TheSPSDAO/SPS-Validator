@@ -139,7 +139,9 @@ export class CompositionRoot extends null {
         container.register<Handle>(Handle, {
             useFactory: (c) => {
                 const knex = c.resolve<Knex>(KnexToken);
-                return new TypedKnex(knex);
+                const typedKnex = new TypedKnex(knex) as Handle;
+                typedKnex.knexInstance = knex;
+                return typedKnex;
             },
         });
         container.register<TransactionStarter>(TransactionStarter, {

@@ -84,7 +84,7 @@ export class StakeTokensAction extends Action<typeof stake_tokens.actionSchema> 
                 trx,
             )),
         );
-        logs.push(...(await this.validatorVoteRepository.updateVoteWeight(this.params.to_player!, this.params.qty, trx)));
+        logs.push(...(await this.validatorVoteRepository.incrementVoteWeight(this.params.to_player!, this.params.qty, trx)));
         return logs;
     }
 }

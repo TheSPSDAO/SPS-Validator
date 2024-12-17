@@ -263,6 +263,28 @@ export function registerApiRoutes(app: Router, opts: ApiOptions): void {
         }
     });
 
+    app.get('/transaction', async (req, res, next) => {
+        try {
+            const trxStarter = req.resolver.resolve(TransactionStarter);
+            const TransactionRepository = req.resolver.resolve(TransactionRepository_);
+            const id = typeof req.query.id === 'string' ? req.query.id : undefined;
+            if (id === undefined) {
+                res.status(400).end();
+                return;
+            }
+            await trxStarter.withTransaction(TransactionMode.Reporting, async (trx?: Trx) => {
+                const data = await TransactionRepository.lookupByTrxId(id, trx);
+                if (data === null) {
+                    res.status(404).end();
+                    return;
+                }
+                res.status(200).json(data);
+            });
+        } catch (err) {
+            next(err);
+        }
+    });
+
     app.get('/transactions/:blockNum/token_transfer', async (req, res, next) => {
         try {
             const blockNum = Number(req.params.blockNum);
@@ -310,28 +332,6 @@ export function registerApiRoutes(app: Router, opts: ApiOptions): void {
                     return;
                 }
 
-                res.status(200).json(data);
-            });
-        } catch (err) {
-            next(err);
-        }
-    });
-
-    app.get('/transactions/lookup', async (req, res, next) => {
-        try {
-            const trxStarter = req.resolver.resolve(TransactionStarter);
-            const TransactionRepository = req.resolver.resolve(TransactionRepository_);
-            const id = typeof req.query.id === 'string' ? req.query.id : undefined;
-            if (id === undefined) {
-                res.status(400).end();
-                return;
-            }
-            await trxStarter.withTransaction(TransactionMode.Reporting, async (trx?: Trx) => {
-                const data = await TransactionRepository.lookupByTrxId(id, trx);
-                if (data === null) {
-                    res.status(404).end();
-                    return;
-                }
                 res.status(200).json(data);
             });
         } catch (err) {
