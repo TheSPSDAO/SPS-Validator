@@ -45,10 +45,14 @@ test.dbOnly('Approve validator', async () => {
 
     const votes = await fixture.testHelper.votesForValidator('steemmonsters');
     expect(votes!.length).toBe(1);
-    expect(votes[0]).toMatchObject({
+    const vote = votes[0];
+    expect({
+        ...vote,
+        vote_weight: Number(vote.vote_weight),
+    }).toMatchObject({
         voter: 'steemmonsters',
         validator: 'steemmonsters',
-        vote_weight: '10',
+        vote_weight: 10,
     });
 });
 
