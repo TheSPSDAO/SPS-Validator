@@ -6,7 +6,7 @@ on:
             - master
 
 jobs:
-    build-and-deploy:
+    build:
         concurrency: ci-${{ github.ref }}
         runs-on: ubuntu-latest
         steps:
@@ -15,7 +15,7 @@ jobs:
 
             - name: Install and Build
               env:
-                  PUBLIC_URL: https://steem-monsters.github.io/splinterlands-validator
+                  PUBLIC_URL: https://thespsdao.github.io/SPS-Validator
                   REACT_APP_BASEPATH: splinterlands-validator
               run: |
                   npm ci
@@ -23,8 +23,22 @@ jobs:
                   npx nx build sps-validator-ui --configuration=production
                   cp dist/apps/sps-validator-ui/index.html dist/apps/sps-validator-ui/404.html
 
-            - name: Deploy
-              uses: JamesIves/github-pages-deploy-action@v4.3.0
+            - name: Upload static files as artifact
+              id: deployment
+              uses: actions/upload-pages-artifact@v3 # or specific "vX.X.X" version tag for this action
               with:
-                  branch: gh-pages
-                  folder: dist/apps/sps-validator-ui
+                  path: dist/apps/sps-validator-ui/
+
+    deploy:
+        environment:
+            name: github-pages
+            url: ${{ steps.deployment.outputs.page_url }}
+        runs-on: ubuntu-latest
+        needs: build
+        permissions:
+            pages: write
+            id-token: write
+        steps:
+            - name: Deploy to GitHub Pages
+              id: deployment
+              uses: actions/deploy-pages@v4
