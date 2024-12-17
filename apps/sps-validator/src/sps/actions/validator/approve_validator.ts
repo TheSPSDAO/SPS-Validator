@@ -54,7 +54,7 @@ export class ApproveValidatorAction extends Action<typeof approve_validator.acti
     }
 
     async process(trx?: Trx): Promise<EventLog[]> {
-        return [await this.validatorVoteRepository.insert(this, trx)];
+        return await this.validatorVoteRepository.insert(this, trx);
     }
 }
 

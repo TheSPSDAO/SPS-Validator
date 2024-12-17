@@ -99,7 +99,9 @@ export class FreshDatabase implements Disposable {
             },
             searchPath: 'public',
         });
-        this.currentHandle = new TypedKnex(this.currentKnex);
+        const handle = new TypedKnex(this.currentKnex) as Handle;
+        handle.knexInstance = this.currentKnex;
+        this.currentHandle = handle;
     }
 
     public async dispose(): Promise<void> {

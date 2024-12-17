@@ -80,7 +80,7 @@ export class TokenUnstakingAction extends Action<typeof token_unstaking.actionSc
             // TODO: Refactor this once vote weight calculation is decoupled from SPS.
             if (this.params.token === TOKENS.SPS && this.stakedToken === TOKENS.SPS) {
                 // Update the total votes for all validators voted on by this player now that their staked SPS has decreased
-                results.push(...(await this.validatorVoteRepository.updateVoteWeight(this.params.player, unstake_amount * -1, trx)));
+                results.push(...(await this.validatorVoteRepository.incrementVoteWeight(this.params.player, unstake_amount * -1, trx)));
             }
         }
 

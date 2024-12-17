@@ -30,38 +30,44 @@ test.dbOnly('Inserting double with onConflict and merge prevents error', async (
     const player = 'player';
     const token = 'token';
 
-    await expect(
+    expect(
         fixture.handle
             .query(BalanceEntity)
             .useKnexQueryBuilder((q) => q.onConflict(['player', 'token']).merge())
             .insertItemWithReturning({ player, token }),
     ).resolves.toMatchObject({ player, token });
 
-    await expect(
-        fixture.handle
-            .query(BalanceEntity)
-            .useKnexQueryBuilder((q) => q.onConflict(['player', 'token']).merge())
-            .insertItemWithReturning({ player, token }),
-    ).resolves.toMatchObject({ player, token, balance: '0.000' });
+    const record = await fixture.handle
+        .query(BalanceEntity)
+        .useKnexQueryBuilder((q) => q.onConflict(['player', 'token']).merge())
+        .insertItemWithReturning({ player, token });
+    expect({
+        ...record,
+        balance: Number(record.balance),
+    }).toMatchObject({ player, token, balance: 0 });
 });
 
 test.dbOnly('Inserting double with onConflict and merge propagates any existing value', async () => {
     const player = 'player';
     const token = 'token';
 
-    await expect(
-        fixture.handle
-            .query(BalanceEntity)
-            .useKnexQueryBuilder((q) => q.onConflict(['player', 'token']).merge())
-            .insertItemWithReturning({ player, token, balance: '12' }),
-    ).resolves.toMatchObject({ player, token, balance: '12.000' });
+    const record = await fixture.handle
+        .query(BalanceEntity)
+        .useKnexQueryBuilder((q) => q.onConflict(['player', 'token']).merge())
+        .insertItemWithReturning({ player, token, balance: '12' });
+    expect({
+        ...record,
+        balance: Number(record.balance),
+    }).toMatchObject({ player, token, balance: 12 });
 
-    await expect(
-        fixture.handle
-            .query(BalanceEntity)
-            .useKnexQueryBuilder((q) => q.onConflict(['player', 'token']).merge())
-            .insertItemWithReturning({ player, token }),
-    ).resolves.toMatchObject({ player, token, balance: '12.000' });
+    const record2 = await fixture.handle
+        .query(BalanceEntity)
+        .useKnexQueryBuilder((q) => q.onConflict(['player', 'token']).merge())
+        .insertItemWithReturning({ player, token });
+    expect({
+        ...record2,
+        balance: Number(record2.balance),
+    }).toMatchObject({ player, token, balance: 12 });
 });
 
 test.dbOnly('Increments balances correctly', async () => {

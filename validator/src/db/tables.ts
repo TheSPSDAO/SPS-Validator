@@ -9,7 +9,15 @@ import type { JSONB, SerialIntKey } from './columns';
 
 export { validateTables } from '@wwwouter/typed-knex';
 
-export type Handle = TypedKnex;
+export type RawResult<T> = {
+    rows: T[];
+    rowCount: number;
+};
+
+export type Handle = TypedKnex & {
+    // shortcut to knex instance instead of injecting it.
+    knexInstance: Knex;
+};
 export const Handle: unique symbol = Symbol.for('Handle');
 
 export type Trx = Knex.Transaction & {
@@ -27,6 +35,14 @@ export class BaseRepository {
             return query.transacting(trx);
         } else {
             return query;
+        }
+    }
+
+    protected queryRaw(trx?: Trx): Knex {
+        if (trx) {
+            return trx;
+        } else {
+            return this.handle.knexInstance;
         }
     }
 }

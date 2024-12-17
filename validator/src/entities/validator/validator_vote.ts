@@ -1,6 +1,6 @@
 import { ValidatorVoteHistoryRepository } from './validator_vote_history';
 import { EventLog, EventTypes } from '../event_log';
-import { BaseRepository, Handle, Trx, ValidatorEntity, ValidatorVoteEntity } from '../../db/tables';
+import { BaseRepository, Handle, RawResult, Trx, ValidatorEntity, ValidatorVoteEntity } from '../../db/tables';
 import { ValidatorVoteEntry, VoteWeightCalculator, VotingAction } from './types';
 
 export class ValidatorVoteRepository extends BaseRepository {
@@ -34,13 +34,11 @@ export class ValidatorVoteRepository extends BaseRepository {
             }),
         );
 
-        // Increment the total_votes for the validator
-        await this.updateVoteWeight(validator, balance, trx);
-
-        // Insert a new vote history record
-        await this.validatorVoteHistoryRepository.insert(action, true, balance, trx);
-
-        return new EventLog(EventTypes.INSERT, ValidatorVoteEntity, vote);
+        return [
+            ...(await this.syncValidatorVotes([validator], trx)),
+            await this.validatorVoteHistoryRepository.insert(action, true, balance, trx),
+            new EventLog(EventTypes.INSERT, ValidatorVoteEntity, vote),
+        ];
     }
 
     async delete(action: VotingAction, trx?: Trx): Promise<EventLog[]> {
@@ -53,32 +51,74 @@ export class ValidatorVoteRepository extends BaseRepository {
             .useKnexQueryBuilder((query) => query.returning('*').del())
             .getMany();
         const deleteVote = new EventLog(EventTypes.DELETE, ValidatorVoteEntity, vote);
-        const decrementTotalVotes = await this.updateVoteWeight(validator, balance * -1, trx);
+        const syncedValidators = await this.syncValidatorVotes([validator], trx);
         const insertValidatorHistory = await this.validatorVoteHistoryRepository.insert(action, false, balance, trx);
-        return [deleteVote, ...decrementTotalVotes, insertValidatorHistory];
+        return [deleteVote, ...syncedValidators, insertValidatorHistory];
     }
 
-    async updateVoteWeight(voter: string, amount: number, trx?: Trx): Promise<EventLog[]> {
+    async incrementVoteWeight(voter: string, amount: number, trx?: Trx): Promise<EventLog[]> {
         // Update all of the vote weights in the validator_votes table
         const votes = await this.query(ValidatorVoteEntity, trx)
             .where('voter', voter)
             .useKnexQueryBuilder((query) => query.increment('vote_weight', amount).returning('*'))
             .getMany();
 
+        const voteEvents = votes.map((v) => new EventLog(EventTypes.UPDATE, ValidatorVoteEntity, v));
+
         if (votes.length > 0) {
-            const results: EventLog[] = [new EventLog(EventTypes.UPDATE, ValidatorVoteEntity, votes)];
-            // Update the total_votes for all of the affected validators
-            const total_votes = await this.query(ValidatorEntity, trx)
-                .whereIn(
-                    'account_name',
-                    votes.map((v) => v.validator),
-                )
-                .useKnexQueryBuilder((query) => query.increment('total_votes', amount).returning('*'))
-                .getMany();
-            results.push(new EventLog(EventTypes.UPDATE, ValidatorEntity, total_votes));
-            return results;
+            const setVotesEvents = await this.syncValidatorVotes(
+                votes.map((v) => v.validator),
+                trx,
+            );
+            return [...voteEvents, ...setVotesEvents];
         } else {
-            return [];
+            return voteEvents;
         }
+    }
+
+    async setVoteWeight(voter: string, weight: number, trx?: Trx): Promise<EventLog[]> {
+        // Update all of the vote weights in the validator_votes table
+        const votes = await this.query(ValidatorVoteEntity, trx)
+            .where('voter', voter)
+            .useKnexQueryBuilder((query) => query.update('vote_weight', weight).returning('*'))
+            .getMany();
+
+        const voteEvents = votes.map((v) => new EventLog(EventTypes.UPDATE, ValidatorVoteEntity, v));
+
+        if (votes.length > 0) {
+            const setVotesEvents = await this.syncValidatorVotes(
+                votes.map((v) => v.validator),
+                trx,
+            );
+            return [...voteEvents, ...setVotesEvents];
+        } else {
+            return voteEvents;
+        }
+    }
+
+    private async syncValidatorVotes(validators: string[], trx?: Trx) {
+        // Update the total_votes for all of the affected validators
+        // note: this requires the search path to be set to include the schema the validator is using, which it should be
+        const total_votes = await this.queryRaw(trx).raw<RawResult<ValidatorVoteEntity>>(
+            `
+            UPDATE validators v
+            SET total_votes = summed.total_votes
+            FROM (
+                SELECT
+                    validator,
+                    SUM(vote_weight) as total_votes
+                FROM
+                    validator_votes vote
+                WHERE
+                    vote.validator = ANY(:validators)
+                GROUP BY
+                    validator
+            ) summed
+            WHERE v.account_name = summed.validator
+            RETURNING v.*;
+            `,
+            { validators },
+        );
+        return total_votes.rows.map((v) => new EventLog(EventTypes.UPDATE, ValidatorEntity, v));
     }
 }
