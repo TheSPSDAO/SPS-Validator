@@ -35,7 +35,7 @@ test.dbOnly('Inserting double with onConflict and merge prevents error', async (
             .query(BalanceEntity)
             .useKnexQueryBuilder((q) => q.onConflict(['player', 'token']).merge())
             .insertItemWithReturning({ player, token }),
-    ).toMatchObject({ player, token });
+    ).resolves.toMatchObject({ player, token });
 
     const record = await fixture.handle
         .query(BalanceEntity)
