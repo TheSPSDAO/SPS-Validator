@@ -2,9 +2,8 @@
 /* istanbul ignore file */
 /* tslint:disable */
 /* eslint-disable */
-import type { string_ } from './string_';
 export type Transaction = {
-    id: string_;
+    id: string;
     block_id: string;
     prev_block_id: string;
     block_num: number;
