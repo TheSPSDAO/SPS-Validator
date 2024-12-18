@@ -15,7 +15,7 @@ jobs:
 
             - name: Install and Build
               run: |
-                  npm ci
+                  npm ci --silent
                   npx nx build sps-validator-ui --configuration=production
                   cp dist/apps/sps-validator-ui/index.html dist/apps/sps-validator-ui/404.html
               env:

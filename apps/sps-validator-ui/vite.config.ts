@@ -4,10 +4,10 @@ import react from '@vitejs/plugin-react';
 import { nxViteTsPaths } from '@nx/vite/plugins/nx-tsconfig-paths.plugin';
 import { nxCopyAssetsPlugin } from '@nx/vite/plugins/nx-copy-assets.plugin';
 
-const BASE_HREF = process.env.BASE_HREF || '/';
+const BASE_URL = process.env.BASE_URL || '/';
 
 export default defineConfig({
-    base: BASE_HREF,
+    base: BASE_URL,
     root: __dirname,
     cacheDir: '../../node_modules/.vite/apps/sps-validator-ui',
     server: {
@@ -19,6 +19,7 @@ export default defineConfig({
         host: 'localhost',
     },
     plugins: [react(), nxViteTsPaths(), nxCopyAssetsPlugin(['*.md'])],
+    envPrefix: ['VITE_', 'VALIDATOR_'],
     build: {
         outDir: '../../dist/apps/sps-validator-ui',
         emptyOutDir: true,
