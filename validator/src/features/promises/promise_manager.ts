@@ -51,7 +51,11 @@ export class PromiseManager implements VirtualPayloadSource {
         private readonly promiseRepository: PromiseRepository,
     ) {}
 
-    async process(block: BlockRef): Promise<ProcessResult[]> {
+    async process(block: BlockRef, trx?: Trx): Promise<ProcessResult[]> {
+        const expiredPromises = await this.promiseRepository.countExpiredPromises(block.block_time, trx);
+        if (expiredPromises === 0) {
+            return [];
+        }
         return [
             [
                 'custom_json',
