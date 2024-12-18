@@ -265,7 +265,7 @@ export class DefaultService {
     ): CancelablePromise<Transaction> {
         return __request(OpenAPI, {
             method: 'GET',
-            url: '/transactions/lookup',
+            url: '/transaction',
             query: {
                 'id': id,
             },

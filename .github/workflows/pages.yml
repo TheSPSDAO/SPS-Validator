@@ -16,12 +16,10 @@ jobs:
             - name: Install and Build
               run: |
                   npm ci
-                  npx nx openapi sps-validator-ui
                   npx nx build sps-validator-ui --configuration=production
                   cp dist/apps/sps-validator-ui/index.html dist/apps/sps-validator-ui/404.html
               env:
-                  ASSET_URL: https://thespsdao.github.io/SPS-Validator
-                  APP_BASEPATH: SPS-Validator
+                  BASE_HREF: /SPS-Validator/
                   VALIDATOR_PREFIX: sl-qavsm_
                   VALIDATOR_API_URL: https://splinterlands-validator.validator.qa.splinterlands.com
 
