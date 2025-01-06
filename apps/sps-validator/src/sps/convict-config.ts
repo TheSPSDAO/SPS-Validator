@@ -250,6 +250,12 @@ const schema = {
         default: false,
         env: 'HELMETJS',
     },
+    version: {
+        doc: 'The application version',
+        format: String,
+        default: 'development',
+        env: 'VERSION',
+    },
 };
 
 const config = convict(schema);
