@@ -98,8 +98,13 @@ export class BlockRepository extends BaseRepository {
         return this.query(BlockEntity, trx).where('block_num', block_num).getFirstOrNull();
     }
 
-    public async getMissedBlocks(block_num: number, trx?: Trx): Promise<BlockEntity[]> {
-        return this.query(BlockEntity, trx).where('block_num', '<', block_num).whereNull('validation_tx').getMany();
+    public async getMissedBlocks(last_checked_block_num: number, block_num: number, trx?: Trx): Promise<BlockEntity[]> {
+        return this.query(BlockEntity, trx)
+            .where('block_num', '<', block_num)
+            .where('block_num', '>', last_checked_block_num)
+            .whereNull('validator')
+            .whereNull('validation_tx')
+            .getMany();
     }
 
     public async insertValidation(block_num: number, validation_tx: string, trx?: Trx): Promise<EventLog<BlockEntity>> {

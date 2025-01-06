@@ -1,4 +1,4 @@
-import { BlockRef, BlockRepository, PrefixOpts, ProcessResult, Trx, ValidatorWatch, VirtualPayloadSource } from '@steem-monsters/splinterlands-validator';
+import { BlockRef, BlockRepository, PrefixOpts, ProcessResult, Trx, ValidatorUpdater, ValidatorWatch, VirtualPayloadSource } from '@steem-monsters/splinterlands-validator';
 import { inject, injectable } from 'tsyringe';
 
 export type MissedBlocksOpts = {
@@ -13,6 +13,7 @@ export class SpsUpdateMissedBlocksSource implements VirtualPayloadSource {
         @inject(PrefixOpts) private readonly prefixOpts: PrefixOpts,
         @inject(MissedBlocksOpts) private readonly missedBlocksOpts: MissedBlocksOpts,
         @inject(ValidatorWatch) private readonly validatorWatch: ValidatorWatch,
+        @inject(ValidatorUpdater) private readonly validatorUpdater: ValidatorUpdater,
     ) {}
 
     trx_id(block: BlockRef): string {
@@ -26,7 +27,14 @@ export class SpsUpdateMissedBlocksSource implements VirtualPayloadSource {
 
         // block 1, expiration 100, so on block 102 we check for missed blocks from 1 (102 - 100 = 2)
         const expired_block = block.block_num - this.validatorWatch.validator?.max_block_age;
-        const missed_blocks = await this.blockRepository.getMissedBlocks(expired_block, trx);
+        if (expired_block > this.validatorWatch.validator.reward_start_block) {
+            return [];
+        }
+
+        const last_checked_block = this.validatorWatch.validator?.last_checked_block;
+        const missed_blocks = await this.blockRepository.getMissedBlocks(last_checked_block, expired_block, trx);
+        // note: this update doesn't get included in the block hash but it doesn't matter
+        await this.validatorUpdater.updateLastCheckedBlock(expired_block, trx);
         if (missed_blocks.length === 0) {
             return [];
         }
@@ -47,7 +55,7 @@ export class SpsUpdateMissedBlocksSource implements VirtualPayloadSource {
             return [];
         }
 
-        return entries.map(([account, amount]) => {
+        return entries.map(([account, missed_blocks]) => {
             return [
                 'custom_json',
                 {
@@ -58,7 +66,8 @@ export class SpsUpdateMissedBlocksSource implements VirtualPayloadSource {
                         action: 'update_missed_blocks',
                         params: {
                             account,
-                            amount,
+                            checked_block: expired_block,
+                            missed_blocks,
                         },
                     },
                 },

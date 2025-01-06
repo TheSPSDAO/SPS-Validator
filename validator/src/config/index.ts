@@ -18,6 +18,7 @@ export type ValidatorConfig = {
     reduction_pct: number;
     max_votes: number;
     num_top_validators: number;
+    last_checked_block: number;
 };
 
 export type TokenConfig = {
@@ -45,7 +46,13 @@ export const validator_schema = object({
     reduction_pct: number().min(0).required(),
     max_votes: number().positive().required(),
     num_top_validators: number().positive().required(),
+    last_checked_block: number().integer().positive().required(),
 });
+
+export interface ValidatorUpdater {
+    updateLastCheckedBlock(block_num: number, trx?: Trx): Promise<EventLog[]>;
+}
+export const ValidatorUpdater: unique symbol = Symbol('ValidatorUpdater');
 
 // Only to assert types. Can be replaced by const discount_schema: ObjectSchema<DiscountEntry> = ...
 type _validator = type_check<ValidatorConfig, InferType<typeof validator_schema>>;

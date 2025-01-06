@@ -13,7 +13,7 @@ import {
     VirtualPayloadSource,
     log,
 } from '@steem-monsters/splinterlands-validator';
-import { inject, injectable, singleton } from 'tsyringe';
+import { inject, singleton } from 'tsyringe';
 import { TOKENS } from '../tokens';
 import { SpsValidatorCheckInRepository } from '../../entities/validator/validator_check_in';
 import { ValidatorCheckInConfig, ValidatorCheckInWatch } from './validator_license.config';

@@ -407,6 +407,7 @@ const update_missed_blocks = new Schema.Schema(
     'update_missed_blocks',
     object({
         account: Schema.hiveAccount.required(),
+        checked_block: number().integer().positive().required(),
         missed_blocks: number().integer().positive().required(),
     }),
 );
