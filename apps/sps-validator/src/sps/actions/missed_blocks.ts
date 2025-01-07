@@ -27,7 +27,7 @@ export class SpsUpdateMissedBlocksSource implements VirtualPayloadSource {
 
         // block 1, expiration 100, so on block 102 we check for missed blocks from 1 (102 - 100 = 2)
         const expired_block = block.block_num - this.validatorWatch.validator?.max_block_age;
-        if (expired_block > this.validatorWatch.validator.reward_start_block) {
+        if (expired_block < this.validatorWatch.validator.reward_start_block) {
             return [];
         }
 
