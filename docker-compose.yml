@@ -47,6 +47,7 @@ services:
       VALIDATOR_ACCOUNT: ${VALIDATOR_ACCOUNT:-}
       VALIDATOR_KEY: ${VALIDATOR_KEY:-}
       REWARD_ACCOUNT: ${REWARD_ACCOUNT:-}
+      VERSION: ${GIT_COMMIT:-development}
     depends_on:
       - pg
 

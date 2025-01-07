@@ -110,6 +110,7 @@ import {
     PromiseManager,
     DelegationPromiseHandler,
     PromiseRepository,
+    ValidatorUpdater,
 } from '@steem-monsters/splinterlands-validator';
 import { ValidatorPools } from './pools';
 import { ValidatorShop } from './utilities/validator-shop';
@@ -238,6 +239,7 @@ export class CompositionRoot extends null {
         container.register<AdminMembership>(AdminMembership, { useToken: SpsConfigLoader });
         container.register<PoolUpdater>(PoolUpdater, { useToken: SpsConfigLoader });
         container.register<PoolSerializer>(PoolSerializer, { useToken: SpsConfigLoader });
+        container.register<ValidatorUpdater>(ValidatorUpdater, { useToken: SpsConfigLoader });
 
         // Action construction
         container.register(SpsUpdateMissedBlocksSource, { useClass: SpsUpdateMissedBlocksSource });

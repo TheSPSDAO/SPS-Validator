@@ -9,9 +9,12 @@ import { SpsValidatorLicenseManager } from './validator_license.manager';
 export class ValidatorCheckInPlugin implements Plugin, Prime {
     readonly name = 'validator_check_in';
 
+    private readonly CHANGE_KEY = Symbol('CHECKIN_PLUGIN_CHANGE_KEY');
+
     private readonly checkInAccount: string;
 
     private primed = false;
+    private lastCheckInBlock: number | undefined;
     private nextCheckInBlock: number | undefined;
 
     constructor(
@@ -26,6 +29,9 @@ export class ValidatorCheckInPlugin implements Plugin, Prime {
     ) {
         // this.checkInWatcher.addValidatorCheckInWatcher() TODO add watcher so we can update the nextBlock if the config changes
         this.checkInAccount = config.reward_account || config.validator_account;
+        this.checkInWatcher.addValidatorCheckInWatcher(this.CHANGE_KEY, () => {
+            this.nextCheckInBlock = this.lastCheckInBlock ? this.getNextCheckInBlock(this.lastCheckInBlock) : undefined;
+        });
     }
 
     async prime(trx?: Trx | undefined): Promise<void> {
@@ -41,7 +47,8 @@ export class ValidatorCheckInPlugin implements Plugin, Prime {
             return;
         }
         const checkIn = await this.checkInRepository.getByAccount(this.checkInAccount, trx);
-        this.nextCheckInBlock = checkIn ? this.getNextCheckInBlock(checkIn.last_check_in_block_num) : undefined;
+        this.lastCheckInBlock = checkIn ? checkIn.last_check_in_block_num : undefined;
+        this.nextCheckInBlock = this.lastCheckInBlock ? this.getNextCheckInBlock(this.lastCheckInBlock) : undefined;
         log(`Next check in block: ${this.nextCheckInBlock}`, LogLevel.Info);
     }
 
@@ -66,6 +73,7 @@ export class ValidatorCheckInPlugin implements Plugin, Prime {
         this.nextCheckInBlock = this.getNextCheckInBlock(blockNumber);
         try {
             const confirmation = await this.hive.submitCheckIn(blockNumber, hash);
+            this.lastCheckInBlock = blockNumber;
             log(`Checked in at block ${blockNumber}. trx_id: ${confirmation.id}`, LogLevel.Info);
         } catch (err) {
             log(`Failed to check in at block ${blockNumber}: ${err}`, LogLevel.Error);

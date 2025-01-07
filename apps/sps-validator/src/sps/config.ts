@@ -37,6 +37,7 @@ import {
     BookkeepingWatch,
     bookkeeping_entries_schema,
     BookkeepingConfig,
+    ValidatorUpdater,
 } from '@steem-monsters/splinterlands-validator';
 import { TOKENS } from './features/tokens';
 import { ValidatorCheckInConfig, ValidatorCheckInWatch, validator_check_in_schema } from './features/validator/validator_license.config';
@@ -52,13 +53,14 @@ function assertNonNull<T>(v: T): asserts v is NonNullable<T> {
 @singleton()
 export class SpsConfigLoader
     extends Cache<ConfigType, ConfigUpdate>
-    implements Cloneable<SpsConfigLoader>, Prime, Watches, ConfigLoader, AdminMembership, PoolUpdater, PoolSerializer
+    implements Cloneable<SpsConfigLoader>, Prime, Watches, ConfigLoader, AdminMembership, PoolUpdater, PoolSerializer, ValidatorUpdater
 {
     // TODO: Could do with a custom validator.
     // TODO: Safe defaults for all values that are non-optional
     public static readonly DEFAULT = Object.freeze({
         validator: {
             reward_start_block: 60963785,
+            last_checked_block: 60963784,
             tokens_per_block: 4.34,
             min_validators: 3,
             reduction_blocks: 864000,
@@ -193,6 +195,10 @@ export class SpsConfigLoader
 
     async updateAccTokensPerShare<T extends string>(pool_name: T, tokens_per_share: number, trx?: Trx) {
         return [await this.updateConfig('sps', `${pool_name}_acc_tokens_per_share`, tokens_per_share, trx)];
+    }
+
+    async updateLastCheckedBlock(block_num: number, trx?: Trx): Promise<EventLog[]> {
+        return [await this.updateConfig('validator', 'last_checked_block', block_num, trx)];
     }
 
     async updateStopBlock<T extends string>(pool_name: T, stop_block: number, trx?: Trx) {

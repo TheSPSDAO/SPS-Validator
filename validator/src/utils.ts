@@ -1,4 +1,5 @@
 const logging_level = process.env.logging_level ? parseInt(process.env.logging_level) : null;
+const version = process.env.VERSION || 'development';
 
 export enum LogLevel {
     None = 0,
@@ -14,7 +15,7 @@ type LogColors = keyof typeof log_colors;
 export function log(msg: string, level: LogLevel = LogLevel.None, color: LogColors | null = null) {
     if (color && log_colors[color]) msg = log_colors[color] + msg + log_colors.Reset;
 
-    if (level <= (logging_level || 5)) console.log(`${new Date().toLocaleString()} - ${msg}`);
+    if (level <= (logging_level || 5)) console.log(`[${version}] ${new Date().toLocaleString()} - ${msg}`);
 }
 
 const log_colors = {

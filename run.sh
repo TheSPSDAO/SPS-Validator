@@ -2,6 +2,7 @@
 # set -euo pipefail
 IFS=$'\n\t'
 
+GIT_COMMIT=$(git rev-parse --short HEAD)
 SCRIPT_DIR=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" &>/dev/null && pwd)
 SQITCH_DIR="$SCRIPT_DIR/sqitch"
 COMPOSE_FILE="${SCRIPT_DIR}/docker-compose.yml"
@@ -30,29 +31,34 @@ if [[ ! $SNAPSHOT_URL ]]; then
     exit
 fi
 
+# wrapper around docker compose that passes the current git commit as an environment variable
+docker_compose_wrapper() {
+    GIT_COMMIT=$GIT_COMMIT docker compose "$@"
+}
+
 rebuild_service() {
     echo "Rebuilding $DOCKER_NAME $1 service"
-    docker compose down "$1"
-    docker compose up -d --build "$1"
+    docker_compose_wrapper down "$1"
+    docker_compose_wrapper up -d --build "$1"
     logs
 }
 
 start() {
     echo "Starting $DOCKER_NAME"
     if [[ $1 == "db" ]]; then
-        docker compose up -d pg
+        docker_compose_wrapper up -d pg
     elif [[ $1 == "all" ]]; then
-        docker compose up -d
+        docker_compose_wrapper up -d
         logs
     else
-        docker compose up -d validator
+        docker_compose_wrapper up -d validator
         logs
     fi
 }
 
 stop() {
     echo "Stopping & removing $DOCKER_NAME"
-    docker compose down
+    docker_compose_wrapper down
 }
 
 restart() {
@@ -94,20 +100,20 @@ build() {
         echo "Skipping snapshot"
         echo "Running migrations. This could take several minutes..."
         if [[ $1 == "no-cache" ]] || [[ $2 == "no-cache" ]]; then
-            docker compose build --no-cache validator-sqitch
+            docker_compose_wrapper build --no-cache validator-sqitch
         else
-            docker compose build validator-sqitch
+            docker_compose_wrapper build validator-sqitch
         fi
     else
         dl_snapshot "$1"
         echo "Running migrations. This could take several minutes..."
         if [[ $1 == "no-cache" ]] || [[ $2 == "no-cache" ]]; then
-            docker compose build --build-arg snapshot="$SNAPSHOT_FILE" --no-cache validator-sqitch
+            docker_compose_wrapper build --build-arg snapshot="$SNAPSHOT_FILE" --no-cache validator-sqitch
         else
-            docker compose build --build-arg snapshot="$SNAPSHOT_FILE" validator-sqitch
+            docker_compose_wrapper build --build-arg snapshot="$SNAPSHOT_FILE" validator-sqitch
         fi
     fi
-    docker compose --profile cli -f "${COMPOSE_FILE}" run validator-sqitch
+    docker_compose_wrapper --profile cli -f "${COMPOSE_FILE}" run validator-sqitch
 }
 
 dl_snapshot() {
@@ -165,7 +171,7 @@ container_exists() {
 
 logs() {
     echo "DOCKER LOGS: (press ctrl-c to exit) "
-    docker compose logs validator -f --tail 30
+    docker_compose_wrapper logs validator -f --tail 30
 }
 
 help() {
