@@ -2,7 +2,7 @@ import { BlockRef, BlockRepository, PrefixOpts, ProcessResult, Trx, ValidatorUpd
 import { inject, injectable } from 'tsyringe';
 
 export type MissedBlocksOpts = {
-    update_account: string;
+    missed_blocks_account: string;
 };
 export const MissedBlocksOpts: unique symbol = Symbol('MissedBlocksOpts');
 
@@ -25,16 +25,19 @@ export class SpsUpdateMissedBlocksSource implements VirtualPayloadSource {
             return [];
         }
 
-        // block 1, expiration 100, so on block 102 we check for missed blocks from 1 (102 - 100 = 2)
-        const expired_block = block.block_num - this.validatorWatch.validator?.max_block_age;
-        if (expired_block > this.validatorWatch.validator.reward_start_block) {
+        // -1 because their validation could be in this block
+        const expired_block = block.block_num - 1 - this.validatorWatch.validator?.max_block_age;
+        const last_checked_block = this.validatorWatch.validator?.last_checked_block;
+
+        // note: this update doesn't get included in the block hash but it doesn't matter. we always update this no matter what though.
+        await this.validatorUpdater.updateLastCheckedBlock(expired_block, trx);
+
+        // don't bother if we're before the reward start block
+        if (expired_block < this.validatorWatch.validator.reward_start_block) {
             return [];
         }
 
-        const last_checked_block = this.validatorWatch.validator?.last_checked_block;
         const missed_blocks = await this.blockRepository.getMissedBlocks(last_checked_block, expired_block, trx);
-        // note: this update doesn't get included in the block hash but it doesn't matter
-        await this.validatorUpdater.updateLastCheckedBlock(expired_block, trx);
         if (missed_blocks.length === 0) {
             return [];
         }
@@ -59,7 +62,7 @@ export class SpsUpdateMissedBlocksSource implements VirtualPayloadSource {
             return [
                 'custom_json',
                 {
-                    required_auths: [this.missedBlocksOpts.update_account],
+                    required_auths: [this.missedBlocksOpts.missed_blocks_account],
                     required_posting_auths: [],
                     id: this.prefixOpts.custom_json_id,
                     json: {

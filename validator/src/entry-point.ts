@@ -90,7 +90,7 @@ export class EntryPoint<T extends Resolver & Container, S extends Synchronisatio
                 utils.log(`Processing block [${block_num}], Head Block: ${observer.headBlockNum}, Blocks to head: ${observer.headBlockNum - block_num}.`);
 
                 const block = new NBlock(block_num, block_data, { l2_block_id: prev_block_hash as string });
-                const result = await this.processor.process(block);
+                const result = await this.processor.process(block, observer.headBlockNum);
                 block_hash = result.block_hash;
                 event_logs = result.event_logs;
 
