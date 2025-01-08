@@ -53,7 +53,7 @@ export class SpsUpdateMissedBlocksSource implements VirtualPayloadSource {
             return acc;
         }, {} as Record<string, number>);
 
-        const entries = Object.entries(byAccount);
+        const entries = Object.entries(byAccount).sort((a, b) => b[1] - a[1]);
         if (entries.length === 0) {
             return [];
         }

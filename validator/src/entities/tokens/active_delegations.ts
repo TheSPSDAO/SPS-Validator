@@ -104,7 +104,12 @@ export class ActiveDelegationsRepository extends BaseRepository {
 
     public async getActiveDelegations(delegator: string, delegatees: string[], base_token: string, trx?: Trx): Promise<ActiveDelegationsEntry[]> {
         // eslint-disable-next-line prettier/prettier
-        const query = this.query(ActiveDelegationEntity, trx).where('delegator', delegator).whereIn('delegatee', delegatees).where('token', base_token);
+        const query = this.query(ActiveDelegationEntity, trx)
+            .where('delegator', delegator)
+            .whereIn('delegatee', delegatees)
+            .where('token', base_token)
+            .orderBy('delegator')
+            .orderBy('delegatee');
 
         const records = await query.getMany();
         return ActiveDelegationsRepository.intoMany(records);
