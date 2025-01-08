@@ -94,7 +94,7 @@ export class BlockProcessor<T extends SynchronisationConfig> {
             // If we are the validator chosen for this block, submit the block hash to validate it
             if (this.isChosenValidator(validator)) {
                 const maxBlockAge = this.watcher.validator?.max_block_age;
-                if (maxBlockAge && headBlock - maxBlockAge >= block_num) {
+                if (maxBlockAge && headBlock - maxBlockAge <= block_num) {
                     // TODO: this.hash can be undefined (not initialized in the constructor), so we can just force it to be set I guess.
                     this.hive.submitBlockValidation(block_num, l2_block_id).then((r) => {
                         utils.log(`Submitted validation for block [${block_num}] with hash [${l2_block_id}] in tx [${r.id}]`);
