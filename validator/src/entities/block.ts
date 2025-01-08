@@ -100,9 +100,9 @@ export class BlockRepository extends BaseRepository {
 
     public async getMissedBlocks(last_checked_block_num: number, block_num: number, trx?: Trx): Promise<BlockEntity[]> {
         return this.query(BlockEntity, trx)
-            .where('block_num', '<', block_num)
+            .where('block_num', '<=', block_num)
             .where('block_num', '>', last_checked_block_num)
-            .whereNull('validator')
+            .whereNotNull('validator')
             .whereNull('validation_tx')
             .getMany();
     }

@@ -90,7 +90,7 @@ replay() {
         stop
         _destroy
         build "$1" "$2"
-        start
+        start "all"
     fi
 }
 

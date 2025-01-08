@@ -2,6 +2,6 @@
 
 BEGIN;
 
-DROP FUNCTION snapshot.freshSnapshot();
+DROP FUNCTION snapshot.freshsnapshot(boolean, text);
 
 COMMIT;

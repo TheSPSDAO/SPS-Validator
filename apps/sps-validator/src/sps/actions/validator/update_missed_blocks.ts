@@ -12,7 +12,7 @@ export class UpdateMissedBlocksAction extends Action<typeof update_missed_blocks
     }
 
     async process(trx?: Trx): Promise<EventLog[]> {
-        return [...(await this.validatorRepository.incrementMissedBlocks(this.op.account, this.params.missed_blocks, trx))];
+        return [...(await this.validatorRepository.incrementMissedBlocks(this.params.account, this.params.missed_blocks, trx))];
     }
 }
 

@@ -2,6 +2,6 @@
 
 BEGIN;
 
-SELECT has_function_privilege('snapshot.freshSnapshot()', 'execute');
+SELECT has_function_privilege('snapshot.freshsnapshot(boolean, text)', 'execute');
 
 ROLLBACK;
