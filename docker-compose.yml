@@ -4,7 +4,7 @@ services:
   pg:
     image: postgres:13-alpine
     ports:
-      - "${POSTGRES_PORT:-5432}:5432"
+      - "127.0.0.1:${POSTGRES_PORT:-5432}:5432"
     volumes:
       - pgdata:/var/lib/postgresql/data
     networks:
@@ -26,7 +26,7 @@ services:
       context: .
       dockerfile: ./apps/sps-validator/Dockerfile
     ports:
-      - "3333:3333"
+      - "127.0.0.1:3333:3333"
     networks:
       - "postgres"
       - "validator"
@@ -85,7 +85,7 @@ services:
         VALIDATOR_PREFIX: "${CUSTOM_JSON_PREFIX:-sm_}"
     restart: on-failure
     ports:
-      - "8888:80"
+      - "127.0.0.1:8888:80"
     networks:
       - "validator"
     depends_on:
