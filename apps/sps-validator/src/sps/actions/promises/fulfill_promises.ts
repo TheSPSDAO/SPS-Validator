@@ -1,10 +1,10 @@
 import { Result } from '@steem-monsters/lib-monad';
 import { OperationData, PromiseManager, Action, EventLog, Trx } from '@steem-monsters/splinterlands-validator';
-import { fulfill_promises } from '../schema';
+import { fulfill_promise_multi } from '../schema';
 import { MakeActionFactory, MakeRouter } from '../utils';
-export class FulfillPromisesAction extends Action<typeof fulfill_promises.actionSchema> {
+export class FulfillPromisesAction extends Action<typeof fulfill_promise_multi.actionSchema> {
     constructor(op: OperationData, data: unknown, index: number, private readonly promiseManager: PromiseManager) {
-        super(fulfill_promises, op, data, index);
+        super(fulfill_promise_multi, op, data, index);
     }
 
     async validate(trx?: Trx): Promise<boolean> {
@@ -39,4 +39,4 @@ export class FulfillPromisesAction extends Action<typeof fulfill_promises.action
 }
 
 const Builder = MakeActionFactory(FulfillPromisesAction, PromiseManager);
-export const Router = MakeRouter(fulfill_promises.action_name, Builder);
+export const Router = MakeRouter(fulfill_promise_multi.action_name, Builder);

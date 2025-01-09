@@ -65,8 +65,8 @@ export class ValidatorCheckInPlugin implements Plugin, Prime {
             return;
         }
         // Check if we are too late to check in for this block
-        else if (this.licenseManager.isCheckInBlockWithinWindow(headBlockNumber, blockNumber)) {
-            log('Check would be too late. Not sending check in.', LogLevel.Debug);
+        else if (!this.licenseManager.isCheckInBlockWithinWindow(headBlockNumber, blockNumber)) {
+            log('Check in would be too late. Not sending check in.', LogLevel.Debug);
             return;
         }
 

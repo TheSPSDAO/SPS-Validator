@@ -7,7 +7,6 @@ export enum Supply {
 
 export enum ShopItemType {
     TOKEN = 'token',
-    CARD = 'card',
 }
 
 // These might need to be constrained
