@@ -27,7 +27,6 @@ export class ValidatorCheckInPlugin implements Plugin, Prime {
         @inject(SpsValidatorLicenseManager)
         private readonly licenseManager: SpsValidatorLicenseManager,
     ) {
-        // this.checkInWatcher.addValidatorCheckInWatcher() TODO add watcher so we can update the nextBlock if the config changes
         this.checkInAccount = config.reward_account || config.validator_account;
         this.checkInWatcher.addValidatorCheckInWatcher(this.CHANGE_KEY, () => {
             this.nextCheckInBlock = this.lastCheckInBlock ? this.getNextCheckInBlock(this.lastCheckInBlock) : undefined;
@@ -49,7 +48,7 @@ export class ValidatorCheckInPlugin implements Plugin, Prime {
         const checkIn = await this.checkInRepository.getByAccount(this.checkInAccount, trx);
         this.lastCheckInBlock = checkIn ? checkIn.last_check_in_block_num : undefined;
         this.nextCheckInBlock = this.lastCheckInBlock ? this.getNextCheckInBlock(this.lastCheckInBlock) : undefined;
-        log(`Next check in block: ${this.nextCheckInBlock}`, LogLevel.Info);
+        log(`Next check in block: ${this.nextCheckInBlock ?? 'asap'}`, LogLevel.Info);
     }
 
     static isAvailable() {
@@ -67,10 +66,18 @@ export class ValidatorCheckInPlugin implements Plugin, Prime {
             return;
         }
 
-        // Check in
-        const hash = this.licenseManager.getCheckInHash(blockHash, this.checkInAccount);
+        // determine if we should check in (do we have staked licenses?). if we don't, we'll try again in the next block
+        const { activatedLicenses } = await this.licenseManager.getLicenses(this.checkInAccount);
+        if (activatedLicenses === 0) {
+            log('No activated licenses found. Not checking in.', LogLevel.Debug);
+            return;
+        }
+
         // plugins are run asynchronously, so we need to set nextCheckInBlock before calling into async code
         this.nextCheckInBlock = this.getNextCheckInBlock(blockNumber);
+
+        // Check in
+        const hash = this.licenseManager.getCheckInHash(blockHash, this.checkInAccount);
         try {
             const confirmation = await this.hive.submitCheckIn(blockNumber, hash);
             this.lastCheckInBlock = blockNumber;

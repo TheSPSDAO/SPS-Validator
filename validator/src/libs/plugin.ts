@@ -5,7 +5,7 @@ import { LogLevel } from '../utils';
 export interface Plugin {
     readonly name: string;
     beforeBlockProcessed?: (blockNumber: number) => Promise<void>;
-    onBlockProcessed?: (blockNumber: number, eventLogs: EventLog[], blockHash: string) => Promise<void>;
+    onBlockProcessed?: (blockNumber: number, eventLogs: EventLog[], blockHash: string, headBlockNumber: number) => Promise<void>;
 }
 
 export class PluginDispatcherBuilder {
@@ -35,9 +35,9 @@ export class PluginDispatcher {
         });
     }
 
-    public dispatch(blockNumber: number, eventLogs: EventLog[], blockHash: string): void {
+    public dispatch(blockNumber: number, eventLogs: EventLog[], blockHash: string, headBlockNumber: number): void {
         this.plugins.forEach((x) => {
-            x.onBlockProcessed?.(blockNumber, eventLogs, blockHash).catch((reason: unknown) => {
+            x.onBlockProcessed?.(blockNumber, eventLogs, blockHash, headBlockNumber).catch((reason: unknown) => {
                 utils.log(`Error dispatching data to plugin ${x.name}: ${reason}`, LogLevel.Error);
             });
         });
