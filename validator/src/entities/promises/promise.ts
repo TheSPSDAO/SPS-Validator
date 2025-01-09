@@ -30,7 +30,7 @@ export class PromiseRepository extends BaseRepository {
     }
 
     async getPromisesByTypeAndIds(type: string, ids: string[], trx?: Trx): Promise<PromiseEntity[]> {
-        const result = await this.query(PromiseEntity, trx).where('type', type).whereIn('ext_id', ids).getMany();
+        const result = await this.query(PromiseEntity, trx).where('type', type).whereIn('ext_id', ids).orderBy('ext_id').getMany();
         return result;
     }
 
@@ -40,7 +40,7 @@ export class PromiseRepository extends BaseRepository {
     }
 
     async getExpiredPromises(now: Date, trx?: Trx): Promise<PromiseEntity[]> {
-        const result = await this.query(PromiseEntity, trx).where('status', 'fulfilled').where('fulfilled_expiration', '<=', now).getMany();
+        const result = await this.query(PromiseEntity, trx).where('status', 'fulfilled').where('fulfilled_expiration', '<=', now).orderBy('ext_id').getMany();
         return result;
     }
 

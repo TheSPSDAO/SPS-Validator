@@ -49,6 +49,8 @@ export class ValidatorVoteRepository extends BaseRepository {
             .where('voter', action.op.account)
             .where('validator', validator)
             .useKnexQueryBuilder((query) => query.returning('*').del())
+            .orderBy('validator')
+            .orderBy('voter')
             .getMany();
         const deleteVote = new EventLog(EventTypes.DELETE, ValidatorVoteEntity, vote);
         const syncedValidators = await this.syncValidatorVotes([validator], trx);
@@ -61,6 +63,8 @@ export class ValidatorVoteRepository extends BaseRepository {
         const votes = await this.query(ValidatorVoteEntity, trx)
             .where('voter', voter)
             .useKnexQueryBuilder((query) => query.increment('vote_weight', amount).returning('*'))
+            .orderBy('validator')
+            .orderBy('voter')
             .getMany();
 
         const voteEvents = votes.map((v) => new EventLog(EventTypes.UPDATE, ValidatorVoteEntity, v));
@@ -81,6 +85,8 @@ export class ValidatorVoteRepository extends BaseRepository {
         const votes = await this.query(ValidatorVoteEntity, trx)
             .where('voter', voter)
             .useKnexQueryBuilder((query) => query.update('vote_weight', weight).returning('*'))
+            .orderBy('validator')
+            .orderBy('voter')
             .getMany();
 
         const voteEvents = votes.map((v) => new EventLog(EventTypes.UPDATE, ValidatorVoteEntity, v));
@@ -113,6 +119,7 @@ export class ValidatorVoteRepository extends BaseRepository {
                     vote.validator = ANY(:validators)
                 GROUP BY
                     validator
+                ORDER BY validator
             ) summed
             WHERE v.account_name = summed.validator
             RETURNING v.*;

@@ -104,6 +104,7 @@ export class BlockRepository extends BaseRepository {
             .where('block_num', '>', last_checked_block_num)
             .whereNotNull('validator')
             .whereNull('validation_tx')
+            .orderBy('block_num', 'asc')
             .getMany();
     }
 
