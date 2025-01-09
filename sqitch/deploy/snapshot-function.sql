@@ -262,7 +262,7 @@ BEGIN
 	    FROM
 	        promise
 		WHERE
-			status = 'open';
+			status IN ('open', 'fulfilled');
 
 		-- pull promise_history for records in snapshot schema promise.  This ensures integrity for the snapshot file
     	INSERT INTO snapshot.promise_history (id, promise_id, action, player, previous_status, new_status, trx_id, created_date)
