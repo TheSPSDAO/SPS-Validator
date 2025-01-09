@@ -133,17 +133,17 @@ afterAll(async () => {
     await fixture.dispose();
 });
 
-test.dbOnly('Garbage data for fulfill_promises does not crash.', () => {
-    return expect(fixture.opsHelper.processOp('fulfill_promises', promise_creator, garbage_payload)).resolves.toBeUndefined();
+test.dbOnly('Garbage data for fulfill_promise_multi does not crash.', () => {
+    return expect(fixture.opsHelper.processOp('fulfill_promise_multi', promise_creator, garbage_payload)).resolves.toBeUndefined();
 });
 
-test.dbOnly('Lots of emoji for fulfill_promises does not crash.', () => {
-    return expect(fixture.opsHelper.processOp('fulfill_promises', promise_creator, emoji_payload)).resolves.toBeUndefined();
+test.dbOnly('Lots of emoji for fulfill_promise_multi does not crash.', () => {
+    return expect(fixture.opsHelper.processOp('fulfill_promise_multi', promise_creator, emoji_payload)).resolves.toBeUndefined();
 });
 
-test.dbOnly('fulfill_promises with invalid payload fails.', async () => {
+test.dbOnly('fulfill_promise_multi with invalid payload fails.', async () => {
     await expect(
-        fixture.opsHelper.processOp('fulfill_promises', promise_creator, {
+        fixture.opsHelper.processOp('fulfill_promise_multi', promise_creator, {
             type: 'delegation',
             // missing controllers / fulfill_timeout_seconds
         }),
@@ -153,9 +153,9 @@ test.dbOnly('fulfill_promises with invalid payload fails.', async () => {
     expect(result?.status).toBe('open');
 });
 
-test.dbOnly('fulfill_promises with invalid type fails.', async () => {
+test.dbOnly('fulfill_promise_multi with invalid type fails.', async () => {
     await expect(
-        fixture.opsHelper.processOp('fulfill_promises', promise_creator, {
+        fixture.opsHelper.processOp('fulfill_promise_multi', promise_creator, {
             ids: [open_promise_id, open_promise_id2],
             type: 'invalid_type',
         }),
@@ -169,9 +169,9 @@ test.dbOnly('fulfill_promises with invalid type fails.', async () => {
 
 // DELEGATION PROMISES
 
-test.dbOnly('fulfill_promises with promise "holder" account fails.', async () => {
+test.dbOnly('fulfill_promise_multi with promise "holder" account fails.', async () => {
     await expect(
-        fixture.opsHelper.processOp('fulfill_promises', delegation_to, {
+        fixture.opsHelper.processOp('fulfill_promise_multi', delegation_to, {
             ids: [open_promise_id, open_promise_id2],
             type: 'delegation',
         }),
@@ -183,9 +183,9 @@ test.dbOnly('fulfill_promises with promise "holder" account fails.', async () =>
     expect(result2?.status).toBe('open');
 });
 
-test.dbOnly('fulfill_promises with not enough tokens fails.', async () => {
+test.dbOnly('fulfill_promise_multi with not enough tokens fails.', async () => {
     await expect(
-        fixture.opsHelper.processOp('fulfill_promises', delegation_to, {
+        fixture.opsHelper.processOp('fulfill_promise_multi', delegation_to, {
             ids: [open_promise_id, open_promise_id2, open_promise_id3],
             type: 'delegation',
         }),
@@ -199,9 +199,9 @@ test.dbOnly('fulfill_promises with not enough tokens fails.', async () => {
     expect(result3?.status).toBe('open');
 });
 
-test.dbOnly('fulfill_promises on open promises succeeds.', async () => {
+test.dbOnly('fulfill_promise_multi on open promises succeeds.', async () => {
     await expect(
-        fixture.opsHelper.processOp('fulfill_promises', delegator, {
+        fixture.opsHelper.processOp('fulfill_promise_multi', delegator, {
             ids: [open_promise_id, open_promise_id2],
             type: 'delegation',
         }),
@@ -237,9 +237,9 @@ test.dbOnly('fulfill_promises on open promises succeeds.', async () => {
     expect(delegationToSpsIn?.balance).toBe(0);
 });
 
-test.dbOnly('fulfill_promises with cancelled promise fails.', async () => {
+test.dbOnly('fulfill_promise_multi with cancelled promise fails.', async () => {
     await expect(
-        fixture.opsHelper.processOp('fulfill_promises', delegator, {
+        fixture.opsHelper.processOp('fulfill_promise_multi', delegator, {
             ids: [open_promise_id, open_promise_id2, cancelled_promise_id],
             type: 'delegation',
         }),
@@ -269,9 +269,9 @@ test.dbOnly('fulfill_promises with cancelled promise fails.', async () => {
     expect(spsOut?.balance).toBe(100);
 });
 
-test.dbOnly('fulfill_promises with fulfilled promise fails.', async () => {
+test.dbOnly('fulfill_promise_multi with fulfilled promise fails.', async () => {
     await expect(
-        fixture.opsHelper.processOp('fulfill_promises', delegator, {
+        fixture.opsHelper.processOp('fulfill_promise_multi', delegator, {
             ids: [open_promise_id, open_promise_id2, fulfilled_promise_id],
             type: 'delegation',
         }),

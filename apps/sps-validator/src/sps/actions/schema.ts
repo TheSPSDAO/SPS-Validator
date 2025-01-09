@@ -362,8 +362,8 @@ const fulfill_promise = new Schema.Schema(
     }),
 );
 
-const fulfill_promises = new Schema.Schema(
-    'fulfill_promises',
+const fulfill_promise_multi = new Schema.Schema(
+    'fulfill_promise_multi',
     object({
         type: string().required(),
         ids: array(string().required()).min(1).required(),
@@ -447,7 +447,7 @@ export {
     reverse_promise,
     complete_promise,
     fulfill_promise,
-    fulfill_promises,
+    fulfill_promise_multi,
     expire_promises,
     activate_license,
     deactivate_license,

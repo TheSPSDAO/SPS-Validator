@@ -111,7 +111,7 @@ export class EntryPoint<T extends Resolver & Container, S extends Synchronisatio
             utils.log(`Processed block ${block_num} in ${processing_time}ms`, LogLevel.Debug);
             utils.log(`Waited ${start_time - round_finish_time}ms for new block.`, LogLevel.Debug);
 
-            this.pluginDispatcher.dispatch(block_num, event_logs, block_hash);
+            this.pluginDispatcher.dispatch(block_num, event_logs, block_hash, observer.headBlockNum);
 
             round_finish_time = Date.now();
             if (this.shouldStop) {

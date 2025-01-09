@@ -96,10 +96,10 @@ BEGIN
 
 		INSERT INTO snapshot.blocks
 		(
-			block_num, block_id, prev_block_id, l2_block_id, block_time, validator
+			block_num, block_id, prev_block_id, l2_block_id, block_time, validator, validation_tx
 		)
 	    SELECT
-			block_num, block_id, prev_block_id, l2_block_id, block_time, validator
+			block_num, block_id, prev_block_id, l2_block_id, block_time, validator, validation_tx
 	    FROM
 			blocks
 	    ORDER BY
@@ -233,10 +233,10 @@ BEGIN
 
 		INSERT INTO snapshot.blocks
 		(
-			block_num, block_id, prev_block_id, l2_block_id, block_time, validator
+			block_num, block_id, prev_block_id, l2_block_id, block_time, validator, validation_tx
 		)
 	    SELECT
-			block_num, block_id, prev_block_id, l2_block_id, block_time, validator
+			block_num, block_id, prev_block_id, l2_block_id, block_time, validator, validation_tx
 	    FROM
 			blocks
 	    ORDER BY

@@ -17,7 +17,7 @@ describe('plugin', () => {
     test('Plugin gets data dispatched', () => {
         const dispatcher = PluginDispatcherBuilder.create().addPlugin(mockPlugin).build();
 
-        dispatcher.dispatch(1, [], '');
+        dispatcher.dispatch(1, [], '', 1);
 
         expect(mockPlugin.onBlockProcessed).toBeCalledTimes(1);
     });
