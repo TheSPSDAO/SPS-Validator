@@ -119,9 +119,9 @@ export class ValidatorVoteRepository extends BaseRepository {
                     vote.validator = ANY(:validators)
                 GROUP BY
                     validator
+                ORDER BY validator
             ) summed
             WHERE v.account_name = summed.validator
-            ORDER BY v.account_name
             RETURNING v.*;
             `,
             { validators },
