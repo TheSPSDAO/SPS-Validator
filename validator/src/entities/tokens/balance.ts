@@ -72,12 +72,18 @@ export class BalanceRepository extends BaseRepository {
     }
 
     async getBalances(player: string, trx?: Trx): Promise<BalanceEntry[]> {
-        const records = await this.query(BalanceEntity, trx).where('player', player).select('player', 'token', 'balance').getMany();
+        const records = await this.query(BalanceEntity, trx).where('player', player).select('player', 'token', 'balance').orderBy('player').orderBy('token').getMany();
         return records.map(BalanceRepository.into);
     }
 
     async getMultipleBalancesByToken(token: string, players: string[], trx?: Trx): Promise<BalanceEntry[]> {
-        const records = await this.query(BalanceEntity, trx).whereIn('player', players).andWhere('token', token).select('player', 'token', 'balance').getMany();
+        const records = await this.query(BalanceEntity, trx)
+            .whereIn('player', players)
+            .andWhere('token', token)
+            .select('player', 'token', 'balance')
+            .orderBy('player')
+            .orderBy('token')
+            .getMany();
         return records.map(BalanceRepository.into);
     }
 

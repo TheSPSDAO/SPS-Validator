@@ -112,9 +112,12 @@ export class ValidatorRepository extends BaseRepository {
     }
 
     public async getBlockValidator(block: Pick<BlockRef, 'prng'>, trx?: Trx): Promise<ValidatorEntry | null> {
-        // HACK: can't filter on Numeric
-        const validators = await this.query(Validator_, trx).where('is_active', true).getMany();
-        const valid_validators = validators.map(ValidatorRepository.into).filter((v) => v.total_votes > 0);
+        const validators = await this.query(Validator_, trx)
+            .where('is_active', true)
+            .where('total_votes', '>', 0 as unknown as string)
+            .orderBy('total_votes', 'desc')
+            .getMany();
+        const valid_validators = validators.map(ValidatorRepository.into);
 
         const min_validators = this.watcher.validator?.min_validators;
         if (min_validators === undefined || validators.length < min_validators) {
