@@ -28,6 +28,11 @@ export class CheckInValidatorAction extends Action<typeof check_in_validator.act
         }
 
         const { block_num, hash } = this.params;
+        const withinWindow = this.licenseManager.isCheckInBlockWithinWindow(this.op.block_num, block_num);
+        if (!withinWindow) {
+            throw new ValidationError('Check in block is too old.', this, ErrorType.InvalidCheckIn);
+        }
+
         const expectedHash = await this.licenseManager.getCheckInHashForBlockNum(block_num, this.reward_account, trx);
         if (hash !== expectedHash) {
             throw new ValidationError('Invalid check in hash.', this, ErrorType.InvalidCheckIn);

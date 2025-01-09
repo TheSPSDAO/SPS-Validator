@@ -55,21 +55,25 @@ export class ValidatorCheckInPlugin implements Plugin, Prime {
         return config.validator_account && config.validator_key && config.enable_check_ins;
     }
 
-    async onBlockProcessed(blockNumber: number, _: EventLog<any>[], blockHash: string): Promise<void> {
+    async onBlockProcessed(blockNumber: number, _: EventLog<any>[], blockHash: string, headBlockNumber: number): Promise<void> {
         if (!this.checkInWatcher.validator_check_in) {
             log('Validator check in config is invalid. Not sending check in.', LogLevel.Warning);
             return;
         }
-
         // Check if we need to check in
-        if (this.nextCheckInBlock && blockNumber < this.nextCheckInBlock) {
+        else if (this.nextCheckInBlock && blockNumber < this.nextCheckInBlock) {
+            return;
+        }
+        // Check if we are too late to check in for this block
+        else if (this.licenseManager.isCheckInBlockWithinWindow(headBlockNumber, blockNumber)) {
+            log('Check would be too late. Not sending check in.', LogLevel.Debug);
             return;
         }
 
         // determine if we should check in (do we have staked licenses?). if we don't, we'll try again in the next block
-        const { activatedLicenses } = await this.licenseManager.getLicenses(this.checkInAccount);
-        if (activatedLicenses === 0) {
-            log('No activated licenses found. Not checking in.', LogLevel.Debug);
+        const { can_check_in } = await this.licenseManager.getCheckIn(this.checkInAccount, blockNumber);
+        if (!can_check_in) {
+            log('Cannot check in at this block.', LogLevel.Debug);
             return;
         }
 

@@ -282,6 +282,15 @@ export class SpsValidatorLicenseManager implements VirtualPayloadSource {
         return this.getCheckInHash(block.l2_block_id, account);
     }
 
+    /**
+     * verifies the check in block is within the window based off the current block
+     * @param current_block_num current block number
+     * @param check_in_block_num check in block number
+     */
+    isCheckInBlockWithinWindow(current_block_num: number, check_in_block_num: number) {
+        return current_block_num - check_in_block_num <= this.#checkInConfig!.check_in_window_blocks;
+    }
+
     getCheckInHash(block_hash: string, account: string): string {
         return sha256(`${block_hash}${account}`);
     }
