@@ -21,6 +21,8 @@ const posting_auth_ops = [
     'return_tokens',
     'fulfill_promise',
     'fulfill_promise_multi',
+    'activate_license',
+    'deactivate_license',
 ];
 
 // TODO: Return instantiated action, or null
