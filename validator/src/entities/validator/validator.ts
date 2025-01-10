@@ -116,6 +116,7 @@ export class ValidatorRepository extends BaseRepository {
             .where('is_active', true)
             .where('total_votes', '>', 0 as unknown as string)
             .orderBy('total_votes', 'desc')
+            .orderBy('account_name')
             .getMany();
         const valid_validators = validators.map(ValidatorRepository.into);
 

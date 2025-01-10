@@ -6,7 +6,7 @@ import { enableHealthChecker } from './health';
 import { TransactionRepository_ } from '../repositories/transactions';
 import { Trx } from '../db/tables';
 import { PriceFeedConsumer, PriceFeedError } from '../utilities/price_feed';
-import { LastBlockCache } from '../entities/block';
+import { BlockRepository as BlockRepository_, LastBlockCache } from '../entities/block';
 import { StakingRewardsRepository } from '../entities/tokens/staking_rewards';
 import { Middleware } from './middleware';
 import { TransactionMode, TransactionStarter } from '../db/transaction';
@@ -328,6 +328,33 @@ export function registerApiRoutes(app: Router, opts: ApiOptions): void {
                 const data = await TransactionRepository.lookupByBlockNum(blockNum, trx);
 
                 if (data.length === 0 && lastBlockCache.value !== null && lastBlockCache.value.block_num < blockNum) {
+                    res.status(404).end();
+                    return;
+                }
+
+                res.status(200).json(data);
+            });
+        } catch (err) {
+            next(err);
+        }
+    });
+
+    app.get('/block/:blockNum', async (req, res, next) => {
+        try {
+            const blockNum = Number(req.params.blockNum);
+
+            if (!Number.isInteger(blockNum)) {
+                res.status(400).end();
+                return;
+            }
+
+            const lastBlockCache = req.resolver.resolve<LastBlockCache>(LastBlockCache);
+            const trxStarter = req.resolver.resolve(TransactionStarter);
+            const BlockRepository = req.resolver.resolve(BlockRepository_);
+            await trxStarter.withTransaction(TransactionMode.Reporting, async (trx?: Trx) => {
+                const data = await BlockRepository.getByBlockNum(blockNum, trx);
+
+                if (!data && lastBlockCache.value !== null && lastBlockCache.value.block_num < blockNum) {
                     res.status(404).end();
                     return;
                 }
