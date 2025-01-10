@@ -69,8 +69,8 @@ export class BalanceHistoryRepository extends BaseRepository {
         const [from_history_record, to_history_record] = extractTransferRecords(action, token_transfer).map(BalanceHistoryRepository.from);
 
         // Send balance update socket messages
-        if (!token_transfer.from.startsWith('$')) this.socket.send(token_transfer.from, 'balance_update', from_history_record);
-        if (!token_transfer.to.startsWith('$')) this.socket.send(token_transfer.to, 'balance_update', to_history_record);
+        if (!token_transfer.from.startsWith('$')) this.socket.send(token_transfer.from, 'balance_update', BalanceHistoryRepository.into(from_history_record));
+        if (!token_transfer.to.startsWith('$')) this.socket.send(token_transfer.to, 'balance_update', BalanceHistoryRepository.into(to_history_record));
 
         await this.query(BalanceHistoryEntity, trx).insertItems([from_history_record, to_history_record]);
         return [new EventLog(EventTypes.INSERT, BalanceHistoryEntity, from_history_record), new EventLog(EventTypes.INSERT, BalanceHistoryEntity, to_history_record)];
