@@ -27,6 +27,7 @@ You need to re-build the validator when getting started or when updating to a ne
 - _(Note)_ The first time you register, your node will be set to "inactive", and you will not be considered for block validation.
 - After you've registered and your local node is caught up, you can set your node to active on the Manage Validator Node page.
 - You are now registered and will be considered for block validation. You can use the Manage Votes page to vote on yourself and others.
+- _(Note)_ If you have to take your node down for any reason, or it is down for some reason, you should set it to Inactive on the Manage Validator Node page so you are not considered for block validation. If you are chosen for a block, and your node is down, you will receive a "missed block" for that block, which could affect who votes for your node.
 
 ### Staking your licenses for LICENSE rewards
 
