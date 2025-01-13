@@ -26,6 +26,7 @@ You need to re-build the validator when getting started or when updating to a ne
 - _(Note)_ If you have just restored from a snapshot, you will have to wait until your node catches up before your UI will see you as registered. You can use the shared management UI here which will most likely be caught up: https://thespsdao.github.io/SPS-Validator/validator-nodes/manage.
 - _(Note)_ The first time you register, your node will be set to "inactive", and you will not be considered for block validation.
 - After you've registered and your local node is caught up, you can set your node to active on the Manage Validator Node page.
+- _(Note)_ When you're node is caught up, you will see log messages like this: `2025-01-13 14:49:27 [310b590] 1/13/2025, 7:49:27 PM - Processing block [92411242], Head Block: 92411242, Blocks to head: 0.`
 - You are now registered and will be considered for block validation. You can use the Manage Votes page to vote on yourself and others.
 - _(Note)_ If you have to take your node down for any reason, or it is down for some reason, you should set it to Inactive on the Manage Validator Node page so you are not considered for block validation. If you are chosen for a block, and your node is down, you will receive a "missed block" for that block, which could affect who votes for your node.
 
