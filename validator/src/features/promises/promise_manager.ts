@@ -1,5 +1,5 @@
 import { Result } from '@steem-monsters/lib-monad';
-import { Trx } from '../../db/tables';
+import { PromiseEntity, Trx } from '../../db/tables';
 import { JSONB } from '../../db/columns';
 import { IAction } from '../../actions/action';
 import { EventLog } from '../../entities/event_log';
@@ -213,24 +213,35 @@ export class PromiseManager implements VirtualPayloadSource {
         const ids = [...new Set(request.ids)];
         const promises = await this.promiseRepository.getPromisesByTypeAndIds(request.type, ids, trx);
         const handlerLogs = await handler.fulfillPromises(request, promises, action, trx);
-        const fulfillExpiration = new Date(action.op.block_time.getTime() + 1000);
-        const [_, updateLogs] = await this.promiseRepository.updateMultiple(
-            {
-                // history data
-                action: 'fulfill',
-                previous_status: 'open',
-                actor: action.op.account,
-                // promise data
-                type: request.type,
-                ext_ids: ids,
-                status: 'fulfilled',
-                fulfilled_at: action.op.block_time,
-                fulfilled_by: action.op.account,
-                fulfilled_expiration: fulfillExpiration,
-            },
-            action,
-            trx,
-        );
+        const groupedExpirations = promises.reduce((map, promise) => {
+            const expiration = promise.fulfill_timeout_seconds !== null ? new Date(action.op.block_time.getTime() + promise.fulfill_timeout_seconds * 1000) : null;
+            const group = map.get(expiration) ?? [];
+            group.push(promise);
+            map.set(expiration, group);
+            return map;
+        }, new Map<Date | null, PromiseEntity[]>());
+
+        const updateLogs: EventLog[] = [];
+        for (const [expiration, promises] of groupedExpirations) {
+            const [_, groupsLogs] = await this.promiseRepository.updateMultiple(
+                {
+                    // history data
+                    action: 'fulfill',
+                    previous_status: 'open',
+                    actor: action.op.account,
+                    // promise data
+                    type: request.type,
+                    ext_ids: promises.map((p) => p.ext_id),
+                    status: 'fulfilled',
+                    fulfilled_at: action.op.block_time,
+                    fulfilled_by: action.op.account,
+                    fulfilled_expiration: expiration,
+                },
+                action,
+                trx,
+            );
+            updateLogs.push(...groupsLogs);
+        }
 
         return [...updateLogs, ...handlerLogs];
     }
