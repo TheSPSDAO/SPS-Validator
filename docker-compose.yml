@@ -48,6 +48,7 @@ services:
       VALIDATOR_KEY: ${VALIDATOR_KEY:-}
       REWARD_ACCOUNT: ${REWARD_ACCOUNT:-}
       VERSION: ${GIT_COMMIT:-development}
+      ENABLE_CHECK_INS: ${ENABLE_CHECK_INS:-true}
     depends_on:
       - pg
 
@@ -79,7 +80,6 @@ services:
     build:
       context: .
       dockerfile: ./apps/sps-validator-ui/Dockerfile
-      no_cache: true
       args:
         VALIDATOR_API_URL: "http://localhost:3333"
         VALIDATOR_PREFIX: "${CUSTOM_JSON_PREFIX:-sm_}"

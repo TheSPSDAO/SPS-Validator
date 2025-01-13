@@ -13,8 +13,29 @@ You need to re-build the validator when getting started or when updating to a ne
 
 - `bash run.sh stop`     : Ensure the validator is not currently running (`bash run.sh stop`)
 - `bash run.sh build`    : Build the validator.  This will deploy the database, run migrations and also download/deploy the snapshot.
-- `bash run.sh start`    : Start the validator.
-- `bash run.sh start all`: Start the validator and the ui.
+- `bash run.sh start` or `bash run.sh start all` : Start the validator. `all` will start the management UI as well.
+- You can go to `http://localhost:3333/status` to check that the validator is running.
+- You can go to `http://localhost:8888/` to view the management UI if you used the `all` option when starting.
+
+### Registering your node
+
+- Set the `VALIDATOR_ACCOUNT` and `VALIDATOR_KEY` (active key) environment variables in your .env file
+- _(Optional)_ Set `REWARD_ACCOUNT` to the account that you want to receive the block validation rewards.
+- If you've already started your node, run `./run.sh rebuild_service validator` to apply the new environment variables
+- Go to the management ui, http://localhost:8888/validator-nodes/manage, and follow the registration steps. Post URL is NOT required.
+- _(Note)_ If you have just restored from a snapshot, you will have to wait until your node catches up before your UI will see you as registered. You can use the shared management UI here which will most likely be caught up: https://thespsdao.github.io/SPS-Validator/validator-nodes/manage.
+- _(Note)_ The first time you register, your node will be set to "inactive", and you will not be considered for block validation.
+- After you've registered and your local node is caught up, you can set your node to active on the Manage Validator Node page.
+- You are now registered and will be considered for block validation. You can use the Manage Votes page to vote on yourself and others.
+
+### Staking your licenses for LICENSE rewards
+
+- Set the `VALIDATOR_ACCOUNT` and `VALIDATOR_KEY` (active key) environment variables in your .env file
+- _(Optional)_ Set `REWARD_ACCOUNT` to the account that you want to receive the license rewards. The `REWARD_ACCOUNT` must have a staked license to receive rewards. If you do not set a `REWARD_ACCOUNT`, then the `VALIDATOR_ACCOUNT` must have a staked license.
+- _(Note)_ LICENSE rewards do not require you to register your node, only that you have a staked license.
+- If you've already started your node, run `./run.sh rebuild_service validator` to apply the new environment variables
+- Go to the splinterlands license management page here, https://validator.qa.splinterlands.com/dashboard/licenses, and click `STAKE LICENSES`.
+- Once you've staked your licenses, and you have the environment variables set, your node will start sending check ins to prove you are running the software so you can receive rewards.
 
 ### Additional Commands
 
@@ -78,10 +99,6 @@ The current 'healthy' code is 200, the 'unhealthy' code is 503.
 If you run into linting or building errors after a `git pull`, make sure you have no lingering `node_modules` lying around.
 The _only_ node_modules that you should need are:
 - `node_modules`, after `npm install`
-- `ui/node_modules`, after `cd ui; npm install`
-
-The following are usually problematic, and should be removed or renamed at your convenience:
-- `validator/node_modules`
 
 ## Useful links
 - [sqitch documentation](https://sqitch.org/docs/)
@@ -93,6 +110,8 @@ The following are usually problematic, and should be removed or renamed at your 
 - validator
   - the main validator block processor.
 - monad
+- atom
 
 ### Apps
 - sps-validator
+- sps-validator-ui
