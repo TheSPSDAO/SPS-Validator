@@ -222,7 +222,7 @@ export class PromiseManager implements VirtualPayloadSource {
         }, new Map<Date | null, PromiseEntity[]>());
 
         const updateLogs: EventLog[] = [];
-        for (const [expiration, promises] of groupedExpirations) {
+        for (const [expiration, groupedPromises] of groupedExpirations) {
             const [_, groupsLogs] = await this.promiseRepository.updateMultiple(
                 {
                     // history data
@@ -231,7 +231,7 @@ export class PromiseManager implements VirtualPayloadSource {
                     actor: action.op.account,
                     // promise data
                     type: request.type,
-                    ext_ids: promises.map((p) => p.ext_id),
+                    ext_ids: groupedPromises.map((p) => p.ext_id),
                     status: 'fulfilled',
                     fulfilled_at: action.op.block_time,
                     fulfilled_by: action.op.account,
