@@ -5,15 +5,15 @@ You need to re-build the validator when getting started or when updating to a ne
 
 ### Prerequisites:
 
-- Make sure you have `docker`, `docker-compose` and either wget or curl installed. (`bash run.sh install_docker` and `bash run.sh preinstall` on Linux)
+- Make sure you have `docker`, `docker-compose` and either wget or curl installed. (`./run.sh install_docker` and `./run.sh preinstall` on Linux)
 - Copy .env-example to .env (`cp .env-example .env`) and change it accordingly
 - _(Optional)_ Either add `validator-data-latest.zip` into the `sqitch` folder or have it downloaded in the build step.
 
 ### Setup Instructions
 
-- `bash run.sh stop`     : Ensure the validator is not currently running (`bash run.sh stop`)
-- `bash run.sh build`    : Build the validator.  This will deploy the database, run migrations and also download/deploy the snapshot.
-- `bash run.sh start` or `bash run.sh start all` : Start the validator. `all` will start the management UI as well.
+- `./run.sh stop`     : Ensure the validator is not currently running (`./run.sh stop`)
+- `./run.sh build`    : Build the validator.  This will deploy the database, run migrations and also download/deploy the snapshot.
+- `./run.sh start` or `./run.sh start all` : Start the validator. `all` will start the management UI as well.
 - You can go to `http://localhost:3333/status` to check that the validator is running.
 - You can go to `http://localhost:8888/` to view the management UI if you used the `all` option when starting.
 
@@ -39,28 +39,32 @@ You need to re-build the validator when getting started or when updating to a ne
 - Go to the splinterlands license management page here, https://validator.qa.splinterlands.com/dashboard/licenses, and click `STAKE LICENSES`.
 - Once you've staked your licenses, and you have the environment variables set, your node will start sending check ins to prove you are running the software so you can receive rewards.
 
+### Known Bugs
+
+- If your node is running and licenses are then staked for its `VALIDATOR_ACCOUNT` or `REWARD_ACCOUNT`, it is not picking up the change and starting the check in process. You can resolve this by restarting your node after you've staked your licenses.
+
 ### Additional Commands
 
-- `bash run.sh restart`: helpful wrapper around `run.sh stop` and `run.sh start`
-- `bash run.sh logs`: trails the last 30 lines of logs
+- `./run.sh restart`: helpful wrapper around `./run.sh stop` and `./run.sh start`
+- `./run.sh logs`: trails the last 30 lines of logs
 
 ### Starting over from a fresh snapshot
 
-- `bash run.sh replay`:  :warning: **This will irrevocably destroy all local data, including blocks that have already been locally validated**: Be very careful here!
+- `./run.sh replay`:  :warning: **This will irrevocably destroy all local data, including blocks that have already been locally validated**: Be very careful here!
 
 ## Local development
 
-For local development, simply run `bash run.sh start db` instead of `bash run.sh start` after the setup instructions.
+For local development, simply run `./run.sh start db` instead of `./run.sh start` after the setup instructions.
 
 - Make sure you have `node` installed.
 - Run `npm i && npm run build sps-validator` to install dependencies and build the dependencies and the sps-validator itself
-- Navigate to the `apps/sps-validator` folder, copy `.env.example` to `.env` and make any desired local changes
+- Copy `.env.example` to `.env` if you haven't and make any desired local changes
 - Run `npm start sps-validator` to run the validator process.
 
 ### Plugins
 
 The validator library supports plugins which are called after each plugin this way you can attach plugins locally to perform
-other work.
+other work. The LICENSE reward pool is partially implemented as a plugin and a good starting point.
 
 Attaching a plugin
 ```typescript
@@ -69,6 +73,7 @@ const dispatcher = PluginDispatcherBuilder.create().addPlugin(coolPlugin).build(
 Then pass the `dispatcher` to the `EntryPoint` constructor and you're good to go!
 
 See the `SimpleLogPlugin` as an example of how to implement the `Plugin` interface.
+
 
 ### Testing
 Run tests with `npm test <project>`.
