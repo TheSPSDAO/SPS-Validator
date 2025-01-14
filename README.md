@@ -11,7 +11,7 @@ You need to re-build the validator when getting started or when updating to a ne
 
 ### Setup Instructions
 
-- `./run.sh stop`     : Ensure the validator is not currently running (`./run.sh stop`)
+- `./run.sh stop`     : Ensure the validator is not currently running.
 - `./run.sh build`    : Build the validator.  This will deploy the database, run migrations and also download/deploy the snapshot.
 - `./run.sh start` or `./run.sh start all` : Start the validator. `all` will start the management UI as well.
 - You can go to `http://localhost:3333/status` to check that the validator is running.
