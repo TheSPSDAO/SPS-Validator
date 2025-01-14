@@ -37,6 +37,14 @@ type MappedPoolProps = {
 
 export type StakingIncrease = [number, string] | 0; // [amount, token], or just 0 for a claimAll
 
+class StakingRewardsClaim {
+    static table = 'staking_rewards_claim';
+    player!: string;
+    pool_name!: string;
+    token!: string;
+    amount!: number;
+}
+
 export class StakingRewardsRepository extends BaseRepository {
     constructor(
         handle: Handle,
@@ -88,9 +96,18 @@ export class StakingRewardsRepository extends BaseRepository {
                         player,
                         pool.token,
                         claim_amount,
-                        'claim_staking_rewards',
+                        `claim_staking_rewards_${pool_name}`,
                         trx,
                     )),
+                );
+
+                // a record of the claim amount for bridges
+                result.push(
+                    new EventLog(
+                        EventTypes.INSERT,
+                        { table: StakingRewardsClaim.table },
+                        { player, pool_name: pool_name as string, token: pool.token, amount: claim_amount, pool: pool_name },
+                    ),
                 );
             }
         }

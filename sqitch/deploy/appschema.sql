@@ -103,6 +103,9 @@ CREATE TABLE IF NOT EXISTS :APP_SCHEMA.validator_transactions
 
 CREATE INDEX IF NOT EXISTS idx_balance_history_created_date ON :APP_SCHEMA.balance_history USING btree (created_date DESC);
 CREATE INDEX IF NOT EXISTS idx_balance_history_player ON :APP_SCHEMA.balance_history USING btree (player);
+CREATE INDEX IF NOT EXISTS balance_history_token_player_type_idx ON :APP_SCHEMA.balance_history USING btree (token ASC NULLS LAST, player ASC NULLS LAST, type ASC NULLS LAST);
+CREATE INDEX IF NOT EXISTS balance_history_player_created_date_idx ON :APP_SCHEMA.balance_history USING btree (player ASC NULLS LAST, created_date ASC NULLS LAST);
+
 CREATE INDEX IF NOT EXISTS validator_transaction_players_player_idx ON :APP_SCHEMA.validator_transaction_players USING btree (player);
 CREATE INDEX IF NOT EXISTS validator_transactions_block_num_idx ON :APP_SCHEMA.validator_transactions USING btree (block_num);
 CREATE INDEX IF NOT EXISTS validator_transactions_created_date_idx ON :APP_SCHEMA.validator_transactions USING btree (created_date);
