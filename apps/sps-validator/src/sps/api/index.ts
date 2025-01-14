@@ -19,8 +19,6 @@ import {
 import { utils } from 'splinterlands-dhive-sl';
 import { ManualDisposer } from '../manual-disposable';
 
-//import { HiveClient, ValidatorEventSource, EventDistributorBuilder, PostgresHiveEventSourcesRepository, TokenCheck } from '@steem-monsters/atom';
-
 // Each Middleware allows requests to read (cache) state from 'the world'. What this means is different for each type of middleware.
 
 @injectable()

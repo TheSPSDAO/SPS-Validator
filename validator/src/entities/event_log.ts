@@ -19,7 +19,7 @@ type RemoveSerialKeys<T> = T extends string | number
 export class EventLog<D = any> {
     public readonly object_type: string;
 
-    constructor(public readonly event_type: EventTypes, object_type: TableDescriptor, public readonly data: RemoveSerialKeys<D>) {
+    constructor(public readonly event_type: EventTypes, object_type: TableDescriptor, public readonly data: D) {
         if (typeof object_type === 'function') {
             this.object_type = getTableName(object_type);
         } else {
