@@ -103,7 +103,11 @@ export class StakingRewardsRepository extends BaseRepository {
 
                 // a record of the claim amount for bridges
                 result.push(
-                    new EventLog(EventTypes.INSERT, StakingRewardsClaim, { player, pool_name: pool_name as string, token: pool.token, amount: claim_amount, pool: pool_name }),
+                    new EventLog(
+                        EventTypes.INSERT,
+                        { table: StakingRewardsClaim.table },
+                        { player, pool_name: pool_name as string, token: pool.token, amount: claim_amount, pool: pool_name },
+                    ),
                 );
             }
         }
