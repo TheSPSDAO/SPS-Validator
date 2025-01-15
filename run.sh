@@ -71,7 +71,7 @@ snapshot() {
     if [[ $REPLY =~ ^[Yy]$ ]]; then
         echo "Zipping snapshot"
         zip snapshot.zip snapshot.sql
-        echo "Snapshot zipped. You can find it in snapshot.sql.xz"
+        echo "Snapshot zipped. You can find it in snapshot.zip"
 
         read -p "Would you like to remove the snapshot.sql file? (y/n)" -n 1 -r
         echo    # (optional) move to a new line
