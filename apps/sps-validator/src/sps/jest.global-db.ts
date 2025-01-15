@@ -15,7 +15,7 @@ export class JestGlobalDb {
     }
 
     async init() {
-        this.postgresContainer = await new PostgreSqlContainer().withReuse().withDatabase(TEMPLATE_DB_NAME).start();
+        this.postgresContainer = await new PostgreSqlContainer('postgres:16.6-alpine').withReuse().withDatabase(TEMPLATE_DB_NAME).start();
 
         // create template db
         const knexInstance = knex({
