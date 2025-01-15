@@ -36,6 +36,58 @@ docker_compose_wrapper() {
     GIT_COMMIT=$GIT_COMMIT docker compose "$@"
 }
 
+snapshot() {
+    read -p "Creating a snapshot requires the validator to be stopped. Stop the validator? (y/n)" -n 1 -r
+    echo    # (optional) move to a new line
+    if [[ ! $REPLY =~ ^[Yy]$ ]]; then
+        echo "Aborting snapshot"
+        exit
+    fi
+
+    echo "Stopping validator"
+    stop "validator"
+
+    source .env || true
+    # set app_database to default value
+    APP_DATABASE=${APP_DATABASE:-validator}
+
+    echo "Creating snapshot"
+    # connect to the database and run the freshsnapshot() function
+    docker_compose_wrapper exec pg psql -U postgres -h 127.0.0.1 -d "$APP_DATABASE" -c "SELECT snapshot.freshsnapshot(TRUE);"
+
+    echo "Dumping snapshot to file"
+    docker_compose_wrapper exec -e PGPASSWORD="$POSTGRES_PASSWORD" pg pg_dump \
+        --no-owner --no-acl --disable-triggers \
+        --no-comments --no-publications --no-security-labels \
+        --schema snapshot \
+        --no-subscriptions --no-tablespaces --data-only \
+        --host "127.0.0.1" \
+        --username "${POSTGRES_USER:-postgres}" \
+        "${APP_DATABASE}" > snapshot.sql
+
+    echo "Snapshot created. You can find it in snapshot.sql"
+
+    read -p "Would you like to zip the snapshot? (y/n)" -n 1 -r
+    echo    # (optional) move to a new line
+    if [[ $REPLY =~ ^[Yy]$ ]]; then
+        echo "Zipping snapshot"
+        zip snapshot.zip snapshot.sql
+        echo "Snapshot zipped. You can find it in snapshot.sql.xz"
+
+        read -p "Would you like to remove the snapshot.sql file? (y/n)" -n 1 -r
+        echo    # (optional) move to a new line
+        if [[ $REPLY =~ ^[Yy]$ ]]; then
+            rm snapshot.sql
+        fi
+    fi
+
+    read -p "Would you like to start the validator again? (y/n)" -n 1 -r
+    echo    # (optional) move to a new line
+    if [[ $REPLY =~ ^[Yy]$ ]]; then
+        start
+    fi
+}
+
 rebuild_service() {
     echo "Rebuilding $DOCKER_NAME $1 service"
     docker_compose_wrapper down "$1"
@@ -58,7 +110,7 @@ start() {
 
 stop() {
     echo "Stopping & removing $DOCKER_NAME"
-    docker_compose_wrapper down
+    docker_compose_wrapper down $1
 }
 
 restart() {
@@ -186,6 +238,7 @@ help() {
     echo "    replay                    - stops docker (if exists), deletes local database and runs build + start"
     echo "    build                     - runs dl_snapshot + database migrations"
     echo "    dl_snapshot               - downloads snapshot if it doesn't exists locally"
+    echo "    snapshot                  - creates a snapshot of the current database."
     echo "    logs                      - trails the last 30 lines of logs"
     echo
     echo "Helpers:"
@@ -219,6 +272,9 @@ case $1 in
     ;;
     dl_snapshot)
         dl_snapshot
+    ;;
+    snapshot)
+        snapshot
     ;;
     config)
         config

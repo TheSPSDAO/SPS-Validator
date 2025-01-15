@@ -12,5 +12,7 @@ config.ini
 .nx
 coverage
 tmp
+snapshot.sql
+snapshot.zip
 
 vite.config.*.timestamp*
