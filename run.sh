@@ -47,7 +47,6 @@ snapshot() {
     echo "Stopping validator"
     stop "validator"
 
-    source .env || true
     # set app_database to default value
     APP_DATABASE=${APP_DATABASE:-validator}
 
@@ -110,7 +109,7 @@ start() {
 
 stop() {
     echo "Stopping & removing $DOCKER_NAME"
-    docker_compose_wrapper down $1
+    docker_compose_wrapper down "$1"
 }
 
 restart() {
