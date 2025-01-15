@@ -20,7 +20,7 @@ jobs:
                   cp dist/apps/sps-validator-ui/index.html dist/apps/sps-validator-ui/404.html
               env:
                   BASE_URL: /SPS-Validator/
-                  VALIDATOR_PREFIX: sl-qavsm_
+                  VALIDATOR_PREFIX: sl-qavosm_
                   VALIDATOR_API_URL: https://splinterlands-validator.validator.qa.splinterlands.com
 
             - name: Upload static files as artifact
