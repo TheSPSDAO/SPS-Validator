@@ -2,7 +2,7 @@ name: "${DOCKER_NAME}"
 
 services:
   pg:
-    image: postgres:13-alpine
+    image: postgres:16.6-alpine
     ports:
       - "${PUBLISH_ADDRESS:-127.0.0.1}:${POSTGRES_PORT:-5432}:5432"
     volumes:
@@ -42,6 +42,7 @@ services:
       START_BLOCK: ${START_BLOCK:-}
       CUSTOM_JSON_ID: ${CUSTOM_JSON_ID:-sps}
       RPC_NODES: ${RPC_NODES:-https://api.hive.blog,https://anyx.io,https://api.openhive.network,https://hived.splinterlands.com,https://hived-2.splinterlands.com}
+      RPC_TIMEOUT: ${RPC_TIMEOUT:-5000}
       REPLAY_BATCH_SIZE: ${REPLAY_BATCH_SIZE:-25}
       DB: '{ "host": "pg", "port": 5432, "database": "${APP_DATABASE:-validator}", "user": "${APP_USER:-validator}", "password": "${APP_PASSWORD:-validator}" }'
       VALIDATOR_ACCOUNT: ${VALIDATOR_ACCOUNT:-}

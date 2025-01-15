@@ -104,6 +104,12 @@ const schema = {
         default: ['https://api.hive.blog', 'https://anyx.io', 'https://api.openhive.network'],
         env: 'RPC_NODES',
     },
+    rpc_timeout: {
+        doc: 'The timeout in ms for RPC requests',
+        format: 'nat',
+        default: 5000,
+        env: 'RPC_TIMEOUT',
+    },
     replay_batch_size: {
         doc: 'The amount of blocks to fetch in parallel when the application is behind on blocks',
         format: 'nat',

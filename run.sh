@@ -109,7 +109,11 @@ start() {
 
 stop() {
     echo "Stopping & removing $DOCKER_NAME"
-    docker_compose_wrapper down "$1"
+    if [[ -z $1 ]]; then
+        docker_compose_wrapper down
+    else
+        docker_compose_wrapper down "$1"
+    fi
 }
 
 restart() {

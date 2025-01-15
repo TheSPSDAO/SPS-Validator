@@ -92,12 +92,12 @@ CREATE TABLE IF NOT EXISTS :APP_SCHEMA.validator_transactions
     prev_block_id character varying(1024) NOT NULL,
     type          character varying(100)  NOT NULL,
     player        character varying(50)   NOT NULL,
-    data          text,
+    data          text compression lz4,
     success       boolean,
     error         text,
     block_num     integer,
     created_date  timestamp without time zone,
-    result        text,
+    result        text compression lz4,
     CONSTRAINT validator_transactions_pkey PRIMARY KEY (id)
 );
 

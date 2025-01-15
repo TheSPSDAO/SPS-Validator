@@ -5,6 +5,7 @@ import { PrefixOpts } from './entities/operation';
 
 export type HiveOptions = {
     rpc_nodes: Array<string>;
+    rpc_timeout?: number;
     logging_level: LogLevel;
     blocks_behind_head: number;
     replay_batch_size: number;
@@ -12,11 +13,12 @@ export type HiveOptions = {
 export const HiveOptions: unique symbol = Symbol('HiveOptions');
 
 export class HiveClient extends Client {
-    constructor(private readonly cfg: HiveOptions, private readonly validatorConfig: ValidatorOpts, private readonly prefixOpts: PrefixOpts) {
+    constructor(readonly cfg: HiveOptions, private readonly validatorConfig: ValidatorOpts, private readonly prefixOpts: PrefixOpts) {
         super({
             nodes: cfg.rpc_nodes,
             // Our LogLevel happens to be compatible with dhive-sl's version.
             loggingLevel: cfg.logging_level.valueOf(),
+            timeout: cfg.rpc_timeout,
             stream: { blocksBehindHead: cfg.blocks_behind_head, replayBatchSize: cfg.replay_batch_size, mode: 'latest' },
             skipTransactionQueue: true,
         });
