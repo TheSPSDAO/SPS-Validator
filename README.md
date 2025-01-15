@@ -47,6 +47,7 @@ You need to re-build the validator when getting started or when updating to a ne
 
 - `./run.sh restart`: helpful wrapper around `./run.sh stop` and `./run.sh start`
 - `./run.sh logs`: trails the last 30 lines of logs
+- `./run.sh snapshot`: stops the validator and creates a snapshot of the database. this snapshot can be uploaded and used to restore another validator.
 
 ### Starting over from a fresh snapshot
 
