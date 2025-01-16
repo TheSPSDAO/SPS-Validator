@@ -11,7 +11,7 @@ export function ValidatorVotesTable({ account, className }: { account: string; c
     if (loading) {
         return <Spinner className="w-full" />;
     }
-    const totalVotes = votes?.reduce((acc, vote) => acc + vote.vote_weight, 0) ?? 0;
+    const totalVotes = votes?.reduce((acc, vote) => acc + Number(vote.vote_weight), 0) ?? 0;
     return (
         <div>
             <Table className={`border-2 border-gray-200 ${className}`}>
