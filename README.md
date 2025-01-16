@@ -19,8 +19,8 @@ You need to re-build the validator when getting started or when updating to a ne
 - `./run.sh build`    : Build the validator.  This will deploy the database, run migrations and also download/deploy the snapshot.
 - _(Note)_: If you receive an error like `Got permission denied while trying to connect to the Docker daemon socket`, follow the steps [here](https://docs.docker.com/engine/install/linux-postinstall/#manage-docker-as-a-non-root-user).
 - `./run.sh start` or `./run.sh start all` : Start the validator. `all` will start the management UI as well.
-- You can go to `http://localhost:3333/status` to check that the validator is running.
-- You can go to `http://localhost:8888/` to view the management UI if you used the `all` option when starting.
+- You can go to http://localhost:3333/status to check that the validator is running.
+- You can go to http://localhost:8888/ to view the management UI if you used the `all` option when starting.
 
 ### Registering your node
 
