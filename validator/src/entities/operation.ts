@@ -33,7 +33,7 @@ export class ActionOrBust {
         }
 
         // need to do this check here, because we have two formats for actions that we accept
-        const isAuthorized = posting_auth_actions.includes(data.action) ? op.active_auth : true;
+        const isAuthorized = posting_auth_actions.includes(data.action) || op.active_auth;
         if (!isAuthorized) {
             return null;
         }
