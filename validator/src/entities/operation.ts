@@ -8,8 +8,7 @@ import { Trx } from '../db/tables';
 import { ProcessResult } from '../actions/virtual';
 import { payout } from '../utilities/token_support';
 
-// TODO: operations should control this...
-const posting_auth_ops = [
+const posting_auth_actions = [
     'token_award',
     'stake_tokens',
     'unstake_tokens',
@@ -32,6 +31,13 @@ export class ActionOrBust {
         if (typeof data?.action !== 'string') {
             return null;
         }
+
+        // need to do this check here, because we have two formats for actions that we accept
+        const isAuthorized = posting_auth_actions.includes(data.action) ? op.active_auth : true;
+        if (!isAuthorized) {
+            return null;
+        }
+
         const factory = this.lookupWrapper.lookupOpsConstructor(op.block_num, data.action, op.isVirtual);
         if (!factory) return null;
         try {
@@ -94,11 +100,6 @@ export default class Operation implements OperationData {
         this.id = op[1].id;
         this.base_id = this.id.replace(this.cfg.custom_json_prefix, '');
 
-        if (!this.isAuthorized()) {
-            this.actions = [];
-            return;
-        }
-
         const data = typeof op[1].json === 'object' ? op[1].json : utils.tryParse(op[1].json);
 
         let actions: Array<IAction | null>;
@@ -134,14 +135,6 @@ export default class Operation implements OperationData {
             await this.actions[i].execute(trx);
         }
     }
-
-    private isAuthorized(): boolean {
-        // TODO: use config item posting_auth_ops to have some operations work with posting auth.
-        // TODO: Figure out order of events where this can be asynchronous.
-        // For now, only accept ops with active auths, or known posting auths.
-        return posting_auth_ops.includes(this.base_id) || this.active_auth;
-    }
-
     get trx_op_id(): string {
         return this.op_index && this.op_index > 0 ? `${this.transaction_id}-${this.op_index}` : this.transaction_id;
     }
