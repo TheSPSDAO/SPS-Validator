@@ -25,6 +25,17 @@ export class JestGlobalDb {
             },
             searchPath: 'public',
         });
+
+        // withReuse() will keep the db, so we don't need to recreate it in this case.
+        const dbExists = await knexInstance.raw(`SELECT 1 FROM pg_database WHERE datname = 'control_db';`);
+        if (dbExists.rows.length > 0) {
+            await knexInstance.destroy();
+            return {
+                templateDb: TEMPLATE_DB_NAME,
+                connectionString: this.postgresContainer.getConnectionUri(),
+            };
+        }
+
         await knexInstance.raw(`DROP SCHEMA IF EXISTS public CASCADE; CREATE SCHEMA public;`);
         await knexInstance.raw(this.structure!);
         await knexInstance.raw(`SET SEARCH_PATH = public;`);

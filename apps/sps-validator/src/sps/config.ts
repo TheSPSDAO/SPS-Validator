@@ -41,6 +41,8 @@ import {
 } from '@steem-monsters/splinterlands-validator';
 import { TOKENS } from './features/tokens';
 import { ValidatorCheckInConfig, ValidatorCheckInWatch, validator_check_in_schema } from './features/validator/validator_license.config';
+import { AnySchema, ValidationError } from 'yup';
+import { Result } from '@steem-monsters/lib-monad';
 
 type Watches = ValidatorWatch & TokenWatch & PoolWatch & ShopWatch & UnstakingWatch & BookkeepingWatch & ValidatorCheckInWatch;
 
@@ -48,6 +50,23 @@ function assertNonNull<T>(v: T): asserts v is NonNullable<T> {
     if (v === undefined || v === null) {
         throw new Error(`assertNonNull called with null or undefined`);
     }
+}
+
+type Assertion<T = unknown> = (value: unknown, ...extra: unknown[]) => asserts value is T;
+type ConfigAssertions = Record<string, Assertion>;
+type ConfigAssertionValues<TAssertions extends ConfigAssertions> = {
+    [key in keyof TAssertions]: TAssertions[key] extends Assertion<infer T> ? T : never;
+};
+type ConfigAsserter<TKey extends string = string, TAssertions extends ConfigAssertions = ConfigAssertions> = {
+    readonly key: TKey;
+    readonly assertions: TAssertions;
+    readonly callback: (values: ConfigAssertionValues<TAssertions>) => void;
+};
+
+function schemaAssertion<T>(schema: AnySchema) {
+    return (value: unknown): asserts value is T => {
+        schema.validateSync(value);
+    };
 }
 
 @singleton()
@@ -155,6 +174,8 @@ export class SpsConfigLoader
 
     private static readonly VALIDATE = Symbol('validate');
 
+    private readonly asserters: ConfigAsserter[] = [];
+
     private readonly validatorWatcher: Quark<ConfigType, 'validator'>;
     private readonly validatorCheckInWatcher: Quark<ConfigType, 'validator_check_in'>;
     private readonly spsWatcher: Quark<ConfigType, 'sps'>;
@@ -163,25 +184,82 @@ export class SpsConfigLoader
 
     public constructor(@inject(ConfigRepository) private readonly configRepository: ConfigRepository, @inject(PoolsHelper) private readonly poolsHelper: PoolsHelper<string>) {
         super({});
+
         // 'sps' is the group_name in the config table
         // next is the object created from all the entries under that group_name
         // we create different "domain" objects (token, unstaking settings, staking pools) from that object
-        this.spsWatcher = this.quark('sps').addWatch(SpsConfigLoader.VALIDATE, (previous, next) => {
-            this.#token = next && token_schema.isValidSync(next) ? next : undefined;
-            this.#unstaking = next && UnstakingSettings.validate(next) ? { get: (_?: string) => next } : undefined;
-            this.#pools = next && this.poolsHelper.validate(next) ? next : undefined;
-        });
-        this.validatorWatcher = this.quark('validator').addWatch(SpsConfigLoader.VALIDATE, (previous, next) => {
-            this.#validator = next && validator_schema.isValidSync(next) ? next : undefined;
-        });
-        this.validatorCheckInWatcher = this.quark('validator_check_in').addWatch(SpsConfigLoader.VALIDATE, (previous, next) => {
-            this.#validator_check_in = next && validator_check_in_schema.isValidSync(next) ? next : undefined;
-        });
-        this.shopWatcher = this.quark('shop').addWatch(SpsConfigLoader.VALIDATE, (previous, next) => {
-            this.#shop = next && shop_entries_schema.isValidSync(next) ? next : undefined;
-        });
-        this.bookkeepingWatcher = this.quark('bookkeeping').addWatch(SpsConfigLoader.VALIDATE, (previous, next) => {
-            this.#bookkeeping = next && bookkeeping_entries_schema.isValidSync(next) ? next : undefined;
+
+        this.spsWatcher = this.addValidator(
+            'sps',
+            {
+                // every key in this object will validate the `sps` object, and be passed to the callback function for setting the domain object
+                token: schemaAssertion<TokenConfig>(token_schema),
+                unstaking: UnstakingSettings.validate,
+                pools: this.poolsHelper.validate.bind(this.poolsHelper),
+            },
+            ({ token, unstaking, pools }) => {
+                this.#token = token;
+                this.#unstaking = unstaking ? { get: (_?: string) => unstaking } : undefined;
+                this.#pools = pools;
+            },
+        );
+
+        this.validatorWatcher = this.addValidator(
+            'validator',
+            {
+                validator: schemaAssertion<ValidatorConfig>(validator_schema),
+            },
+            ({ validator }) => {
+                this.#validator = validator;
+            },
+        );
+
+        this.validatorCheckInWatcher = this.addValidator(
+            'validator_check_in',
+            {
+                validator_check_in: schemaAssertion<ValidatorCheckInConfig>(validator_check_in_schema),
+            },
+            ({ validator_check_in }) => {
+                this.#validator_check_in = validator_check_in;
+            },
+        );
+
+        this.shopWatcher = this.addValidator(
+            'shop',
+            {
+                shop: schemaAssertion<ShopConfig>(shop_entries_schema),
+            },
+            ({ shop }) => {
+                this.#shop = shop;
+            },
+        );
+
+        this.bookkeepingWatcher = this.addValidator(
+            'bookkeeping',
+            {
+                bookkeeping: schemaAssertion<BookkeepingConfig>(bookkeeping_entries_schema),
+            },
+            ({ bookkeeping }) => {
+                this.#bookkeeping = bookkeeping;
+            },
+        );
+    }
+
+    addValidator<TKey extends string, TAssertions extends ConfigAssertions>(key: TKey, assertions: TAssertions, callback: (values: ConfigAssertionValues<TAssertions>) => void) {
+        this.asserters.push({ key, assertions, callback } as ConfigAsserter);
+        return this.quark(key).addWatch(SpsConfigLoader.VALIDATE, (previous, next) => {
+            const values: Record<string, any> = {};
+            for (const [k, check] of Object.entries(assertions)) {
+                try {
+                    // next/previous are reversed because we rarely use previous and its a better interface
+                    const _ = check(next, previous);
+                    values[k] = next;
+                } catch (err) {
+                    log(`Config validation failed for ${key}.${k}: ${err}`, LogLevel.Error);
+                    values[k] = undefined;
+                }
+            }
+            callback(values as ConfigAssertionValues<TAssertions>);
         });
     }
 
@@ -278,6 +356,42 @@ export class SpsConfigLoader
     public async load(trx?: Trx) {
         const config_entries = await this.configRepository.load(trx);
         this.reload(config_entries);
+    }
+
+    public async validateUpdateConfig(group_name: string, name: string, value: string, trx?: Trx): Promise<Result<void, string[]>> {
+        const exists = await this.configRepository.exists({ group_name, name }, trx);
+        if (!exists) {
+            return Result.Err([`Config entry ${group_name}.${name} does not exist.`]);
+        }
+
+        const currentConfig = this.value;
+        const newConfig = await this.configRepository.testUpdate({ group_name, name, value }, trx);
+        const errors: string[] = [];
+        for (const asserter of this.asserters) {
+            const { key: asserterGroup, assertions } = asserter;
+            if (asserterGroup !== group_name) {
+                continue;
+            }
+
+            const assertionFuncs = Object.entries(assertions);
+            for (const [key, assertion] of assertionFuncs) {
+                try {
+                    const currentValue = currentConfig[group_name];
+                    const newValue = newConfig[group_name];
+                    const _ = assertion(newValue, currentValue);
+                } catch (err) {
+                    if (err instanceof ValidationError) {
+                        errors.push(`Validation failed for ${asserterGroup}.${key}: ${err.errors.join(', ')}`);
+                    } else {
+                        errors.push(`Validation failed for ${asserterGroup}.${key}: ${err}`);
+                    }
+                }
+            }
+        }
+        if (errors.length > 0) {
+            return Result.Err(errors);
+        }
+        return Result.OkVoid();
     }
 
     /**
