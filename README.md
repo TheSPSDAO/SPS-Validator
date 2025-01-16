@@ -5,6 +5,7 @@ You need to re-build the validator when getting started or when updating to a ne
 
 ### Prerequisites:
 
+- A linux distro (if you're on windows, WSL will work)
 - Make sure you have `docker`, `docker-compose` and either wget or curl installed. (`./run.sh install_docker` and `./run.sh preinstall` on Linux)
 - Copy .env-example to .env (`cp .env-example .env`) and change it accordingly
 - _(Optional)_ Either add `validator-data-latest.zip` into the `sqitch` folder or have it downloaded in the build step.
