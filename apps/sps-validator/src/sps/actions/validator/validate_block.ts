@@ -70,7 +70,7 @@ export class ValidateBlockAction extends Action<typeof validate_block.actionSche
 
     async process(trx?: Trx): Promise<EventLog[]> {
         // Log the validation transaction id for the validated block
-        const results: EventLog[] = [await this.blockRepository.insertValidation(this.params.block_num, this.op.transaction_id)];
+        const results: EventLog[] = [await this.blockRepository.insertValidation(this.params.block_num, this.op.transaction_id, trx)];
 
         // Award SPS tokens to the validator who validated this block
         const reward = this.op.block_reward;

@@ -50,6 +50,7 @@ services:
       REWARD_ACCOUNT: ${REWARD_ACCOUNT:-}
       VERSION: ${GIT_COMMIT:-development}
       ENABLE_CHECK_INS: ${ENABLE_CHECK_INS:-true}
+      BLOCK_PROCESSING: ${BLOCK_PROCESSING:-true}
     depends_on:
       - pg
 
