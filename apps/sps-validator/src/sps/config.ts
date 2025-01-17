@@ -189,7 +189,7 @@ export class SpsConfigLoader
         // next is the object created from all the entries under that group_name
         // we create different "domain" objects (token, unstaking settings, staking pools) from that object
 
-        this.spsWatcher = this.addValidator(
+        this.spsWatcher = this.addAsserterWatcher(
             'sps',
             {
                 // every key in this object will validate the `sps` object, and be passed to the callback function for setting the domain object
@@ -204,7 +204,7 @@ export class SpsConfigLoader
             },
         );
 
-        this.validatorWatcher = this.addValidator(
+        this.validatorWatcher = this.addAsserterWatcher(
             'validator',
             {
                 validator: schemaAssertion<ValidatorConfig>(validator_schema),
@@ -214,7 +214,7 @@ export class SpsConfigLoader
             },
         );
 
-        this.validatorCheckInWatcher = this.addValidator(
+        this.validatorCheckInWatcher = this.addAsserterWatcher(
             'validator_check_in',
             {
                 validator_check_in: schemaAssertion<ValidatorCheckInConfig>(validator_check_in_schema),
@@ -224,7 +224,7 @@ export class SpsConfigLoader
             },
         );
 
-        this.shopWatcher = this.addValidator(
+        this.shopWatcher = this.addAsserterWatcher(
             'shop',
             {
                 shop: schemaAssertion<ShopConfig>(shop_entries_schema),
@@ -234,7 +234,7 @@ export class SpsConfigLoader
             },
         );
 
-        this.bookkeepingWatcher = this.addValidator(
+        this.bookkeepingWatcher = this.addAsserterWatcher(
             'bookkeeping',
             {
                 bookkeeping: schemaAssertion<BookkeepingConfig>(bookkeeping_entries_schema),
@@ -245,14 +245,18 @@ export class SpsConfigLoader
         );
     }
 
-    addValidator<TKey extends string, TAssertions extends ConfigAssertions>(key: TKey, assertions: TAssertions, callback: (values: ConfigAssertionValues<TAssertions>) => void) {
+    addAsserterWatcher<TKey extends string, TAssertions extends ConfigAssertions>(
+        key: TKey,
+        assertions: TAssertions,
+        callback: (values: ConfigAssertionValues<TAssertions>) => void,
+    ) {
         this.asserters.push({ key, assertions, callback } as ConfigAsserter);
         return this.quark(key).addWatch(SpsConfigLoader.VALIDATE, (previous, next) => {
             const values: Record<string, any> = {};
-            for (const [k, check] of Object.entries(assertions)) {
+            for (const [k, assertion] of Object.entries(assertions)) {
                 try {
                     // next/previous are reversed because we rarely use previous and its a better interface
-                    const _ = check(next, previous);
+                    const _ = assertion(next, previous);
                     values[k] = next;
                 } catch (err) {
                     log(`Config validation failed for ${key}.${k}: ${err}`, LogLevel.Error);
@@ -368,8 +372,8 @@ export class SpsConfigLoader
         const newConfig = await this.configRepository.testUpdate({ group_name, name, value }, trx);
         const errors: string[] = [];
         for (const asserter of this.asserters) {
-            const { key: asserterGroup, assertions } = asserter;
-            if (asserterGroup !== group_name) {
+            const { key: asserterKey, assertions } = asserter;
+            if (asserterKey !== group_name) {
                 continue;
             }
 
@@ -381,9 +385,9 @@ export class SpsConfigLoader
                     const _ = assertion(newValue, currentValue);
                 } catch (err) {
                     if (err instanceof ValidationError) {
-                        errors.push(`Validation failed for ${asserterGroup}.${key}: ${err.errors.join(', ')}`);
+                        errors.push(`Validation failed for ${asserterKey}.${key}: ${err.errors.join(', ')}`);
                     } else {
-                        errors.push(`Validation failed for ${asserterGroup}.${key}: ${err}`);
+                        errors.push(`Validation failed for ${asserterKey}.${key}: ${err}`);
                     }
                 }
             }
