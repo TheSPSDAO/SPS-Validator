@@ -34,7 +34,7 @@ export class TransactionRepository extends BaseRepository {
         }
     }
 
-    private static from(blockRef: Omit<BlockRef, 'prng'>, action: IAction): [TransactionEntity, TransactionPlayerEntity[]] {
+    private static from(blockRef: Omit<BlockRef, 'prng'>, action: IAction, index: number): [TransactionEntity, TransactionPlayerEntity[]] {
         if (action.isEmpty()) {
             log(`Recording empty action in block`, LogLevel.Warning);
         }
@@ -46,6 +46,8 @@ export class TransactionRepository extends BaseRepository {
             id: action.unique_trx_id,
             created_date: blockRef.block_time,
             block_num: blockRef.block_num,
+            // transaction's index in the block
+            index,
             block_id: blockRef.block_id,
             prev_block_id: blockRef.previous,
             type: action.id,
@@ -60,8 +62,8 @@ export class TransactionRepository extends BaseRepository {
     }
 
     public async extractFromActions(blockRef: Omit<BlockRef, 'prng'>, actions: IAction[], trx?: Trx) {
-        const transformed = actions.map((action) => {
-            const [transaction, players] = TransactionRepository.from(blockRef, action);
+        const transformed = actions.map((action, index) => {
+            const [transaction, players] = TransactionRepository.from(blockRef, action, index);
             return { action, transaction, players };
         });
         const transactions = transformed.map((x) => x.transaction);

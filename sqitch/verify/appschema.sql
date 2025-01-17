@@ -61,6 +61,7 @@ SELECT id,
        success,
        error,
        block_num,
+       index,
        created_date,
        result
 FROM validator_transactions
