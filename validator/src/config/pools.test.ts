@@ -1,8 +1,8 @@
 import { AwardPool, PoolsHelper, ValidatedPool } from './pools';
 
 test('Forbidden name construction should fail', () => {
-    expect(() => new PoolsHelper([{ name: '_acc_tokens_per_share', token: 'EUR', stake: 'USD' }])).toThrowError();
-    expect(() => new PoolsHelper([{ name: '_last_reward_block', token: 'USD', stake: 'USD' }])).toThrowError();
+    expect(() => new PoolsHelper([{ name: '_acc_tokens_per_share', token: 'EUR', stake: 'USD' }])).toThrow();
+    expect(() => new PoolsHelper([{ name: '_last_reward_block', token: 'USD', stake: 'USD' }])).toThrow();
 });
 
 test('Duplicate name construction should fail', () => {
@@ -12,7 +12,7 @@ test('Duplicate name construction should fail', () => {
                 { name: 'generic-name', token: 'EUR', stake: 'USD' },
                 { name: 'generic-name', token: 'USD', stake: 'USD' },
             ]),
-    ).toThrowError();
+    ).toThrow();
 });
 
 test('Duplicate token construction should not fail', () => {
@@ -22,7 +22,7 @@ test('Duplicate token construction should not fail', () => {
                 { name: 'special-name', token: 'EUR', stake: 'USD' },
                 { name: 'unique-name', token: 'EUR', stake: 'USD' },
             ]),
-    ).not.toThrowError();
+    ).not.toThrow();
 });
 
 describe('Pool validation tests', () => {
@@ -66,7 +66,11 @@ describe('Pool validation tests', () => {
         ${[x, y]} | ${'banana'}  | ${false}
     `(`Verifies PoolsHelper with $pools validated to  [$isValid] for [$payload] ($#) `, ({ pools, payload, isValid }) => {
         const p = new PoolsHelper(pools);
-        expect(p.validate(payload)).toBe(isValid);
+        if (isValid) {
+            expect(p.validate(payload));
+        } else {
+            expect(p.validate(payload)).toThrow();
+        }
     });
 
     test('Pool can be retrieved by name or token', () => {
