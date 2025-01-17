@@ -67,9 +67,9 @@ describe('Pool validation tests', () => {
     `(`Verifies PoolsHelper with $pools validated to  [$isValid] for [$payload] ($#) `, ({ pools, payload, isValid }) => {
         const p = new PoolsHelper(pools);
         if (isValid) {
-            expect(p.validate(payload));
+            expect(() => p.validate(payload)).not.toThrow();
         } else {
-            expect(p.validate(payload)).toThrow();
+            expect(() => p.validate(payload)).toThrow();
         }
     });
 
