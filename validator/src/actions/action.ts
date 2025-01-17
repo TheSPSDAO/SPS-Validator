@@ -31,7 +31,6 @@ export default abstract class Action<T extends AnyObjectSchema> implements IActi
     public readonly id: string;
     public readonly params: Asserts<T>;
     public readonly players: string[];
-    public readonly card_ids: string[];
     public success: boolean | undefined = undefined;
     public result: EventLog[] | undefined = undefined;
     public error: LogObj | undefined = undefined;
@@ -45,7 +44,6 @@ export default abstract class Action<T extends AnyObjectSchema> implements IActi
             this.params = result.value.params;
 
             this.players = [this.op.account];
-            this.card_ids = [];
 
             // TODO: Handle proxy account transactions
         } else {
@@ -89,6 +87,7 @@ export default abstract class Action<T extends AnyObjectSchema> implements IActi
     /**
      * Checks if the parameters passed are valid against the schema for the this action name.
      * Returns true when okay, throws on validation error.
+     * TODO: remove the return value - it's never checked because we're supposed to throw, so its confusing.
      * @param client
      */
     protected abstract validate(trx?: Trx): Promise<boolean>;

@@ -88,14 +88,15 @@ export class TransactionRepository_ extends BaseRepository {
 
     async lookupTokenTransferByBlockNum(blockNum: number, trx?: Trx): Promise<TokenTransfer[]> {
         const result = await this.query(TransactionEntity, trx)
-            .whereRaw(`block_num = (SELECT block_num FROM blocks WHERE block_num=${blockNum})`)
+            .whereRaw(`block_num = (SELECT block_num FROM blocks WHERE block_num = ?)`, `${blockNum}`)
             .where('type', 'token_transfer')
+            .orderBy('index', 'asc')
             .getMany();
         return result.map((x) => new TokenTransferTransactionRow(x).into());
     }
 
     async lookupByBlockNum(blockNum: number, trx?: Trx): Promise<TransactionEntity[]> {
-        return this.query(TransactionEntity, trx).whereRaw(`block_num = (SELECT block_num FROM blocks WHERE block_num=${blockNum})`).getMany();
+        return this.query(TransactionEntity, trx).whereRaw(`block_num = (SELECT block_num FROM blocks WHERE block_num = ?)`, `${blockNum}`).orderBy('index', 'asc').getMany();
     }
 
     async lookupByTrxId(transactionId: string, trx?: Trx): Promise<TransactionEntity | null> {

@@ -213,6 +213,7 @@ export class TransactionEntity {
     @Column() public success!: boolean | null;
     @Column() public error!: string | null;
     @Column() public block_num!: number | null;
+    @Column() public index!: number | null;
     @Column() public created_date!: Date | null;
     @Column() public result!: string | null;
 }

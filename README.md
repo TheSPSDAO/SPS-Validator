@@ -5,17 +5,22 @@ You need to re-build the validator when getting started or when updating to a ne
 
 ### Prerequisites:
 
+- A linux distro (if you're on windows, WSL will work)
+- [git](https://git-scm.com/book/en/v2/Getting-Started-Installing-Git) installed
 - Make sure you have `docker`, `docker-compose` and either wget or curl installed. (`./run.sh install_docker` and `./run.sh preinstall` on Linux)
 - Copy .env-example to .env (`cp .env-example .env`) and change it accordingly
 - _(Optional)_ Either add `validator-data-latest.zip` into the `sqitch` folder or have it downloaded in the build step.
 
 ### Setup Instructions
 
+- `git clone https://github.com/TheSPSDAO/SPS-Validator.git` : Clone the repository
+- `cd SPS-Validator`  : Change directory to the validator repository
 - `./run.sh stop`     : Ensure the validator is not currently running.
 - `./run.sh build`    : Build the validator.  This will deploy the database, run migrations and also download/deploy the snapshot.
+- _(Note)_: If you receive an error like `Got permission denied while trying to connect to the Docker daemon socket`, follow the steps [here](https://docs.docker.com/engine/install/linux-postinstall/#manage-docker-as-a-non-root-user).
 - `./run.sh start` or `./run.sh start all` : Start the validator. `all` will start the management UI as well.
-- You can go to `http://localhost:3333/status` to check that the validator is running.
-- You can go to `http://localhost:8888/` to view the management UI if you used the `all` option when starting.
+- You can go to http://localhost:3333/status to check that the validator is running.
+- You can go to http://localhost:8888/ to view the management UI if you used the `all` option when starting.
 
 ### Registering your node
 
