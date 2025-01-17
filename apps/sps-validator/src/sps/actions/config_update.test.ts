@@ -56,17 +56,31 @@ test.dbOnly('Admin attempts to update existing config with posting auth', async 
 });
 
 test.dbOnly('Admin attempts to update nonexistent config', async () => {
-    await expect(
-        fixture.opsHelper.processOp('config_update', 'steemmonsters', {
-            updates: [
-                {
-                    group_name: 'nox-root',
-                    name: 'not_admin_accounts',
-                    value: JSON.stringify(['wordempire', 'worthempire']),
-                },
-            ],
-        }),
-    ).rejects.toBeInstanceOf(Error);
+    await fixture.opsHelper.processOp('config_update', 'steemmonsters', {
+        updates: [
+            {
+                group_name: 'nox-root',
+                name: 'not_admin_accounts',
+                value: JSON.stringify(['wordempire', 'worthempire']),
+            },
+        ],
+    });
     const perhaps = fixture.loader.value as any;
     expect(perhaps?.['nox-root']?.['not_admin_accounts']).toBeUndefined();
+});
+
+test.dbOnly('Admin attempts to update config with invalid data', async () => {
+    await fixture.testHelper.insertDefaultConfiguration();
+    await fixture.loader.load();
+    await fixture.opsHelper.processOp('config_update', 'steemmonsters', {
+        updates: [
+            {
+                group_name: 'sps',
+                name: 'unstaking_periods',
+                value: -100,
+            },
+        ],
+    });
+    const perhaps = fixture.loader.value as any;
+    expect(perhaps?.['sps']?.['unstaking_periods']).toBe(1);
 });

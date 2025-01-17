@@ -74,31 +74,54 @@ export class ConfigRepository extends BaseRepository {
         const config_records = await this.query(Config_, trx).orderBy('group_name').orderBy('index').getMany();
 
         Object.keys(this.config).forEach((key) => delete this.config[key]);
+        this.applyConfigRecords(this.config, config_records);
 
+        utils.log(`Config Loaded from table!`, LogLevel.Info);
+        return this.config;
+    }
+
+    public async exists(payload: Omit<ConfigUpdate, 'value'>, trx?: Trx) {
+        const count = await this.query(Config_, trx).where('group_name', payload.group_name).andWhere('name', payload.name).getCount();
+        return Number(count) > 0;
+    }
+
+    /**
+     * Loads the current config, applies the update, and returns it without saving to the database.
+     */
+    public async testUpdate(payload: ConfigUpdate, trx?: Trx) {
+        const config_records = await this.query(Config_, trx).orderBy('group_name').orderBy('index').getMany();
+        const match = config_records.find((config_record) => config_record.group_name === payload.group_name && config_record.name === payload.name);
+        if (match) {
+            match.value = payload.value;
+        }
+
+        const config: ConfigEntries = {};
+        this.applyConfigRecords(config, config_records);
+        return config;
+    }
+
+    private applyConfigRecords(config_entries: ConfigEntries, config_records: Config_[]) {
         config_records.forEach((config_record) => {
             const { group_name, group_type, value, value_type, name } = config_record;
             const parsed_value = ConfigRepository.parse_value(value!, value_type);
 
             if (!group_name || group_name == '$root') {
-                this.config[config_record.name] = parsed_value;
+                config_entries[config_record.name] = parsed_value;
                 return;
             }
 
             const is_array = group_type === 'array';
 
-            if (!this.config[group_name]) this.config[group_name] = is_array ? [] : {};
+            if (!config_entries[group_name]) config_entries[group_name] = is_array ? [] : {};
 
             if (is_array) {
-                const group = this.config[group_name] as unknown[];
+                const group = config_entries[group_name] as unknown[];
                 group.push(parsed_value);
             } else {
-                const group = this.config[group_name] as any;
+                const group = config_entries[group_name] as any;
                 group[name] = parsed_value;
             }
         });
-
-        utils.log(`Config Loaded from table!`, LogLevel.Info);
-        return this.config;
     }
 
     public update(payload: ConfigUpdate, trx?: Trx): Promise<void> {

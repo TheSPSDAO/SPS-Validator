@@ -11,7 +11,7 @@ export type PoolSettings = {
 
 const unstaking_settings_schema = object({
     unstaking_interval_seconds: number().integer().positive().required(),
-    unstaking_periods: number().integer().positive(),
+    unstaking_periods: number().integer().required().positive(),
 });
 
 export type UnstakingSettings = {
@@ -20,7 +20,7 @@ export type UnstakingSettings = {
 };
 
 export const UnstakingSettings = {
-    validate: (value: unknown): value is UnstakingSettings => unstaking_settings_schema.isValidSync(value),
+    validate: (value: unknown): asserts value is UnstakingSettings => unstaking_settings_schema.validateSync(value) && void 0,
 };
 
 export type UnstakingConfiguration = {
@@ -54,7 +54,7 @@ export type ValidatedPool<T extends string> = {
     [key in `${T}_${PoolProps}`]: number;
 };
 
-type PoolValidator<T extends string> = (value: unknown) => value is ValidatedPool<T>;
+type PoolValidator<T extends string> = (value: unknown) => asserts value is ValidatedPool<T>;
 
 export type Pools<T extends string = string> = AwardPool<T>[];
 export const Pools: unique symbol = Symbol('Pools');
@@ -71,8 +71,14 @@ export class PoolsHelper<T extends string> {
         this.validators = pools.map(PoolsHelper.poolValidator);
     }
 
-    public validate(value: unknown): value is ValidatedPool<T> {
-        return this.validators.length > 0 && this.validators.every((validator) => validator(value));
+    public validate(value: unknown): asserts value is ValidatedPool<T> {
+        if (this.validators.length === 0) {
+            throw new Error('No validators available');
+        }
+
+        for (const validator of this.validators) {
+            validator(value);
+        }
     }
 
     private static validateAwardPools(pools: AwardPool<string>[]) {
@@ -100,8 +106,11 @@ export class PoolsHelper<T extends string> {
             [`${name}_acc_tokens_per_share`]: number(),
             [`${name}_last_reward_block`]: number().integer().min(0), // 0 is not a proper block number, yet a good default for 'not-yet-paid-out'
         });
-        return (value: unknown): value is ValidatedPool<T> => {
-            return !PoolsHelper.reservedNames.includes(name) && schema.isValidSync(value);
+        return (value: unknown): asserts value is ValidatedPool<T> => {
+            if (PoolsHelper.reservedNames.includes(name)) {
+                throw new Error(`Pool name ${name} is reserved`);
+            }
+            schema.validateSync(value);
         };
     }
 
