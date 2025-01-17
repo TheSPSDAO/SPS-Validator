@@ -115,6 +115,7 @@ BEGIN
 	        success,
 	        error,
 	        block_num,
+            index,
 	        created_date,
 	        result
 	    )
@@ -128,6 +129,7 @@ BEGIN
 	        success,
 	        error,
 	        block_num,
+            index,
 	        created_date,
 	        result
 	    FROM
