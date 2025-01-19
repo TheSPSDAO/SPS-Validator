@@ -63,15 +63,14 @@ export class ValidatorVoteRepository extends BaseRepository {
         const votes = await this.query(ValidatorVoteEntity, trx)
             .where('voter', voter)
             .useKnexQueryBuilder((query) => query.increment('vote_weight', amount).returning('*'))
-            .orderBy('validator')
-            .orderBy('voter')
             .getMany();
 
-        const voteEvents = votes.map((v) => new EventLog(EventTypes.UPDATE, ValidatorVoteEntity, v));
+        const sortedVotes = votes.sort((a, b) => a.validator.localeCompare(b.validator) || a.voter.localeCompare(b.voter));
+        const voteEvents = sortedVotes.map((v) => new EventLog(EventTypes.UPDATE, ValidatorVoteEntity, v));
 
-        if (votes.length > 0) {
+        if (sortedVotes.length > 0) {
             const setVotesEvents = await this.syncValidatorVotes(
-                votes.map((v) => v.validator),
+                sortedVotes.map((v) => v.validator),
                 trx,
             );
             return [...voteEvents, ...setVotesEvents];
@@ -85,15 +84,14 @@ export class ValidatorVoteRepository extends BaseRepository {
         const votes = await this.query(ValidatorVoteEntity, trx)
             .where('voter', voter)
             .useKnexQueryBuilder((query) => query.update('vote_weight', weight).returning('*'))
-            .orderBy('validator')
-            .orderBy('voter')
             .getMany();
 
-        const voteEvents = votes.map((v) => new EventLog(EventTypes.UPDATE, ValidatorVoteEntity, v));
+        const sortedVotes = votes.sort((a, b) => a.validator.localeCompare(b.validator) || a.voter.localeCompare(b.voter));
+        const voteEvents = sortedVotes.map((v) => new EventLog(EventTypes.UPDATE, ValidatorVoteEntity, v));
 
-        if (votes.length > 0) {
+        if (sortedVotes.length > 0) {
             const setVotesEvents = await this.syncValidatorVotes(
-                votes.map((v) => v.validator),
+                sortedVotes.map((v) => v.validator),
                 trx,
             );
             return [...voteEvents, ...setVotesEvents];
@@ -105,7 +103,7 @@ export class ValidatorVoteRepository extends BaseRepository {
     private async syncValidatorVotes(validators: string[], trx?: Trx) {
         // Update the total_votes for all of the affected validators
         // note: this requires the search path to be set to include the schema the validator is using, which it should be
-        const total_votes = await this.queryRaw(trx).raw<RawResult<ValidatorVoteEntity>>(
+        const updatedValidators = await this.queryRaw(trx).raw<RawResult<ValidatorVoteEntity>>(
             `
             UPDATE validators v
             SET total_votes = summed.total_votes
@@ -126,6 +124,7 @@ export class ValidatorVoteRepository extends BaseRepository {
             `,
             { validators },
         );
-        return total_votes.rows.map((v) => new EventLog(EventTypes.UPDATE, ValidatorEntity, v));
+        const sortedUpdatedValidators = updatedValidators.rows.sort((a, b) => a.validator.localeCompare(b.validator));
+        return sortedUpdatedValidators.map((v) => new EventLog(EventTypes.UPDATE, ValidatorEntity, v));
     }
 }
