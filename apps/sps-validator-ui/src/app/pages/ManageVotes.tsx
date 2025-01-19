@@ -15,7 +15,7 @@ function VoteCard({ account, votes, config, reloadVotes }: { account: string; vo
     const [limit, setLimit] = useState(10); // TODO: Add a limit selector
     const [search, setSearch] = useState('');
     const [count, isLoadingCount] = usePromise(() => DefaultService.getValidators(0, 0), [search]);
-    const [result, isLoading] = usePromise(() => DefaultService.getValidators(limit, page * limit, search), [search]);
+    const [result, isLoading] = usePromise(() => DefaultService.getValidators(limit, page * limit, search), [search, limit, page]);
 
     const [workingSearch, setWorkingSearch] = useState('');
     const updateSearch = (event: FormEvent<HTMLFormElement>) => {
