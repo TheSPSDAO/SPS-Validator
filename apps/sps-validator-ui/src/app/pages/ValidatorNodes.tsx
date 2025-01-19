@@ -12,7 +12,7 @@ function ValidatorNodesCard({ className, onNodeSelected }: { className?: string;
     const [limit, setLimit] = useState(10); // TODO: Add a limit selector
     const [search, setSearch] = useState('');
     const [count, isLoadingCount] = usePromise(() => DefaultService.getValidators(0, 0), [search]);
-    const [result, isLoading] = usePromise(() => DefaultService.getValidators(limit, page * limit, search), [search]);
+    const [result, isLoading] = usePromise(() => DefaultService.getValidators(limit, page * limit, search), [search, page, limit]);
 
     const [workingSearch, setWorkingSearch] = useState('');
     const updateSearch = (event: FormEvent<HTMLFormElement>) => {

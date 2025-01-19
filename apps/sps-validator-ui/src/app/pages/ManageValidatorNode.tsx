@@ -1,12 +1,10 @@
 import { useEffect, useState } from 'react';
-import { Hive, HiveService } from '../services/hive';
-import { Button, Card, CardBody, CardFooter, CardHeader, Checkbox, Input, Spinner, Typography } from '@material-tailwind/react';
+import { HiveService } from '../services/hive';
+import { Button, Card, CardBody, CardFooter, Checkbox, Input, Spinner, Typography } from '@material-tailwind/react';
 import { AuthorizedAccountWrapper } from '../components/AuthorizedAccountWrapper';
 import { DefaultService, Validator } from '../services/openapi';
 import { usePromise } from '../hooks/Promise';
-import { Link } from 'react-router-dom';
 import { TxLookupService } from '../services/TxLookupService';
-import { Table, TableBody, TableCell, TableColumn, TableHead, TableRow } from '../components/Table';
 import { ValidatorVotesTable } from '../components/ValidatorVotesTable';
 import { ValidatorStatsTable } from '../components/ValidatorStatsTable';
 
