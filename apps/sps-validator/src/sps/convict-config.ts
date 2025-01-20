@@ -254,19 +254,19 @@ const schema = {
         doc: 'SPS sl cold account',
         nullable: false,
         default: 'sl-cold',
-        env: 'sl-cold',
+        env: 'SL_COLD_ACCOUNT',
     },
     terablock_bsc_account: {
         doc: 'SPS terablock bsc account',
         nullable: false,
         default: 'terablock-bsc',
-        env: 'terablock-bsc',
+        env: 'TERABLOCK_BSC_ACCOUNT',
     },
     terablock_eth_account: {
         doc: 'SPS terablock eth account',
         nullable: false,
         default: 'terablock-eth',
-        env: 'terablock-eth',
+        env: 'TERABLOCK_ETH_ACCOUNT',
     },
     reward_pool_accounts: {
         doc: 'SPS reward pool accounts',
