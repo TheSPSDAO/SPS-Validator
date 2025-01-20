@@ -279,9 +279,6 @@ case $1 in
     snapshot)
         snapshot
     ;;
-    config)
-        config
-    ;;
     logs)
         logs
     ;;
