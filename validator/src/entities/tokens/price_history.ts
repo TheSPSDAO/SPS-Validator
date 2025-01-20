@@ -21,7 +21,7 @@ export class PriceHistoryRepository extends BaseRepository {
     }
 
     public async groupedHistory(since = new Date(0), trx?: Trx) {
-        const records = await this.query(PriceHistoryEntity, trx).where('block_time', '>', since).orderBy('block_time', 'desc').getMany();
+        const records = await this.query(PriceHistoryEntity, trx).where('block_time', '>', since).orderBy('block_time', 'desc').orderBy('validator', 'desc').getMany();
         return groupBy(records.map(PriceHistoryRepository.into), (t) => t.token);
     }
 

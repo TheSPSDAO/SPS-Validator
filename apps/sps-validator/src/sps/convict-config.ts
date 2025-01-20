@@ -238,6 +238,44 @@ const schema = {
         default: '$TOKEN_STAKING_REWARDS',
         env: 'STAKING_REWARDS_ACCOUNT',
     },
+    dao_account: {
+        doc: 'SPS dao account',
+        nullable: false,
+        default: 'sps.dao',
+        env: 'DAO_ACCOUNT',
+    },
+    dao_reserve_account: {
+        doc: 'SPS dao reserve account',
+        nullable: false,
+        default: 'sps.dao.reserves',
+        env: 'DAO_RESERVE_ACCOUNT',
+    },
+    sl_cold_account: {
+        doc: 'SPS sl cold account',
+        nullable: false,
+        default: 'sl-cold',
+        env: 'sl-cold',
+    },
+    terablock_bsc_account: {
+        doc: 'SPS terablock bsc account',
+        nullable: false,
+        default: 'terablock-bsc',
+        env: 'terablock-bsc',
+    },
+    terablock_eth_account: {
+        doc: 'SPS terablock eth account',
+        nullable: false,
+        default: 'terablock-eth',
+        env: 'terablock-eth',
+    },
+    reward_pool_accounts: {
+        doc: 'SPS reward pool accounts',
+        nullable: false,
+        format: 'stringy-array',
+        default:
+            '$REWARD_POOLS_BRAWL,$REWARD_POOLS_LAND,$REWARD_POOLS_LICENSE,$VALIDATOR_REWARDS,$REWARD_POOLS_SOULKEEP,$REWARD_POOLS_MODERN,$REWARD_POOLS_WILD,$REWARD_POOLS_SURVIVAL,$UNCLAIMED_UNISWAP_REWARDS,$TOURNAMENTS_DISTRIBUTION,$TOKEN_STAKING_REWARDS,$REWARD_POOLS_FOCUS,$REWARD_POOLS_SEASON',
+        env: 'REWARD_POOL_ACCOUNTS',
+    },
     missed_blocks_account: {
         doc: 'Default system account to track all missed blocks',
         nullable: false,

@@ -17,7 +17,7 @@ import { SpsActionOrBust, SpsOperationFactory } from './entities/operation';
 import { SpsBlockRepository, SpsHiveAccountRepository, SpsLastBlockCache, SpsTransactionRepository } from './entities/block';
 import { SpsPoolClaimPayloads } from './entities/claims';
 import { SpsStakingRewardsRepository } from './entities/tokens/staking_rewards';
-import { SpsBalanceRepository } from './entities/tokens/balance';
+import { SpsBalanceRepository, SupplyOpts } from './entities/tokens/balance';
 import { SpsTokenUnstakingRepository } from './entities/tokens/token_unstaking';
 import { SpsValidatorVoteRepository, SpsVoteWeightCalculator } from './entities/validator/validator_vote';
 import { SpsValidatorRepository } from './entities/validator/validator';
@@ -164,6 +164,7 @@ export class CompositionRoot extends null {
         container.register<BurnOpts>(BurnOpts, { useToken: ConfigType });
         container.register<MissedBlocksOpts>(MissedBlocksOpts, { useToken: ConfigType });
         container.register<StakingConfiguration>(StakingConfiguration, { useToken: ConfigType });
+        container.register<SupplyOpts>(SupplyOpts, { useToken: ConfigType });
 
         // Hive
         container.register<HiveClient>(HiveClient, { useToken: SpsHiveClient });
