@@ -103,7 +103,7 @@ export class ValidatorVoteRepository extends BaseRepository {
     private async syncValidatorVotes(validators: string[], trx?: Trx) {
         // Update the total_votes for all of the affected validators
         // note: this requires the search path to be set to include the schema the validator is using, which it should be
-        const updatedValidators = await this.queryRaw(trx).raw<RawResult<ValidatorVoteEntity>>(
+        const updatedValidators = await this.queryRaw(trx).raw<RawResult<ValidatorEntity>>(
             `
             UPDATE validators v
             SET total_votes = summed.total_votes
@@ -124,7 +124,7 @@ export class ValidatorVoteRepository extends BaseRepository {
             `,
             { validators },
         );
-        const sortedUpdatedValidators = updatedValidators.rows.sort((a, b) => a.validator.localeCompare(b.validator));
+        const sortedUpdatedValidators = updatedValidators.rows.sort((a, b) => a.account_name.localeCompare(b.account_name));
         return sortedUpdatedValidators.map((v) => new EventLog(EventTypes.UPDATE, ValidatorEntity, v));
     }
 }
