@@ -119,7 +119,7 @@ export class SpsBalanceRepository extends BalanceRepository {
             circulating_supply: circulatingSupplySps,
             reserve: {
                 dao: combinedDaoSps,
-                dao_deserve: daoReserveSps,
+                dao_reserve: daoReserveSps,
                 sl_cold: slColdSupplySps,
                 terablock_bsc: combinedTerablockBscSps,
                 terablock_eth: combinedTerablockEthSps,
