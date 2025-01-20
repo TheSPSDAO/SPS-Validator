@@ -5,6 +5,7 @@ import { array, InferType, mixed, number, object, string } from 'yup';
 import type { token } from '../utilities/token_support';
 import { ValidatedPool, UnstakingConfiguration } from './pools';
 import { BookkeepingConfig } from '../entities/bookkeeping';
+import { Result } from '@steem-monsters/lib-monad';
 export * from './pools';
 export * from './updater';
 
@@ -135,5 +136,6 @@ export interface ConfigLoader {
     readonly value: ConfigType;
     load(trx?: Trx): Promise<void>;
     updateConfig(group_name: string, name: string, value: ConfigData, trx?: Trx): Promise<EventLog>;
+    validateUpdateConfig(group_name: string, name: string, value: string, trx?: Trx): Promise<Result<void, string[]>>;
     reloadingUpdateConfig(group_name: string, name: string, value: string, trx?: Trx): Promise<EventLog>;
 }

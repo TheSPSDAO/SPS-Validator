@@ -9,6 +9,7 @@ export type LogObj = {
 
 export enum ErrorType {
     AdminOnly = 2,
+    InvalidConfig = 3,
     TestError = 10,
     AmountNotPositive = 30,
     InsufficientBalance = 31,
