@@ -5,7 +5,6 @@ You need to re-build the validator when getting started or when updating to a ne
 
 ### Prerequisites:
 
-- A linux distro (if you're on windows, WSL will work)
 - [git](https://git-scm.com/book/en/v2/Getting-Started-Installing-Git) installed
 - Make sure you have `docker`, `docker-compose` and either wget or curl installed. (`./run.sh install_docker` and `./run.sh preinstall` on Linux)
 - Copy .env-example to .env (`cp .env-example .env`) and change it accordingly
@@ -15,6 +14,7 @@ You need to re-build the validator when getting started or when updating to a ne
 
 - `git clone https://github.com/TheSPSDAO/SPS-Validator.git` : Clone the repository
 - `cd SPS-Validator`  : Change directory to the validator repository
+- _(Note)_            : If you're on Windows, use PowerShell and replace `./run.sh` with `./run.ps1` in all the commands. You may need to set your execution policy (`set-executionpolicy remotesigned` from an Administrator instance of powershell).
 - `./run.sh stop`     : Ensure the validator is not currently running.
 - `./run.sh build`    : Build the validator.  This will deploy the database, run migrations and also download/deploy the snapshot.
 - _(Note)_: If you receive an error like `Got permission denied while trying to connect to the Docker daemon socket`, follow the steps [here](https://docs.docker.com/engine/install/linux-postinstall/#manage-docker-as-a-non-root-user).
