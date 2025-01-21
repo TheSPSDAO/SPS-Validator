@@ -37,7 +37,11 @@ beforeAll(async () => {
 
 beforeEach(async () => {
     await fixture.restore();
+    await fixture.testHelper.insertDefaultConfiguration();
     await fixture.handle.query(BlockEntity).insertItem({ block_num: 0, block_time: new Date(), block_id: '', prev_block_id: '', l2_block_id: '' });
+    await fixture.handle.query(ConfigEntity).where('group_name', 'validator').andWhere('name', 'num_top_validators').updateItem({
+        value: '3',
+    });
     await fixture.loader.load();
 });
 
@@ -48,6 +52,9 @@ afterAll(async () => {
 describe('Price feed API endpoint', () => {
     beforeEach(async () => {
         await fixture.testHelper.insertExistingAdmins(['someadmin1', 'someadmin2', 'someadmin3']);
+        await fixture.testHelper.insertDummyValidator('someadmin1', true, 10);
+        await fixture.testHelper.insertDummyValidator('someadmin2', true, 8);
+        await fixture.testHelper.insertDummyValidator('someadmin3', true, 6);
         await fixture.loader.load();
     });
 
@@ -86,16 +93,13 @@ describe('Price feed API endpoint', () => {
         ${'not-SPS'} | ${404} | ${undefined}
     `(`Checking [$token] after several price points should give HTTP status [$status] with price [$price]`, async ({ token, status, price }) => {
         await fixture.opsHelper.processOp('price_feed', 'someadmin1', {
-            sps_price: 100,
-            dec_price: 13,
+            updates: [{ token: 'SPS', price: 100 }],
         });
         await fixture.opsHelper.processOp('price_feed', 'someadmin2', {
-            sps_price: 500,
-            dec_price: 20,
+            updates: [{ token: 'SPS', price: 500 }],
         });
         await fixture.opsHelper.processOp('price_feed', 'someadmin3', {
-            sps_price: 300,
-            dec_price: 50,
+            updates: [{ token: 'SPS', price: 300 }],
         });
         const response = await fixture.request.get(`/price_feed/${token}`);
         expect(response.status).toBe(status);
