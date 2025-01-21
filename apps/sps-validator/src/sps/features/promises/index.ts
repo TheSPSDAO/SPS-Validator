@@ -1,1 +1,1 @@
-export * from './promise_manager';
+export * from './promse-manager';

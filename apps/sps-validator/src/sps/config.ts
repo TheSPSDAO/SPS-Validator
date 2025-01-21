@@ -40,7 +40,7 @@ import {
     ValidatorUpdater,
 } from '@steem-monsters/splinterlands-validator';
 import { TOKENS } from './features/tokens';
-import { ValidatorCheckInConfig, ValidatorCheckInWatch, validator_check_in_schema } from './features/validator/validator_license.config';
+import { ValidatorCheckInConfig, ValidatorCheckInWatch, validator_check_in_schema } from './features/validator/config';
 import { AnySchema, ValidationError } from 'yup';
 import { Result } from '@steem-monsters/lib-monad';
 

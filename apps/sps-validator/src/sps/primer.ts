@@ -2,7 +2,7 @@ import { inject, singleton } from 'tsyringe';
 import { SpsConfigLoader } from './config';
 import { Bookkeeping, LastBlockCache, Prime, Primer, RawPriceFeed } from '@steem-monsters/splinterlands-validator';
 import { ValidatorShop } from './utilities/validator-shop';
-import { ValidatorCheckInPlugin } from './features/validator/validator_check_in.plugin';
+import { ValidatorCheckInPlugin } from './features/validator/license-plugin';
 
 @singleton()
 export class SpsPrimer extends Primer {

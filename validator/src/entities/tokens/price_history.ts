@@ -20,11 +20,6 @@ export class PriceHistoryRepository extends BaseRepository {
         super(handle);
     }
 
-    public async groupedHistory(since = new Date(0), trx?: Trx) {
-        const records = await this.query(PriceHistoryEntity, trx).where('block_time', '>', since).orderBy('block_time', 'desc').orderBy('validator', 'desc').getMany();
-        return groupBy(records.map(PriceHistoryRepository.into), (t) => t.token);
-    }
-
     private static from(entry: PriceEntry): PriceHistoryEntity {
         return {
             ...entry,
@@ -39,8 +34,19 @@ export class PriceHistoryRepository extends BaseRepository {
         };
     }
 
+    public async groupedHistory(since = new Date(0), trx?: Trx) {
+        const records = await this.query(PriceHistoryEntity, trx).where('block_time', '>', since).orderBy('block_time', 'desc').orderBy('validator', 'desc').getMany();
+        return groupBy(records.map(PriceHistoryRepository.into), (t) => t.token);
+    }
+
+    public async getLastPriceEntry(validator: string, trx?: Trx): Promise<PriceEntry | null> {
+        const record = await this.query(PriceHistoryEntity, trx).where('validator', validator).orderBy('block_time', 'desc').getFirstOrNull();
+        return record ? PriceHistoryRepository.into(record) : null;
+    }
+
     public async upsert(payload: PriceEntry, trx?: Trx) {
         const record = await this.query(PriceHistoryEntity, trx)
+            // can we have multiple entries for the same validator and token for a given block?
             .useKnexQueryBuilder((query) => query.insert(PriceHistoryRepository.from(payload)).onConflict(['validator', 'token']).merge().returning('*'))
             .getFirst();
         return PriceHistoryRepository.into(record);

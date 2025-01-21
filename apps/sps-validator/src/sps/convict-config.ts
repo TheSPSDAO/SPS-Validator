@@ -104,6 +104,22 @@ const schema = {
         default: ['https://api.hive.blog', 'https://anyx.io', 'https://api.openhive.network'],
         env: 'RPC_NODES',
     },
+    hive_engine_rpc_nodes: {
+        doc: 'The Hive Engine RPC nodes to connect to, in failover order',
+        format: 'stringy-array',
+        childFormat: 'url',
+        default: [
+            'https://api.hive-engine.com/rpc',
+            'https://engine.rishipanthee.com',
+            'https://herpc.dtools.dev',
+            'https://ha.herpc.dtools.dev',
+            'https://api.primersion.com',
+            'https://herpc.kanibot.com',
+            'https://ctpmain.com',
+            'https://herpc.actifit.io',
+        ],
+        env: 'HIVE_ENGINE_RPC_NODES',
+    },
     rpc_timeout: {
         doc: 'The timeout in ms for RPC requests',
         format: 'nat',

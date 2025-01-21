@@ -1,7 +1,7 @@
 import { OperationData, Action, EventLog, Trx, ValidationError, ErrorType } from '@steem-monsters/splinterlands-validator';
 import { expire_check_ins } from '../schema';
 import { MakeActionFactory, MakeRouter } from '../utils';
-import { SpsValidatorLicenseManager } from '../../features/validator/validator_license.manager';
+import { SpsValidatorLicenseManager } from '../../features/validator/license-manager';
 
 export class ExpireCheckInsAction extends Action<typeof expire_check_ins.actionSchema> {
     constructor(op: OperationData, data: unknown, index: number, private readonly licenseManager: SpsValidatorLicenseManager) {

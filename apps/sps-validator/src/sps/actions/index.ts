@@ -39,7 +39,7 @@ import { Router as CompletePromiseRouter } from './promises/complete_promise';
 import { Router as ExpirePromisesRouter } from './promises/expire_promises';
 import { Router as UpdateMissedBlocksRouter } from './validator/update_missed_blocks';
 import { MakeMultiRouter, MakeVirtualPayloadSource } from './utils';
-import { SpsValidatorLicenseManager } from '../features/validator/validator_license.manager';
+import { SpsValidatorLicenseManager } from '../features/validator/license-manager';
 import { SpsClearBurnedTokensSource } from './burn';
 import { SpsUpdateMissedBlocksSource } from './missed_blocks';
 

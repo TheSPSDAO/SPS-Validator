@@ -1,1 +1,1 @@
-export * from './supported_tokens';
+export * from './supported-tokens';

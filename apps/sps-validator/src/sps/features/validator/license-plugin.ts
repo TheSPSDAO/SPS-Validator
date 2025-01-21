@@ -2,8 +2,8 @@ import { EventLog, HiveClient, LogLevel, Plugin, Prime, Trx, log } from '@steem-
 import { inject, singleton } from 'tsyringe';
 import config from '../../convict-config';
 import { SpsValidatorCheckInRepository } from '../../entities/validator/validator_check_in';
-import { ValidatorCheckInWatch } from './validator_license.config';
-import { SpsValidatorLicenseManager } from './validator_license.manager';
+import { ValidatorCheckInWatch } from './config';
+import { SpsValidatorLicenseManager } from './license-manager';
 
 @singleton()
 export class ValidatorCheckInPlugin implements Plugin, Prime {
@@ -59,13 +59,9 @@ export class ValidatorCheckInPlugin implements Plugin, Prime {
         if (!this.checkInWatcher.validator_check_in) {
             log('Validator check in config is invalid. Not sending check in.', LogLevel.Warning);
             return;
-        }
-        // Check if we need to check in
-        else if (this.nextCheckInBlock && blockNumber < this.nextCheckInBlock) {
+        } else if (this.nextCheckInBlock && blockNumber < this.nextCheckInBlock) {
             return;
-        }
-        // Check if we are too late to check in for this block
-        else if (!this.licenseManager.isCheckInBlockWithinWindow(headBlockNumber, blockNumber)) {
+        } else if (!this.licenseManager.isCheckInBlockWithinWindow(headBlockNumber, blockNumber)) {
             log('Check in would be too late. Not sending check in.', LogLevel.Debug);
             return;
         }

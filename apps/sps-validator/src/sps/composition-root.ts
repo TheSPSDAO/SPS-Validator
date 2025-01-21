@@ -116,10 +116,10 @@ import { ValidatorPools } from './pools';
 import { ValidatorShop } from './utilities/validator-shop';
 import { KillPlugin } from '../plugins/kill_plugin';
 import { ManualDisposer } from './manual-disposable';
-import { SpsValidatorLicenseManager } from './features/validator/validator_license.manager';
+import { SpsValidatorLicenseManager } from './features/validator/license-manager';
 import { SpsValidatorCheckInRepository } from './entities/validator/validator_check_in';
-import { ValidatorCheckInWatch } from './features/validator/validator_license.config';
-import { ValidatorCheckInPlugin } from './features/validator/validator_check_in.plugin';
+import { ValidatorCheckInWatch } from './features/validator/config';
+import { ValidatorCheckInPlugin } from './features/validator/license-plugin';
 import { MissedBlocksOpts, SpsUpdateMissedBlocksSource } from './actions/missed_blocks';
 
 // Only use re-exported `container` to ensure composition root was loaded.
