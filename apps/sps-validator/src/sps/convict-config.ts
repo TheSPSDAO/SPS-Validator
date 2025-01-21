@@ -344,8 +344,12 @@ const schema = {
         token_map: {
             doc: 'The mapping of tokens to CoinMarketCap ids',
             format: 'stringy-object',
-            default: {
-                HIVE: '5370',
+            structure: {
+                HIVE: {
+                    doc: 'The CoinMarketCap id for HIVE',
+                    format: String,
+                    default: '5370',
+                },
             },
             env: 'PRICE_FEED_COIN_MARKET_CAP_TOKEN_MAP',
         },

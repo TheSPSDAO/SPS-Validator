@@ -7,6 +7,7 @@ import { inject, injectable } from 'tsyringe';
 import { container } from '../../__tests__/test-composition-root';
 import { ConfigType } from '../convict-config';
 import { BlockEntity, ConfigEntity, LastBlockCache, Middleware, registerApiRoutes, StakingPoolRewardDebtEntity } from '@steem-monsters/splinterlands-validator';
+import { registerSpsRoutes } from './sps';
 
 @injectable()
 class Fixture extends BaseFixture {
@@ -24,6 +25,7 @@ class Fixture extends BaseFixture {
             health_checker: cfg.health_checker,
             injection_middleware: middleware,
         });
+        registerSpsRoutes(app);
         this.request = supertest(app);
     }
 }
@@ -372,6 +374,6 @@ describe('Token API endpoints', () => {
     `(`Checking supply for token [$param] = [$total] with HTTP status [$status]`, async ({ param, status, total }) => {
         const response = await fixture.request.get(`/tokens/${param}/supply`);
         expect(response.status).toBe(status);
-        expect(response.body).toBe(total);
+        expect(response.body.circulating_supply).toBe(total);
     });
 });

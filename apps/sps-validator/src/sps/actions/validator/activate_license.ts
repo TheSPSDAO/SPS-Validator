@@ -1,7 +1,7 @@
 import { OperationData, Action, EventLog, Trx, ValidationError, ErrorType } from '@steem-monsters/splinterlands-validator';
 import { activate_license } from '../schema';
 import { MakeActionFactory, MakeRouter } from '../utils';
-import { SpsValidatorLicenseManager } from '../../features/validator/license-manager';
+import { SpsValidatorLicenseManager } from '../../features/validator';
 
 export class ActivateLicenseAction extends Action<typeof activate_license.actionSchema> {
     constructor(op: OperationData, data: unknown, index: number, private readonly licenseManager: SpsValidatorLicenseManager) {

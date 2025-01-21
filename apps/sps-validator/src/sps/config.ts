@@ -43,8 +43,9 @@ import { TOKENS } from './features/tokens';
 import { ValidatorCheckInConfig, ValidatorCheckInWatch, validator_check_in_schema } from './features/validator/config';
 import { AnySchema, ValidationError } from 'yup';
 import { Result } from '@steem-monsters/lib-monad';
+import { price_feed_schema, PriceFeedConfig, PriceFeedWatch } from './features/price_feed';
 
-type Watches = ValidatorWatch & TokenWatch & PoolWatch & ShopWatch & UnstakingWatch & BookkeepingWatch & ValidatorCheckInWatch;
+type Watches = ValidatorWatch & TokenWatch & PoolWatch & ShopWatch & UnstakingWatch & BookkeepingWatch & ValidatorCheckInWatch & PriceFeedWatch;
 
 function assertNonNull<T>(v: T): asserts v is NonNullable<T> {
     if (v === undefined || v === null) {
@@ -109,6 +110,9 @@ export class SpsConfigLoader
             check_in_window_blocks: 300,
             check_in_interval_blocks: 28800,
         },
+        price_feed: {
+            interval_blocks: 200,
+        },
     });
 
     #validator?: ValidatorConfig;
@@ -118,6 +122,7 @@ export class SpsConfigLoader
     #pools?: ValidatedPool<string>;
     #shop?: ShopConfig;
     #bookkeeping?: BookkeepingConfig;
+    #price_feed?: PriceFeedConfig;
 
     public get validator() {
         return this.#validator;
@@ -145,6 +150,10 @@ export class SpsConfigLoader
 
     public get validator_check_in() {
         return this.#validator_check_in;
+    }
+
+    public get price_feed() {
+        return this.#price_feed;
     }
 
     protected updateImpl(currentState: ConfigType, { group_name, name, value }: ConfigUpdate): ConfigType {
@@ -181,6 +190,7 @@ export class SpsConfigLoader
     private readonly spsWatcher: Quark<ConfigType, 'sps'>;
     private readonly shopWatcher: Quark<ConfigType, 'shop'>;
     private readonly bookkeepingWatcher: Quark<ConfigType, 'bookkeeping'>;
+    private readonly priceFeedWatcher: Quark<ConfigType, 'price_feed'>;
 
     public constructor(@inject(ConfigRepository) private readonly configRepository: ConfigRepository, @inject(PoolsHelper) private readonly poolsHelper: PoolsHelper<string>) {
         super({});
@@ -241,6 +251,16 @@ export class SpsConfigLoader
             },
             ({ bookkeeping }) => {
                 this.#bookkeeping = bookkeeping;
+            },
+        );
+
+        this.priceFeedWatcher = this.addAsserterWatcher(
+            'price_feed',
+            {
+                price_feed: schemaAssertion<PriceFeedConfig>(price_feed_schema),
+            },
+            ({ price_feed }) => {
+                this.#price_feed = price_feed;
             },
         );
     }
@@ -347,6 +367,16 @@ export class SpsConfigLoader
 
     public removeBookkeepingWatcher(key: string | symbol) {
         this.bookkeepingWatcher.removeWatch(key);
+    }
+
+    public addPriceFeedWatcher(key: string | symbol, handler: (value?: PriceFeedConfig | undefined) => void) {
+        this.priceFeedWatcher.addWatch(key, (_prev, _next) => {
+            handler(this.price_feed);
+        });
+    }
+
+    public removePriceFeedWatcher(key: string | symbol) {
+        this.priceFeedWatcher.removeWatch(key);
     }
 
     async prime(trx?: Trx): Promise<void> {

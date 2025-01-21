@@ -116,10 +116,7 @@ import { ValidatorPools } from './pools';
 import { ValidatorShop } from './utilities/validator-shop';
 import { KillPlugin } from '../plugins/kill_plugin';
 import { ManualDisposer } from './manual-disposable';
-import { SpsValidatorLicenseManager } from './features/validator/license-manager';
-import { SpsValidatorCheckInRepository } from './entities/validator/validator_check_in';
-import { ValidatorCheckInWatch } from './features/validator/config';
-import { ValidatorCheckInPlugin } from './features/validator/license-plugin';
+import { SpsValidatorLicenseManager, ValidatorCheckInPlugin, ValidatorCheckInWatch } from './features/validator';
 import { MissedBlocksOpts, SpsUpdateMissedBlocksSource } from './actions/missed_blocks';
 import {
     CoinGeckoExternalPriceFeed,
@@ -128,7 +125,9 @@ import {
     DaoExternalPriceFeedOpts,
     ExternalPriceFeed,
     PriceFeedPlugin,
+    PriceFeedWatch,
 } from './features/price_feed';
+import { SpsValidatorCheckInRepository } from './entities/validator/validator_check_in';
 
 // Only use re-exported `container` to ensure composition root was loaded.
 export { container, singleton, inject, injectable } from 'tsyringe';
@@ -244,6 +243,7 @@ export class CompositionRoot extends null {
         container.register<PoolWatch>(PoolWatch, { useToken: SpsConfigLoader });
         container.register<ShopWatch>(ShopWatch, { useToken: SpsConfigLoader });
         container.register<BookkeepingWatch>(BookkeepingWatch, { useToken: SpsConfigLoader });
+        container.register<PriceFeedWatch>(PriceFeedWatch, { useToken: SpsConfigLoader });
         container.register(ValidatorCheckInWatch, { useToken: SpsConfigLoader });
         container.register<AdminMembership>(AdminMembership, { useToken: SpsConfigLoader });
         container.register<PoolUpdater>(PoolUpdater, { useToken: SpsConfigLoader });

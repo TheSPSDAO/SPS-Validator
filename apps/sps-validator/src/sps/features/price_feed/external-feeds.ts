@@ -1,4 +1,4 @@
-import { injectable, InjectionToken } from 'tsyringe';
+import { inject, injectable, InjectionToken } from 'tsyringe';
 
 export interface ExternalPriceFeed {
     readonly feed: string;
@@ -14,7 +14,7 @@ export const DaoExternalPriceFeedOpts: InjectionToken<DaoExternalPriceFeedOpts> 
 export class DaoExternalPriceFeed implements ExternalPriceFeed {
     readonly feed = 'dao';
 
-    constructor(private readonly opts: DaoExternalPriceFeedOpts) {}
+    constructor(@inject(DaoExternalPriceFeedOpts) private readonly opts: DaoExternalPriceFeedOpts) {}
 
     async getTokenPriceInUSD(token: string): Promise<number | null> {
         if (!this.opts || !this.opts.api_url) {
@@ -44,7 +44,7 @@ export const CoinGeckoExternalPriceFeedOpts: InjectionToken<CoinGeckoExternalPri
 export class CoinGeckoExternalPriceFeed implements ExternalPriceFeed {
     readonly feed = 'coingecko';
 
-    constructor(private readonly opts: CoinGeckoExternalPriceFeedOpts) {}
+    constructor(@inject(CoinGeckoExternalPriceFeedOpts) private readonly opts: CoinGeckoExternalPriceFeedOpts) {}
 
     async getTokenPriceInUSD(token: string): Promise<number | null> {
         if (!this.opts || !this.opts.api_url || !this.opts.api_key) {
@@ -80,7 +80,7 @@ export class CoinMarketCapExternalPriceFeed implements ExternalPriceFeed {
 
     private readonly token_map: Map<string, string>;
 
-    constructor(private readonly opts: CoinMarketCapExternalPriceFeedOpts) {
+    constructor(@inject(CoinMarketCapExternalPriceFeedOpts) private readonly opts: CoinMarketCapExternalPriceFeedOpts) {
         this.token_map = new Map(Object.entries(opts.token_map).map(([k, v]) => [k.toLowerCase(), v]));
     }
 

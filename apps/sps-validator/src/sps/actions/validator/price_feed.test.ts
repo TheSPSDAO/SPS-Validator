@@ -21,10 +21,6 @@ beforeEach(async () => {
     await fixture.restore();
 
     await fixture.testHelper.insertDefaultConfiguration();
-    await fixture.handle.query(ConfigEntity).where('group_name', 'validator').andWhere('name', 'reward_start_block').updateItem({
-        value: '100',
-    });
-
     await fixture.handle.query(ConfigEntity).where('group_name', 'validator').andWhere('name', 'num_top_validators').updateItem({
         value: '2',
     });
@@ -45,143 +41,49 @@ test.dbOnly('Lots of emoji for price_feed does not crash.', () => {
     return expect(fixture.opsHelper.processOp('price_feed', 'steemmonsters', emoji_payload)).resolves.toBeUndefined();
 });
 
-test.dbOnly('Admin price_feed before handover', async () => {
+test.dbOnly('Active validator price_feed', async () => {
+    await fixture.testHelper.insertDummyValidator('steemmonsters', true, 10);
+    await fixture.testHelper.insertDummyValidator('steemmonsters1', true, 8);
     await fixture.opsHelper.processOp('price_feed', 'steemmonsters', {
-        sps_price: 42,
-        dec_price: 11,
+        updates: [
+            {
+                token: 'SPS',
+                price: 3.2,
+            },
+        ],
     });
-    const calculated = await fixture.consumer.getPriceAtPoint('SPS', new Date());
-    expect(calculated).toBe(42);
-});
-
-test.dbOnly('Multiple Admin price_feed before handover', async () => {
-    await fixture.testHelper.insertExistingAdmins(['wordempire']);
-    await fixture.loader.load();
-    await fixture.opsHelper.processOp('price_feed', 'steemmonsters', {
-        sps_price: 42,
-        dec_price: 11,
-    });
-    await fixture.opsHelper.processOp('price_feed', 'wordempire', {
-        sps_price: 50,
-        dec_price: 13,
-    });
-    const calculated = await fixture.consumer.getPriceAtPoint('SPS', new Date());
-    expect(calculated).toBe(46);
-});
-
-test.dbOnly.skip('Multiple Admin price_feed before handover with outdated info', async () => {
-    await fixture.testHelper.insertExistingAdmins(['wordempire']);
-    await fixture.loader.load();
-    const now = new Date();
-    const lastYear = new Date(now.getFullYear() - 1, now.getMonth(), now.getDate());
-    await fixture.opsHelper.processOp(
-        'price_feed',
-        'steemmonsters',
-        {
-            sps_price: 42,
-            dec_price: 11,
-        },
-
-        {
-            block_time: lastYear,
-        },
-    );
-    await fixture.opsHelper.processOp('price_feed', 'wordempire', {
-        sps_price: 50,
-        dec_price: 13,
-    });
-    const calculated = await fixture.consumer.getPriceAtPoint('SPS', new Date());
-    expect(calculated).toBe(50);
-});
-
-test.dbOnly('Non-admin price_feed before handover', async () => {
-    await fixture.opsHelper.processOp('price_feed', 'not-steemmonsters', {
-        sps_price: 7331,
-        dec_price: 10,
-    });
-    const result = await fixture.testHelper.lookupPriceFeedRecord('not-steemmonsters', 'SPS');
-    expect(result).toBeNull();
-});
-
-test.dbOnly('Admin price_feed after handover', async () => {
-    await fixture.opsHelper.processOp(
-        'price_feed',
-        'steemmonsters',
-        {
-            sps_price: 42,
-            dec_price: 11,
-        },
-        { block_num: 200 },
-    );
-    const result = await fixture.testHelper.lookupPriceFeedRecord('steemmonsters', 'SPS');
-    expect(result).toBeNull();
-});
-
-test.dbOnly('Non-admin price_feed after handover', async () => {
-    await fixture.opsHelper.processOp(
-        'price_feed',
-        'not-steemmonsters',
-        {
-            sps_price: 7331,
-            dec_price: 10,
-        },
-        { block_num: 200 },
-    );
-    const result = await fixture.testHelper.lookupPriceFeedRecord('not-steemmonsters', 'SPS');
-    expect(result).toBeNull();
-});
-
-test.dbOnly('Active validator price_feed after handover', async () => {
-    await fixture.opsHelper.processOp('update_validator', 'steemmonsters', {
-        is_active: true,
-    });
-    await fixture.opsHelper.processOp(
-        'price_feed',
-        'steemmonsters',
-        {
-            sps_price: 3.2,
-            dec_price: 19,
-        },
-        { block_num: 200 },
-    );
     const calculated = await fixture.consumer.getPriceAtPoint('SPS', new Date());
     expect(calculated).toBe(3.2);
 });
 
-test.dbOnly('Inactive validator price_feed after handover', async () => {
-    await fixture.opsHelper.processOp('update_validator', 'steemmonsters', {
-        is_active: false,
+test.dbOnly('Inactive validator price_feed', async () => {
+    await fixture.testHelper.insertDummyValidator('steemmonsters', false, 10);
+    await fixture.testHelper.insertDummyValidator('steemmonsters1', true, 8);
+    await fixture.testHelper.insertDummyValidator('steemmonsters2', true, 5);
+    await fixture.opsHelper.processOp('price_feed', 'steemmonsters', {
+        updates: [
+            {
+                token: 'SPS',
+                price: 3.2,
+            },
+        ],
     });
-    await fixture.opsHelper.processOp(
-        'price_feed',
-        'steemmonsters',
-        {
-            sps_price: 30,
-            dec_price: 22,
-        },
-        { block_num: 200 },
-    );
     const result = await fixture.testHelper.lookupPriceFeedRecord('steemmonsters', 'SPS');
     expect(result).toBeNull();
 });
 
-test.dbOnly('First admin, then validator price_feed with handover', async () => {
-    await fixture.opsHelper.processOp('update_validator', 'wordempire', {
-        is_active: true,
+test.dbOnly('Not top validator price_feed', async () => {
+    await fixture.testHelper.insertDummyValidator('steemmonsters', true, 10);
+    await fixture.testHelper.insertDummyValidator('steemmonsters1', true, 12);
+    await fixture.testHelper.insertDummyValidator('steemmonsters2', true, 15);
+    await fixture.opsHelper.processOp('price_feed', 'steemmonsters2', {
+        updates: [
+            {
+                token: 'SPS',
+                price: 3.2,
+            },
+        ],
     });
-    await fixture.opsHelper.processOp('price_feed', 'steemmonsters', {
-        sps_price: 20,
-        dec_price: 3.6,
-    });
-    await fixture.opsHelper.processOp(
-        'price_feed',
-        'wordempire',
-        {
-            sps_price: 30,
-            dec_price: Math.PI,
-        },
-        { block_num: 200 },
-    );
-    const calculated = await fixture.consumer.getPriceAtPoint('SPS', new Date());
-    expect(calculated).toBe(25);
+    const result = await fixture.testHelper.lookupPriceFeedRecord('steemmonsters', 'SPS');
+    expect(result).toBeNull();
 });

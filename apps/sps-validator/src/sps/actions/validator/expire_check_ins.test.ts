@@ -3,7 +3,7 @@ import { container } from '../../../__tests__/test-composition-root';
 import { Fixture } from '../../../__tests__/action-fixture';
 import { TOKENS } from '../../features/tokens';
 import { ConfigEntity } from '@steem-monsters/splinterlands-validator';
-import { SpsValidatorLicenseManager } from '../../features/validator/validator_license.manager';
+import { SpsValidatorLicenseManager } from '../../features/validator';
 
 const fixture = container.resolve(Fixture);
 
