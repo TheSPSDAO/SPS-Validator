@@ -1,9 +1,12 @@
 import { EventLog, HiveClient, LogLevel, Plugin, PriceHistoryRepository, Prime, Trx, ValidatorRepository, ValidatorWatch, log } from '@steem-monsters/splinterlands-validator';
 import { inject, injectAll, singleton } from 'tsyringe';
 import config from '../../convict-config';
-import { ExternalFeed } from './external-feeds';
+import { ExternalPriceFeed } from './external-feeds';
 import { PriceFeedWatch } from './config';
 import { backOff } from 'exponential-backoff';
+import { TOKENS } from '../tokens';
+
+const HIVE_TOKEN = 'HIVE';
 
 @singleton()
 export class PriceFeedPlugin implements Plugin, Prime {
@@ -21,7 +24,7 @@ export class PriceFeedPlugin implements Plugin, Prime {
         @inject(PriceHistoryRepository) private readonly priceHistoryRepository: PriceHistoryRepository,
         @inject(ValidatorWatch) private readonly validatorWatch: ValidatorWatch,
         @inject(ValidatorRepository) private readonly validatorRepository: ValidatorRepository,
-        @injectAll(ExternalFeed) private readonly feeds: ExternalFeed[],
+        @injectAll(ExternalPriceFeed) private readonly feeds: ExternalPriceFeed[],
     ) {
         this.priceFeedWatch.addPriceFeedWatcher(this.CHANGE_KEY, (config) => {
             this.nextBlock = undefined;
@@ -40,7 +43,7 @@ export class PriceFeedPlugin implements Plugin, Prime {
             return;
         }
 
-        const lastPriceEntry = await this.priceHistoryRepository.getLastPriceEntry(config.validator_account, trx);
+        const lastPriceEntry = await this.priceHistoryRepository.getLastPriceEntry(config.validator_account, TOKENS.SPS, trx);
         this.lastSentBlock = lastPriceEntry ? lastPriceEntry.block_num : undefined;
         this.nextBlock = this.lastSentBlock ? this.getNextBlock(this.lastSentBlock) : undefined;
         log(`Next price feed block: ${this.nextBlock ?? 'asap'}`, LogLevel.Info);
@@ -80,8 +83,8 @@ export class PriceFeedPlugin implements Plugin, Prime {
         this.nextBlock = this.getNextBlock(blockNumber);
 
         try {
-            const price = await this.getTokenPriceInUSD('SPS');
-            const confirmation = await this.hive.submitPriceFeed([{ token: 'SPS', price }]);
+            const price = await this.getTokenPriceInUSD(TOKENS.SPS);
+            const confirmation = await this.hive.submitPriceFeed([{ token: TOKENS.SPS, price }]);
             this.lastSentBlock = blockNumber;
             log(`Sent price feed at block ${blockNumber}. trx_id: ${confirmation.id}`, LogLevel.Info);
         } catch (err) {
@@ -96,7 +99,7 @@ export class PriceFeedPlugin implements Plugin, Prime {
         let externalHivePrice: number | null = null;
         for (const feed of randomizedFeeds) {
             try {
-                const maybeHivePrice = await backOff(() => feed.getTokenPriceInUSD('HIVE'), {
+                const maybeHivePrice = await backOff(() => feed.getTokenPriceInUSD(HIVE_TOKEN), {
                     numOfAttempts: 3,
                     startingDelay: 1000,
                     maxDelay: 3000,

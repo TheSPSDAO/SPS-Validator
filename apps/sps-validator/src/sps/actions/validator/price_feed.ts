@@ -1,6 +1,7 @@
 import { OperationData, PriceFeedProducer, Trx, Action, EventLog, TopPriceFeedWrapper } from '@steem-monsters/splinterlands-validator';
 import { price_feed } from '../schema';
 import { MakeActionFactory, MakeRouter } from '../utils';
+import { TOKENS } from '../../features/tokens';
 
 export class TopPriceFeedAction extends Action<typeof price_feed.actionSchema> {
     constructor(op: OperationData, data: unknown, index: number, private readonly producer: PriceFeedProducer) {
@@ -10,6 +11,11 @@ export class TopPriceFeedAction extends Action<typeof price_feed.actionSchema> {
     async process(trx?: Trx): Promise<EventLog[]> {
         const results: EventLog[] = [];
         for (const update of this.params.updates) {
+            // we only need sps price right now, and only sps price is being sent
+            if (update.token !== TOKENS.SPS) {
+                continue;
+            }
+
             results.push(
                 ...(await this.producer.addPriceEntry(
                     {

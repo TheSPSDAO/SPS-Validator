@@ -39,8 +39,8 @@ export class PriceHistoryRepository extends BaseRepository {
         return groupBy(records.map(PriceHistoryRepository.into), (t) => t.token);
     }
 
-    public async getLastPriceEntry(validator: string, trx?: Trx): Promise<PriceEntry | null> {
-        const record = await this.query(PriceHistoryEntity, trx).where('validator', validator).orderBy('block_time', 'desc').getFirstOrNull();
+    public async getLastPriceEntry(validator: string, token: string, trx?: Trx): Promise<PriceEntry | null> {
+        const record = await this.query(PriceHistoryEntity, trx).where('validator', validator).where('token', token).orderBy('block_time', 'desc').getFirstOrNull();
         return record ? PriceHistoryRepository.into(record) : null;
     }
 

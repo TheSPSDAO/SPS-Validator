@@ -304,6 +304,52 @@ const schema = {
         default: true,
         env: 'ENABLE_CHECK_INS',
     },
+    price_feed_dao: {
+        api_url: {
+            doc: 'The URL of the DAO price feed API',
+            format: 'url',
+            default: 'https://prices.spsvalidator.com',
+            env: 'PRICE_FEED_DAO_API_URL',
+        },
+    },
+    price_feed_coin_gecko: {
+        api_url: {
+            doc: 'The URL of the CoinGecko price feed API',
+            format: 'url',
+            default: 'https://pro-api.coingecko.com',
+            env: 'PRICE_FEED_COIN_GECKO_API_URL',
+        },
+        api_key: {
+            doc: 'The API key for the CoinGecko price feed API',
+            nullable: true,
+            format: String,
+            default: null as null | string,
+            env: 'PRICE_FEED_COIN_GECKO_API_KEY',
+        },
+    },
+    price_feed_coin_market_cap: {
+        api_url: {
+            doc: 'The URL of the CoinMarketCap price feed API',
+            format: 'url',
+            default: 'https://pro-api.coinmarketcap.com',
+            env: 'PRICE_FEED_COIN_MARKET_CAP_API_URL',
+        },
+        api_key: {
+            doc: 'The API key for the CoinMarketCap price feed API',
+            nullable: true,
+            format: String,
+            default: null as null | string,
+            env: 'PRICE_FEED_COIN_MARKET_CAP_API_KEY',
+        },
+        token_map: {
+            doc: 'The mapping of tokens to CoinMarketCap ids',
+            format: 'stringy-object',
+            default: {
+                HIVE: '5370',
+            },
+            env: 'PRICE_FEED_COIN_MARKET_CAP_TOKEN_MAP',
+        },
+    },
     helmetjs: {
         doc: 'Enable helmetjs security middleware',
         format: Boolean,

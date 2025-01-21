@@ -1,20 +1,20 @@
 import { injectable, InjectionToken } from 'tsyringe';
 
-export interface ExternalFeed {
+export interface ExternalPriceFeed {
     readonly feed: string;
     getTokenPriceInUSD(token: string): Promise<number | null>;
 }
-export const ExternalFeed: InjectionToken<ExternalFeed> = Symbol('ExternalFeed');
+export const ExternalPriceFeed: InjectionToken<ExternalPriceFeed> = Symbol('ExternalPriceFeed');
 
-export type DaoExternalFeedOpts = {
+export type DaoExternalPriceFeedOpts = {
     api_url: string;
 };
-export const DaoExternalFeedOpts: InjectionToken<DaoExternalFeedOpts> = Symbol('DaoExternalFeedOpts');
+export const DaoExternalPriceFeedOpts: InjectionToken<DaoExternalPriceFeedOpts> = Symbol('DaoExternalPriceFeedOpts');
 @injectable()
-export class DaoExternalFeed implements ExternalFeed {
+export class DaoExternalPriceFeed implements ExternalPriceFeed {
     readonly feed = 'dao';
 
-    constructor(private readonly opts: DaoExternalFeedOpts) {}
+    constructor(private readonly opts: DaoExternalPriceFeedOpts) {}
 
     async getTokenPriceInUSD(token: string): Promise<number | null> {
         if (!this.opts || !this.opts.api_url) {
@@ -30,21 +30,21 @@ export class DaoExternalFeed implements ExternalFeed {
         return json?.price ?? null;
     }
 
-    static isAvailable(opts: DaoExternalFeedOpts) {
+    static isAvailable(opts: DaoExternalPriceFeedOpts) {
         return !!opts.api_url;
     }
 }
 
-export type CoinGeckoExternalFeedOpts = {
+export type CoinGeckoExternalPriceFeedOpts = {
     api_url: string;
     api_key: string;
 };
-export const CoinGeckoExternalFeedOpts: InjectionToken<CoinGeckoExternalFeedOpts> = Symbol('CoinGeckoExternalFeedOpts');
+export const CoinGeckoExternalPriceFeedOpts: InjectionToken<CoinGeckoExternalPriceFeedOpts> = Symbol('CoinGeckoExternalPriceFeedOpts');
 @injectable()
-export class CoinGeckoExternalFeed implements ExternalFeed {
+export class CoinGeckoExternalPriceFeed implements ExternalPriceFeed {
     readonly feed = 'coingecko';
 
-    constructor(private readonly opts: CoinGeckoExternalFeedOpts) {}
+    constructor(private readonly opts: CoinGeckoExternalPriceFeedOpts) {}
 
     async getTokenPriceInUSD(token: string): Promise<number | null> {
         if (!this.opts || !this.opts.api_url || !this.opts.api_key) {
@@ -63,24 +63,24 @@ export class CoinGeckoExternalFeed implements ExternalFeed {
         return price ? parseFloat(price) : null;
     }
 
-    static isAvailable(opts: CoinGeckoExternalFeedOpts) {
+    static isAvailable(opts: CoinGeckoExternalPriceFeedOpts) {
         return !!opts.api_url && !!opts.api_key;
     }
 }
 
-export type CoinMarketCapExternalFeedOpts = {
+export type CoinMarketCapExternalPriceFeedOpts = {
     api_url: string;
     api_key: string;
     token_map: Record<string, string>;
 };
-export const CoinMarketCapExternalFeedOpts: InjectionToken<CoinGeckoExternalFeedOpts> = Symbol('CoinGeckoExternalFeedOpts');
+export const CoinMarketCapExternalPriceFeedOpts: InjectionToken<CoinGeckoExternalPriceFeedOpts> = Symbol('CoinGeckoExternalPriceFeedOpts');
 @injectable()
-export class CoinMarketCapExternalFeed implements ExternalFeed {
+export class CoinMarketCapExternalPriceFeed implements ExternalPriceFeed {
     readonly feed = 'coinmarketcap';
 
     private readonly token_map: Map<string, string>;
 
-    constructor(private readonly opts: CoinMarketCapExternalFeedOpts) {
+    constructor(private readonly opts: CoinMarketCapExternalPriceFeedOpts) {
         this.token_map = new Map(Object.entries(opts.token_map).map(([k, v]) => [k.toLowerCase(), v]));
     }
 
@@ -108,7 +108,7 @@ export class CoinMarketCapExternalFeed implements ExternalFeed {
         return price ? parseFloat(price) : null;
     }
 
-    static isAvailable(opts: CoinMarketCapExternalFeedOpts) {
+    static isAvailable(opts: CoinMarketCapExternalPriceFeedOpts) {
         return !!opts.api_url && !!opts.api_key && !!opts.token_map && Object.keys(opts.token_map).length > 0;
     }
 }

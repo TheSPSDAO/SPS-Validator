@@ -121,6 +121,14 @@ import { SpsValidatorCheckInRepository } from './entities/validator/validator_ch
 import { ValidatorCheckInWatch } from './features/validator/config';
 import { ValidatorCheckInPlugin } from './features/validator/license-plugin';
 import { MissedBlocksOpts, SpsUpdateMissedBlocksSource } from './actions/missed_blocks';
+import {
+    CoinGeckoExternalPriceFeed,
+    CoinGeckoExternalPriceFeedOpts,
+    DaoExternalPriceFeed,
+    DaoExternalPriceFeedOpts,
+    ExternalPriceFeed,
+    PriceFeedPlugin,
+} from './features/price_feed';
 
 // Only use re-exported `container` to ensure composition root was loaded.
 export { container, singleton, inject, injectable } from 'tsyringe';
@@ -305,6 +313,23 @@ export class CompositionRoot extends null {
         // Promise handlers
         container.register<DelegationPromiseHandler>(DelegationPromiseHandler, { useToken: SpsDelegationPromiseHandler });
 
+        // External price feeds
+        const daoFeedConfig = cfg.price_feed_dao;
+        if (DaoExternalPriceFeed.isAvailable(daoFeedConfig)) {
+            container.register<DaoExternalPriceFeedOpts>(DaoExternalPriceFeedOpts, { useValue: daoFeedConfig });
+            container.register<ExternalPriceFeed>(ExternalPriceFeed, { useClass: DaoExternalPriceFeed });
+        }
+        const coinGeckoFeedConfig = cfg.price_feed_coin_gecko;
+        if (CoinGeckoExternalPriceFeed.isAvailable(coinGeckoFeedConfig)) {
+            container.register<CoinGeckoExternalPriceFeedOpts>(CoinGeckoExternalPriceFeedOpts, { useValue: coinGeckoFeedConfig });
+            container.register<ExternalPriceFeed>(ExternalPriceFeed, { useClass: CoinGeckoExternalPriceFeed });
+        }
+        const cmcFeedConfig = cfg.price_feed_coin_market_cap;
+        if (CoinGeckoExternalPriceFeed.isAvailable(cmcFeedConfig)) {
+            container.register<CoinGeckoExternalPriceFeedOpts>(CoinGeckoExternalPriceFeedOpts, { useValue: cmcFeedConfig });
+            container.register<ExternalPriceFeed>(ExternalPriceFeed, { useClass: CoinGeckoExternalPriceFeed });
+        }
+
         // Plugins
         container.register(ValidatorCheckInPlugin, { useClass: ValidatorCheckInPlugin });
         container.register<PluginDispatcher>(PluginDispatcher, {
@@ -317,6 +342,11 @@ export class CompositionRoot extends null {
 
                 if (ValidatorCheckInPlugin.isAvailable()) {
                     builder = builder.addPlugin(container.resolve(ValidatorCheckInPlugin));
+                }
+
+                const externalFeeds = container.resolveAll(ExternalPriceFeed);
+                if (PriceFeedPlugin.isAvailable() && externalFeeds.length > 0) {
+                    builder = builder.addPlugin(container.resolve(PriceFeedPlugin));
                 }
 
                 return builder.build();
