@@ -72,7 +72,7 @@ export class HiveClient extends Client {
         );
     }
 
-    public async submitPriceFeed(updates: PriceUpdate[]) {
+    public async submitPriceFeed(updates: PriceUpdate[], metadata?: unknown) {
         if (!this.validatorConfig.validator_account || !this.validatorConfig.validator_key) {
             throw new Error(`Attempting to submit price feed without setting up a validator account/key.`);
         }
@@ -82,7 +82,7 @@ export class HiveClient extends Client {
                 id: this.prefixOpts.custom_json_id,
                 json: {
                     action: 'price_feed',
-                    params: { updates },
+                    params: { updates, metadata },
                 },
                 account: this.validatorConfig.validator_account,
                 role: 'active',

@@ -191,6 +191,7 @@ const price_feed = new Schema.Schema(
                 }),
             )
             .required(),
+        metadata: object().unknown(true).optional(),
     }),
 );
 

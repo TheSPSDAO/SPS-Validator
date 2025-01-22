@@ -83,8 +83,8 @@ export class PriceFeedPlugin implements Plugin, Prime {
         this.nextBlock = this.getNextBlock(blockNumber);
 
         try {
-            const price = await this.getTokenPriceInUSD(TOKENS.SPS);
-            const confirmation = await this.hive.submitPriceFeed([{ token: TOKENS.SPS, price }]);
+            const result = await this.getTokenPriceInUSD(TOKENS.SPS);
+            const confirmation = await this.hive.submitPriceFeed([{ token: TOKENS.SPS, price: result.price }], result.metadata);
             this.lastSentBlock = blockNumber;
             log(`Sent price feed at block ${blockNumber}. trx_id: ${confirmation.id}`, LogLevel.Info);
         } catch (err) {
@@ -94,9 +94,10 @@ export class PriceFeedPlugin implements Plugin, Prime {
         }
     }
 
-    private async getTokenPriceInUSD(token: string): Promise<number> {
+    private async getTokenPriceInUSD(token: string) {
         const randomizedFeeds = this.feeds.sort(() => Math.random() - 0.5);
         let externalHivePrice: number | null = null;
+        let feedUsed: string | null = null;
         for (const feed of randomizedFeeds) {
             try {
                 const maybeHivePrice = await backOff(() => feed.getTokenPriceInUSD(HIVE_TOKEN), {
@@ -109,6 +110,7 @@ export class PriceFeedPlugin implements Plugin, Prime {
                     continue;
                 }
                 externalHivePrice = maybeHivePrice;
+                feedUsed = feed.name;
             } catch (err) {
                 log(`Failed to get HIVE price from ${feed.constructor.name}: ${err}`, LogLevel.Warning);
             }
@@ -128,10 +130,24 @@ export class PriceFeedPlugin implements Plugin, Prime {
         if (isNaN(hePriceParsed)) {
             throw new Error(`Failed to get price for ${token} from Hive Engine`);
         } else if (hePriceParsed === 0) {
-            return 0;
+            return {
+                price: 0,
+                metadata: {
+                    hive_usd: externalHivePrice,
+                    he_price: hePriceParsed,
+                    external_feed: feedUsed,
+                },
+            };
         }
 
-        return parseFloat((externalHivePrice / hePriceParsed).toFixed(7));
+        return {
+            price: parseFloat((externalHivePrice / hePriceParsed).toFixed(7)),
+            metadata: {
+                hive_usd: externalHivePrice,
+                he_price: hePriceParsed,
+                external_feed: feedUsed,
+            },
+        };
     }
 
     private getNextBlock(lastBlockNum: number): number {

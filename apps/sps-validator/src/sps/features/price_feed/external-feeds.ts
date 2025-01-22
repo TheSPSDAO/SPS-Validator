@@ -1,7 +1,7 @@
 import { inject, injectable, InjectionToken } from 'tsyringe';
 
 export interface ExternalPriceFeed {
-    readonly feed: string;
+    readonly name: string;
     getTokenPriceInUSD(token: string): Promise<number | null>;
 }
 export const ExternalPriceFeed: InjectionToken<ExternalPriceFeed> = Symbol('ExternalPriceFeed');
@@ -12,7 +12,7 @@ export type DaoExternalPriceFeedOpts = {
 export const DaoExternalPriceFeedOpts: InjectionToken<DaoExternalPriceFeedOpts> = Symbol('DaoExternalPriceFeedOpts');
 @injectable()
 export class DaoExternalPriceFeed implements ExternalPriceFeed {
-    readonly feed = 'dao';
+    readonly name = 'dao';
 
     constructor(@inject(DaoExternalPriceFeedOpts) private readonly opts: DaoExternalPriceFeedOpts) {}
 
@@ -42,7 +42,7 @@ export type CoinGeckoExternalPriceFeedOpts = {
 export const CoinGeckoExternalPriceFeedOpts: InjectionToken<CoinGeckoExternalPriceFeedOpts> = Symbol('CoinGeckoExternalPriceFeedOpts');
 @injectable()
 export class CoinGeckoExternalPriceFeed implements ExternalPriceFeed {
-    readonly feed = 'coingecko';
+    readonly name = 'coingecko';
 
     constructor(@inject(CoinGeckoExternalPriceFeedOpts) private readonly opts: CoinGeckoExternalPriceFeedOpts) {}
 
@@ -76,7 +76,7 @@ export type CoinMarketCapExternalPriceFeedOpts = {
 export const CoinMarketCapExternalPriceFeedOpts: InjectionToken<CoinGeckoExternalPriceFeedOpts> = Symbol('CoinGeckoExternalPriceFeedOpts');
 @injectable()
 export class CoinMarketCapExternalPriceFeed implements ExternalPriceFeed {
-    readonly feed = 'coinmarketcap';
+    readonly name = 'coinmarketcap';
 
     private readonly token_map: Map<string, string>;
 
