@@ -59,6 +59,25 @@ convict.addFormat({
     },
 });
 
+convict.addFormat({
+    name: 'stringy-object-freeform',
+    validate: function (val: any) {
+        if (typeof val !== 'object') {
+            throw Error('value does not seem to be an object. Please use a different format');
+        }
+    },
+    coerce: function (val: unknown) {
+        switch (typeof val) {
+            case 'string':
+                return JSON.parse(val);
+            case 'object':
+                return val;
+            default:
+                return null;
+        }
+    },
+});
+
 const schema = {
     env: {
         doc: 'The application environment',
@@ -343,14 +362,10 @@ const schema = {
         },
         token_map: {
             doc: 'The mapping of tokens to CoinMarketCap ids',
-            format: 'stringy-object',
-            structure: {
-                HIVE: {
-                    doc: 'The CoinMarketCap id for HIVE',
-                    format: String,
-                    default: '5370',
-                },
-            },
+            format: 'stringy-object-freeform',
+            default: {
+                HIVE: '5370',
+            } as Record<string, string>,
             env: 'PRICE_FEED_COIN_MARKET_CAP_TOKEN_MAP',
         },
     },
@@ -377,4 +392,5 @@ export const ConfigType: unique symbol = Symbol.for('ConfigType');
 // TODO: we might want to support loading in json files as well:
 config.validate({ allowed: 'strict' });
 const cfg: ConfigType = config.getProperties();
+
 export default cfg;

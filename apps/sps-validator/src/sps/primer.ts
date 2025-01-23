@@ -3,6 +3,7 @@ import { SpsConfigLoader } from './config';
 import { Bookkeeping, LastBlockCache, Prime, Primer, RawPriceFeed } from '@steem-monsters/splinterlands-validator';
 import { ValidatorShop } from './utilities/validator-shop';
 import { ValidatorCheckInPlugin } from './features/validator/license-plugin';
+import { PriceFeedPlugin } from './features/price_feed';
 
 @singleton()
 export class SpsPrimer extends Primer {
@@ -13,7 +14,8 @@ export class SpsPrimer extends Primer {
         @inject(ValidatorShop) shop: Prime,
         @inject(Bookkeeping) bookkeeping: Prime,
         @inject(ValidatorCheckInPlugin) checkInPlugin: Prime,
+        @inject(PriceFeedPlugin) priceFeedPlugin: Prime,
     ) {
-        super(feed, lastBlockCache, configLoader, shop, bookkeeping, checkInPlugin);
+        super(feed, lastBlockCache, configLoader, shop, bookkeeping, checkInPlugin, priceFeedPlugin);
     }
 }

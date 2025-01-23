@@ -52,7 +52,7 @@ services:
       VERSION: ${GIT_COMMIT:-development}
       ENABLE_CHECK_INS: ${ENABLE_CHECK_INS:-true}
       BLOCK_PROCESSING: ${BLOCK_PROCESSING:-true}
-      PRICE_FEED_DAO_API_URL: ${PRICE_FEED_DAO_API_URL:-https://prices.spsvalidator.com}
+      PRICE_FEED_DAO_API_URL: ${PRICE_FEED_DAO_API_URL:-https://prices.splinterlands.workers.dev}
       PRICE_FEED_COIN_GECKO_API_URL: ${PRICE_FEED_COIN_GECKO_API_URL:-https://pro-api.coingecko.com}
       PRICE_FEED_COIN_GECKO_API_KEY: ${PRICE_FEED_COIN_GECKO_API_KEY:-}
       PRICE_FEED_COIN_MARKET_CAP_API_URL: ${PRICE_FEED_COIN_MARKET_CAP_API_URL:-https://pro-api.coinmarketcap.com}

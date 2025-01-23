@@ -27,7 +27,6 @@ import { SpsPromiseRepository } from './entities/promises/promise';
 import { SpsHiveStream } from './hive-stream';
 import { SpsValidatorShop } from './validator-shop';
 import { SpsPoolManager } from './pool-manager';
-import { SpsPriceFeed, SpsTopPriceFeedWrapper } from './price_feed';
 import { SpsHiveClient } from './hive';
 import { SpsBookkeeping } from './bookkeeping';
 import { SpsDelegationManager, SpsDelegationPromiseHandler } from './features/delegation';
@@ -121,11 +120,15 @@ import { MissedBlocksOpts, SpsUpdateMissedBlocksSource } from './actions/missed_
 import {
     CoinGeckoExternalPriceFeed,
     CoinGeckoExternalPriceFeedOpts,
+    CoinMarketCapExternalPriceFeed,
+    CoinMarketCapExternalPriceFeedOpts,
     DaoExternalPriceFeed,
     DaoExternalPriceFeedOpts,
     ExternalPriceFeed,
     PriceFeedPlugin,
     PriceFeedWatch,
+    SpsPriceFeed,
+    SpsTopPriceFeedWrapper,
 } from './features/price_feed';
 import { SpsValidatorCheckInRepository } from './entities/validator/validator_check_in';
 
@@ -325,9 +328,10 @@ export class CompositionRoot extends null {
             container.register<ExternalPriceFeed>(ExternalPriceFeed, { useClass: CoinGeckoExternalPriceFeed });
         }
         const cmcFeedConfig = cfg.price_feed_coin_market_cap;
-        if (CoinGeckoExternalPriceFeed.isAvailable(cmcFeedConfig)) {
-            container.register<CoinGeckoExternalPriceFeedOpts>(CoinGeckoExternalPriceFeedOpts, { useValue: cmcFeedConfig });
-            container.register<ExternalPriceFeed>(ExternalPriceFeed, { useClass: CoinGeckoExternalPriceFeed });
+        console.log(cmcFeedConfig);
+        if (CoinMarketCapExternalPriceFeed.isAvailable(cmcFeedConfig)) {
+            container.register<CoinMarketCapExternalPriceFeedOpts>(CoinMarketCapExternalPriceFeedOpts, { useValue: cmcFeedConfig });
+            container.register<ExternalPriceFeed>(ExternalPriceFeed, { useClass: CoinMarketCapExternalPriceFeed });
         }
 
         // Plugins

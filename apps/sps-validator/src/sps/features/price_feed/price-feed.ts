@@ -12,7 +12,7 @@ import {
     ValidatorWatch,
 } from '@steem-monsters/splinterlands-validator';
 import { inject, injectable, singleton } from 'tsyringe';
-import { PriceFeedWatch } from './features/price_feed';
+import { PriceFeedWatch } from '.';
 
 @singleton()
 export class SpsPriceFeed extends RawPriceFeed {

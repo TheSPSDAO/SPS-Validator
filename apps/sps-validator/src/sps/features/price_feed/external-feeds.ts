@@ -82,7 +82,7 @@ export type CoinMarketCapExternalPriceFeedOpts = {
     api_key: string;
     token_map: Record<string, string>;
 };
-export const CoinMarketCapExternalPriceFeedOpts: InjectionToken<CoinGeckoExternalPriceFeedOpts> = Symbol('CoinGeckoExternalPriceFeedOpts');
+export const CoinMarketCapExternalPriceFeedOpts: InjectionToken<CoinMarketCapExternalPriceFeedOpts> = Symbol('CoinMarketCapExternalPriceFeedOpts');
 @injectable()
 export class CoinMarketCapExternalPriceFeed implements ExternalPriceFeed {
     readonly name = 'coinmarketcap';

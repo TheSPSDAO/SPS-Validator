@@ -46,7 +46,7 @@ export class PriceFeedPlugin implements Plugin, Prime {
         const lastPriceEntry = await this.priceHistoryRepository.getLastPriceEntry(config.validator_account, TOKENS.SPS, trx);
         this.lastSentBlock = lastPriceEntry ? lastPriceEntry.block_num : undefined;
         this.nextBlock = this.lastSentBlock ? this.getNextBlock(this.lastSentBlock) : undefined;
-        log(`Next price feed block: ${this.nextBlock ?? 'asap'}`, LogLevel.Info);
+        log(`Next price feed block: ${this.nextBlock ?? 'asap'}. Available feeds: ${this.feeds.map((f) => f.name).join(', ')}`, LogLevel.Info);
     }
 
     static isAvailable() {
@@ -80,15 +80,15 @@ export class PriceFeedPlugin implements Plugin, Prime {
         }
 
         // plugins are run asynchronously, so we need to set nextBlock before calling into async code
-        this.nextBlock = this.getNextBlock(blockNumber);
+        this.nextBlock = this.getNextBlock(headBlockNumber);
 
         try {
             const result = await this.getTokenPriceInUSD(TOKENS.SPS);
             const confirmation = await this.hive.submitPriceFeed([{ token: TOKENS.SPS, price: result.price }], result.metadata);
-            this.lastSentBlock = blockNumber;
-            log(`Sent price feed at block ${blockNumber}. trx_id: ${confirmation.id}`, LogLevel.Info);
+            this.lastSentBlock = headBlockNumber;
+            log(`Sent price feed at block ${headBlockNumber}. trx_id: ${confirmation.id}`, LogLevel.Info);
         } catch (err) {
-            log(`Failed to send price feed at block ${blockNumber}: ${err}`, LogLevel.Error);
+            log(`Failed to send price feed at block ${headBlockNumber}: ${err}`, LogLevel.Error);
             // reset next check in block if it failed
             this.nextBlock = undefined;
         }
@@ -112,7 +112,8 @@ export class PriceFeedPlugin implements Plugin, Prime {
                 externalHivePrice = maybeHivePrice;
                 feedUsed = feed.name;
             } catch (err) {
-                log(`Failed to get HIVE price from ${feed.constructor.name}: ${err}`, LogLevel.Warning);
+                console.error(err);
+                log(`Failed to get HIVE price from ${feed.name}: ${err}`, LogLevel.Warning);
             }
         }
 
@@ -151,6 +152,6 @@ export class PriceFeedPlugin implements Plugin, Prime {
     }
 
     private getNextBlock(lastBlockNum: number): number {
-        return lastBlockNum + this.priceFeedWatch.price_feed!.interval_blocks + Math.random() * this.priceFeedWatch.price_feed!.interval_blocks;
+        return lastBlockNum + this.priceFeedWatch.price_feed!.interval_blocks + Math.floor(Math.random() * this.priceFeedWatch.price_feed!.interval_blocks);
     }
 }
