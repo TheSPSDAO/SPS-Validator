@@ -16,7 +16,7 @@ import {
 import { inject, singleton } from 'tsyringe';
 import { TOKENS } from '../tokens';
 import { SpsValidatorCheckInRepository } from '../../entities/validator/validator_check_in';
-import { ValidatorCheckInConfig, ValidatorCheckInWatch } from './validator_license.config';
+import { ValidatorCheckInConfig, ValidatorCheckInWatch } from './config';
 import { ValidatorCheckInEntity } from '../../entities/tables';
 import { sha256 } from 'js-sha256';
 

@@ -26,7 +26,7 @@ services:
       context: .
       dockerfile: ./apps/sps-validator/Dockerfile
     ports:
-      - "${PUBLISH_ADDRESS:-127.0.0.1}:3333:3333"
+      - "${PUBLISH_ADDRESS:-127.0.0.1}:${API_PORT:-3333}:3333"
     networks:
       - "postgres"
       - "validator"
@@ -42,6 +42,7 @@ services:
       START_BLOCK: ${START_BLOCK:-}
       CUSTOM_JSON_ID: ${CUSTOM_JSON_ID:-sps}
       RPC_NODES: ${RPC_NODES:-https://api.hive.blog,https://anyx.io,https://api.openhive.network,https://hived.splinterlands.com,https://hived-2.splinterlands.com}
+      HIVE_ENGINE_RPC_NODES: ${HIVE_ENGINE_RPC_NODES:-https://api.hive-engine.com/rpc,https://engine.rishipanthee.com,https://herpc.dtools.dev,https://ha.herpc.dtools.dev,https://api.primersion.com,https://herpc.kanibot.com,https://ctpmain.com,https://herpc.actifit.io}
       RPC_TIMEOUT: ${RPC_TIMEOUT:-5000}
       REPLAY_BATCH_SIZE: ${REPLAY_BATCH_SIZE:-25}
       DB: '{ "host": "pg", "port": 5432, "database": "${APP_DATABASE:-validator}", "user": "${APP_USER:-validator}", "password": "${APP_PASSWORD:-validator}" }'
@@ -51,6 +52,11 @@ services:
       VERSION: ${GIT_COMMIT:-development}
       ENABLE_CHECK_INS: ${ENABLE_CHECK_INS:-true}
       BLOCK_PROCESSING: ${BLOCK_PROCESSING:-true}
+      PRICE_FEED_DAO_API_URL: ${PRICE_FEED_DAO_API_URL:-https://prices.splinterlands.workers.dev}
+      PRICE_FEED_COIN_GECKO_API_URL: ${PRICE_FEED_COIN_GECKO_API_URL:-https://pro-api.coingecko.com}
+      PRICE_FEED_COIN_GECKO_API_KEY: ${PRICE_FEED_COIN_GECKO_API_KEY:-}
+      PRICE_FEED_COIN_MARKET_CAP_API_URL: ${PRICE_FEED_COIN_MARKET_CAP_API_URL:-https://pro-api.coinmarketcap.com}
+      PRICE_FEED_COIN_MARKET_CAP_API_KEY: ${PRICE_FEED_COIN_MARKET_CAP_API_KEY:-}
     depends_on:
       - pg
 
@@ -60,8 +66,7 @@ services:
       context: ./sqitch
       dockerfile: Dockerfile
       args:
-        # Default to latest snapshot, override with --build-arg snapshot='local-snapshot.zip'. run.sh overrides this with SNAPSHOT_URL from .env.
-        snapshot: "https://d33cuc2qlex36c.cloudfront.net/validator-data-latest-20241128-0.zip"
+        snapshot: "${SNAPSHOT_URL}"
     networks:
       - "postgres"
     depends_on:
@@ -83,11 +88,11 @@ services:
       context: .
       dockerfile: ./apps/sps-validator-ui/Dockerfile
       args:
-        VALIDATOR_API_URL: "http://localhost:3333"
+        VALIDATOR_API_URL: "http://localhost:${API_PORT:-3333}"
         VALIDATOR_PREFIX: "${CUSTOM_JSON_PREFIX:-sm_}"
     restart: on-failure
     ports:
-      - "${PUBLISH_ADDRESS:-127.0.0.1}:8888:80"
+      - "${PUBLISH_ADDRESS:-127.0.0.1}:${UI_PORT:-8888}:80"
     networks:
       - "validator"
     depends_on:

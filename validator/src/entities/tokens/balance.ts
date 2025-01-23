@@ -26,7 +26,7 @@ export type GetTokenBalancesResult = {
 };
 
 export class BalanceRepository extends BaseRepository {
-    public constructor(handle: Handle, private readonly balanceHistory: BalanceHistoryRepository, private readonly bookkeeping: Bookkeeping, private readonly burnAccount: string) {
+    public constructor(handle: Handle, private readonly balanceHistory: BalanceHistoryRepository, private readonly bookkeeping: Bookkeeping) {
         super(handle);
     }
 
@@ -55,20 +55,6 @@ export class BalanceRepository extends BaseRepository {
             };
         }
         return BalanceRepository.into(record).balance;
-    }
-
-    async getSupply(token: string, trx?: Trx): Promise<number> {
-        const query = this.query(BalanceEntity, trx)
-            .where('token', token)
-            .andWhere('balance', '>', String(0))
-            .andWhere('player', '!=', this.burnAccount) // this is wrong. need to check other accounts too
-            .sum('balance', 'supply');
-        const record = await query.getSingleOrNull();
-        if (record?.supply !== null) {
-            return parseFloat(record!.supply);
-        } else {
-            return 0;
-        }
     }
 
     async getBalances(player: string, trx?: Trx): Promise<BalanceEntry[]> {

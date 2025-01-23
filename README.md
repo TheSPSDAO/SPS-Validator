@@ -44,6 +44,17 @@ You need to re-build the validator when getting started or when updating to a ne
 - Go to the splinterlands license management page here, https://validator.qa.splinterlands.com/dashboard/licenses, and click `STAKE LICENSES`.
 - Once you've staked your licenses, and you have the environment variables set, your node will start sending check ins to prove you are running the software so you can receive rewards.
 
+### Price Feed
+
+The top validators will be responsible for the SPS price feed inside the validator. The DAO provides a free price feed to the validator network that the validator nodes will use by default. To avoid a single source of truth for the SPS price however, it is recommended to purchase API keys to either coingecko or coin market cap and set them in your .env file. If you are not a top validator, you do not have to do this.
+```
+# one or the other, or both. a random feed is picked to get the sps price every N blocks.
+PRICE_FEED_COIN_GECKO_API_KEY=
+PRICE_FEED_COIN_MARKET_CAP_API_KEY=
+```
+
+Once those are set, you can run `./run.sh rebuild_service validator` to apply them.
+
 ### Known Bugs
 
 - If your node is running and licenses are then staked for its `VALIDATOR_ACCOUNT` or `REWARD_ACCOUNT`, it is not picking up the change and starting the check in process. You can resolve this by restarting your node after you've staked your licenses.

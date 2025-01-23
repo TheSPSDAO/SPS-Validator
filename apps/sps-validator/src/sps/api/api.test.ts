@@ -7,6 +7,7 @@ import { inject, injectable } from 'tsyringe';
 import { container } from '../../__tests__/test-composition-root';
 import { ConfigType } from '../convict-config';
 import { BlockEntity, ConfigEntity, LastBlockCache, Middleware, registerApiRoutes, StakingPoolRewardDebtEntity } from '@steem-monsters/splinterlands-validator';
+import { registerSpsRoutes } from './sps';
 
 @injectable()
 class Fixture extends BaseFixture {
@@ -24,6 +25,7 @@ class Fixture extends BaseFixture {
             health_checker: cfg.health_checker,
             injection_middleware: middleware,
         });
+        registerSpsRoutes(app);
         this.request = supertest(app);
     }
 }
@@ -45,7 +47,13 @@ afterAll(async () => {
 
 describe('Price feed API endpoint', () => {
     beforeEach(async () => {
-        await fixture.testHelper.insertExistingAdmins(['someadmin1', 'someadmin2', 'someadmin3']);
+        await fixture.testHelper.insertDefaultConfiguration();
+        await fixture.handle.query(ConfigEntity).where('group_name', 'validator').andWhere('name', 'num_top_validators').updateItem({
+            value: '3',
+        });
+        await fixture.testHelper.insertDummyValidator('someadmin1', true, 10);
+        await fixture.testHelper.insertDummyValidator('someadmin2', true, 8);
+        await fixture.testHelper.insertDummyValidator('someadmin3', true, 6);
         await fixture.loader.load();
     });
 
@@ -68,8 +76,7 @@ describe('Price feed API endpoint', () => {
         ${'not-SPS'} | ${404} | ${undefined}
     `(`Checking [$token] after one price point for SPS should give HTTP status [$status] with price [$price]`, async ({ token, status, price }) => {
         await fixture.opsHelper.processOp('price_feed', 'someadmin1', {
-            sps_price: 7331.2,
-            dec_price: 42,
+            updates: [{ token: 'SPS', price: 7331.2 }],
         });
         const response = await fixture.request.get(`/price_feed/${token}`);
         expect(response.status).toBe(status);
@@ -84,16 +91,13 @@ describe('Price feed API endpoint', () => {
         ${'not-SPS'} | ${404} | ${undefined}
     `(`Checking [$token] after several price points should give HTTP status [$status] with price [$price]`, async ({ token, status, price }) => {
         await fixture.opsHelper.processOp('price_feed', 'someadmin1', {
-            sps_price: 100,
-            dec_price: 13,
+            updates: [{ token: 'SPS', price: 100 }],
         });
         await fixture.opsHelper.processOp('price_feed', 'someadmin2', {
-            sps_price: 500,
-            dec_price: 20,
+            updates: [{ token: 'SPS', price: 500 }],
         });
         await fixture.opsHelper.processOp('price_feed', 'someadmin3', {
-            sps_price: 300,
-            dec_price: 50,
+            updates: [{ token: 'SPS', price: 300 }],
         });
         const response = await fixture.request.get(`/price_feed/${token}`);
         expect(response.status).toBe(status);
@@ -372,6 +376,6 @@ describe('Token API endpoints', () => {
     `(`Checking supply for token [$param] = [$total] with HTTP status [$status]`, async ({ param, status, total }) => {
         const response = await fixture.request.get(`/tokens/${param}/supply`);
         expect(response.status).toBe(status);
-        expect(response.body).toBe(total);
+        expect(response.body.circulating_supply).toBe(total);
     });
 });

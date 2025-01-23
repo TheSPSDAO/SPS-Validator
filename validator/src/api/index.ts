@@ -452,17 +452,4 @@ export function registerApiRoutes(app: Router, opts: ApiOptions): void {
             next(err);
         }
     });
-
-    app.get('/tokens/:token/supply', async (req, res, next) => {
-        try {
-            const token = req.params.token;
-            const trxStarter = req.resolver.resolve<TransactionStarter>(TransactionStarter);
-            const Balance = req.resolver.resolve(BalanceRepository);
-            await trxStarter.withTransaction(TransactionMode.Reporting, async (trx?: Trx) => {
-                res.json(await Balance.getSupply(token, trx));
-            });
-        } catch (err) {
-            next(err);
-        }
-    });
 }

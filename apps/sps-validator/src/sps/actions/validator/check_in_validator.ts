@@ -1,7 +1,7 @@
 import { OperationData, Action, EventLog, Trx, ValidationError, ErrorType, HiveAccountRepository } from '@steem-monsters/splinterlands-validator';
 import { check_in_validator } from '../schema';
 import { MakeActionFactory, MakeRouter } from '../utils';
-import { SpsValidatorLicenseManager } from '../../features/validator/validator_license.manager';
+import { SpsValidatorLicenseManager } from '../../features/validator';
 
 export class CheckInValidatorAction extends Action<typeof check_in_validator.actionSchema> {
     private readonly reward_account: string;

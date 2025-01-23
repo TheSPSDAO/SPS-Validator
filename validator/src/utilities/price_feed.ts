@@ -93,12 +93,10 @@ export class RawPriceFeed extends Cache<Map<string, PriceEntry[]>, PriceEntry> i
     }
 
     async addPriceEntry(pe: PriceEntry, trx?: Trx): Promise<EventLog[]> {
-        const result = await this.priceHistoryRepository.upsert(pe);
+        const result = await this.priceHistoryRepository.upsert(pe, trx);
         if (result) {
             this.clear();
             await this.fillStore(trx);
-            // When db transaction is reverted, cache is broken.
-            // TODO: table name
             return [new EventLog(EventTypes.UPSERT, { table: 'price_history' }, result)];
         } else {
             return [];

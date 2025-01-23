@@ -18,6 +18,7 @@ import {
 } from '@steem-monsters/splinterlands-validator';
 import { utils } from 'splinterlands-dhive-sl';
 import { ManualDisposer } from '../manual-disposable';
+import { registerSpsRoutes } from './sps';
 
 // Each Middleware allows requests to read (cache) state from 'the world'. What this means is different for each type of middleware.
 
@@ -120,6 +121,9 @@ export class EnabledApiActivator implements ConditionalApiActivator {
             resolver: this.resolver,
             injection_middleware: this.middleware,
         });
+
+        // must come after registerApiRoutes so we have the resolver
+        registerSpsRoutes(app);
 
         return app;
     }

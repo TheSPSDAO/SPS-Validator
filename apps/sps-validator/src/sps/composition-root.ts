@@ -17,7 +17,7 @@ import { SpsActionOrBust, SpsOperationFactory } from './entities/operation';
 import { SpsBlockRepository, SpsHiveAccountRepository, SpsLastBlockCache, SpsTransactionRepository } from './entities/block';
 import { SpsPoolClaimPayloads } from './entities/claims';
 import { SpsStakingRewardsRepository } from './entities/tokens/staking_rewards';
-import { SpsBalanceRepository } from './entities/tokens/balance';
+import { SpsBalanceRepository, SupplyOpts } from './entities/tokens/balance';
 import { SpsTokenUnstakingRepository } from './entities/tokens/token_unstaking';
 import { SpsValidatorVoteRepository, SpsVoteWeightCalculator } from './entities/validator/validator_vote';
 import { SpsValidatorRepository } from './entities/validator/validator';
@@ -27,7 +27,6 @@ import { SpsPromiseRepository } from './entities/promises/promise';
 import { SpsHiveStream } from './hive-stream';
 import { SpsValidatorShop } from './validator-shop';
 import { SpsPoolManager } from './pool-manager';
-import { SpsPriceFeed, SpsTopPriceFeedWrapper } from './price_feed';
 import { SpsHiveClient } from './hive';
 import { SpsBookkeeping } from './bookkeeping';
 import { SpsDelegationManager, SpsDelegationPromiseHandler } from './features/delegation';
@@ -116,11 +115,22 @@ import { ValidatorPools } from './pools';
 import { ValidatorShop } from './utilities/validator-shop';
 import { KillPlugin } from '../plugins/kill_plugin';
 import { ManualDisposer } from './manual-disposable';
-import { SpsValidatorLicenseManager } from './features/validator/validator_license.manager';
-import { SpsValidatorCheckInRepository } from './entities/validator/validator_check_in';
-import { ValidatorCheckInWatch } from './features/validator/validator_license.config';
-import { ValidatorCheckInPlugin } from './features/validator/validator_check_in.plugin';
+import { SpsValidatorLicenseManager, ValidatorCheckInPlugin, ValidatorCheckInWatch } from './features/validator';
 import { MissedBlocksOpts, SpsUpdateMissedBlocksSource } from './actions/missed_blocks';
+import {
+    CoinGeckoExternalPriceFeed,
+    CoinGeckoExternalPriceFeedOpts,
+    CoinMarketCapExternalPriceFeed,
+    CoinMarketCapExternalPriceFeedOpts,
+    DaoExternalPriceFeed,
+    DaoExternalPriceFeedOpts,
+    ExternalPriceFeed,
+    PriceFeedPlugin,
+    PriceFeedWatch,
+    SpsPriceFeed,
+    SpsTopPriceFeedWrapper,
+} from './features/price_feed';
+import { SpsValidatorCheckInRepository } from './entities/validator/validator_check_in';
 
 // Only use re-exported `container` to ensure composition root was loaded.
 export { container, singleton, inject, injectable } from 'tsyringe';
@@ -164,6 +174,7 @@ export class CompositionRoot extends null {
         container.register<BurnOpts>(BurnOpts, { useToken: ConfigType });
         container.register<MissedBlocksOpts>(MissedBlocksOpts, { useToken: ConfigType });
         container.register<StakingConfiguration>(StakingConfiguration, { useToken: ConfigType });
+        container.register<SupplyOpts>(SupplyOpts, { useToken: ConfigType });
 
         // Hive
         container.register<HiveClient>(HiveClient, { useToken: SpsHiveClient });
@@ -235,6 +246,7 @@ export class CompositionRoot extends null {
         container.register<PoolWatch>(PoolWatch, { useToken: SpsConfigLoader });
         container.register<ShopWatch>(ShopWatch, { useToken: SpsConfigLoader });
         container.register<BookkeepingWatch>(BookkeepingWatch, { useToken: SpsConfigLoader });
+        container.register<PriceFeedWatch>(PriceFeedWatch, { useToken: SpsConfigLoader });
         container.register(ValidatorCheckInWatch, { useToken: SpsConfigLoader });
         container.register<AdminMembership>(AdminMembership, { useToken: SpsConfigLoader });
         container.register<PoolUpdater>(PoolUpdater, { useToken: SpsConfigLoader });
@@ -304,6 +316,24 @@ export class CompositionRoot extends null {
         // Promise handlers
         container.register<DelegationPromiseHandler>(DelegationPromiseHandler, { useToken: SpsDelegationPromiseHandler });
 
+        // External price feeds
+        const daoFeedConfig = cfg.price_feed_dao;
+        if (DaoExternalPriceFeed.isAvailable(daoFeedConfig)) {
+            container.register<DaoExternalPriceFeedOpts>(DaoExternalPriceFeedOpts, { useValue: daoFeedConfig });
+            container.register<ExternalPriceFeed>(ExternalPriceFeed, { useClass: DaoExternalPriceFeed });
+        }
+        const coinGeckoFeedConfig = cfg.price_feed_coin_gecko;
+        if (CoinGeckoExternalPriceFeed.isAvailable(coinGeckoFeedConfig)) {
+            container.register<CoinGeckoExternalPriceFeedOpts>(CoinGeckoExternalPriceFeedOpts, { useValue: coinGeckoFeedConfig });
+            container.register<ExternalPriceFeed>(ExternalPriceFeed, { useClass: CoinGeckoExternalPriceFeed });
+        }
+        const cmcFeedConfig = cfg.price_feed_coin_market_cap;
+        console.log(cmcFeedConfig);
+        if (CoinMarketCapExternalPriceFeed.isAvailable(cmcFeedConfig)) {
+            container.register<CoinMarketCapExternalPriceFeedOpts>(CoinMarketCapExternalPriceFeedOpts, { useValue: cmcFeedConfig });
+            container.register<ExternalPriceFeed>(ExternalPriceFeed, { useClass: CoinMarketCapExternalPriceFeed });
+        }
+
         // Plugins
         container.register(ValidatorCheckInPlugin, { useClass: ValidatorCheckInPlugin });
         container.register<PluginDispatcher>(PluginDispatcher, {
@@ -316,6 +346,11 @@ export class CompositionRoot extends null {
 
                 if (ValidatorCheckInPlugin.isAvailable()) {
                     builder = builder.addPlugin(container.resolve(ValidatorCheckInPlugin));
+                }
+
+                const externalFeeds = container.resolveAll(ExternalPriceFeed);
+                if (PriceFeedPlugin.isAvailable() && externalFeeds.length > 0) {
+                    builder = builder.addPlugin(container.resolve(PriceFeedPlugin));
                 }
 
                 return builder.build();

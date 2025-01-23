@@ -92,18 +92,16 @@ export class ValidatorRepository extends BaseRepository {
         };
     }
 
-    public getValidatorsWithCount(trx?: Trx, limit?: number, skip?: number) {
-        let q = this.query(Validator_, trx).orderBy('total_votes', 'desc').orderBy('account_name');
-
-        if (limit !== undefined) {
-            q = q.limit(limit);
-        }
-
-        if (skip !== undefined) {
-            q = q.offset(skip);
-        }
-
-        return q.getMany();
+    public async isTopValidator(account_name: string, num_top_validators: number, trx?: Trx) {
+        const validators = await this.query(Validator_, trx)
+            .where('is_active', true)
+            .where('total_votes', '>', 0 as unknown as string)
+            .orderBy('total_votes', 'desc')
+            .orderBy('account_name')
+            .limit(num_top_validators)
+            .select('account_name')
+            .getMany();
+        return validators.some((v) => v.account_name === account_name);
     }
 
     async lookup(account_name: string, trx?: Trx): Promise<ValidatorEntry | null> {

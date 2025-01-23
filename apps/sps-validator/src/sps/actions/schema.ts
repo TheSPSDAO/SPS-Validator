@@ -160,7 +160,7 @@ const validate_block = new Schema.Schema(
     'validate_block',
     object({
         block_num: number().integer().required(),
-        hash: string().required(),
+        hash: string().strict().required(),
         reward_account: Schema.hiveAccount.optional(),
     }),
 );
@@ -171,9 +171,9 @@ const config_update = new Schema.Schema(
         updates: array()
             .of(
                 object({
-                    group_name: string().required(),
-                    name: string().required(),
-                    value: string().required(),
+                    group_name: string().strict().required(),
+                    name: string().strict().required(),
+                    value: string().strict().required(),
                 }).unknown(true),
             )
             .required(),
@@ -191,6 +191,7 @@ const price_feed = new Schema.Schema(
                 }),
             )
             .required(),
+        metadata: object().unknown(true).optional(),
     }),
 );
 
@@ -297,33 +298,12 @@ const increment_reward_pools = new Schema.Schema(
     }),
 );
 
-const delegate_rewards = new Schema.Schema(
-    'delegate_rewards',
-    object({
-        username: string().strict().required(),
-        percent: number().required(),
-        types: array(string().strict().required()).optional(),
-        type: string().strict().optional(),
-        token: Schema.token.strict().required(),
-    }),
-);
-
-const undelegate_rewards = new Schema.Schema(
-    'undelegate_rewards',
-    object({
-        username: string().strict().required(),
-        types: array(string().strict().required()).optional(),
-        type: string().strict().optional(),
-        token: Schema.token.required(),
-    }),
-);
-
 const create_promise = new Schema.Schema(
     'create_promise',
     object({
-        controllers: array(string().required()).min(1).required(),
-        type: string().required(),
-        id: string().required(),
+        controllers: array(string().strict().required()).min(1).required(),
+        type: string().strict().required(),
+        id: string().strict().required(),
         fulfill_timeout_seconds: number().strict().required(),
         params: object().unknown(true).optional(),
     }),
@@ -332,32 +312,32 @@ const create_promise = new Schema.Schema(
 const cancel_promise = new Schema.Schema(
     'cancel_promise',
     object({
-        type: string().required(),
-        id: string().required(),
+        type: string().strict().required(),
+        id: string().strict().required(),
     }),
 );
 
 const reverse_promise = new Schema.Schema(
     'reverse_promise',
     object({
-        type: string().required(),
-        id: string().required(),
+        type: string().strict().required(),
+        id: string().strict().required(),
     }),
 );
 
 const complete_promise = new Schema.Schema(
     'complete_promise',
     object({
-        type: string().required(),
-        id: string().required(),
+        type: string().strict().required(),
+        id: string().strict().required(),
     }),
 );
 
 const fulfill_promise = new Schema.Schema(
     'fulfill_promise',
     object({
-        type: string().required(),
-        id: string().required(),
+        type: string().strict().required(),
+        id: string().strict().required(),
         metadata: object().unknown(true).optional(),
     }),
 );
@@ -365,8 +345,8 @@ const fulfill_promise = new Schema.Schema(
 const fulfill_promise_multi = new Schema.Schema(
     'fulfill_promise_multi',
     object({
-        type: string().required(),
-        ids: array(string().required()).min(1).required(),
+        type: string().strict().required(),
+        ids: array(string().strict().required()).min(1).required(),
         metadata: object().unknown(true).optional(),
     }),
 );
@@ -396,7 +376,7 @@ const check_in_validator = new Schema.Schema(
     'check_in_validator',
     object({
         block_num: number().integer().positive().required(),
-        hash: string().required(),
+        hash: string().strict().required(),
         reward_account: Schema.hiveAccount.optional(),
     }),
 );
@@ -440,8 +420,6 @@ export {
     set_authority,
     claim_rewards,
     increment_reward_pools,
-    delegate_rewards,
-    undelegate_rewards,
     create_promise,
     cancel_promise,
     reverse_promise,

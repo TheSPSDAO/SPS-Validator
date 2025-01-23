@@ -72,14 +72,9 @@ test.dbOnly('Inserting double with onConflict and merge propagates any existing 
 
 test.dbOnly('Increments balances correctly', async () => {
     const is_bookkeeping_account = jest.fn();
-    const repo = new BalanceRepository(
-        fixture.handle,
-        { insert: () => [] } as unknown as BalanceHistoryRepository,
-        {
-            is_bookkeeping_account,
-        },
-        '',
-    );
+    const repo = new BalanceRepository(fixture.handle, { insert: () => [] } as unknown as BalanceHistoryRepository, {
+        is_bookkeeping_account,
+    });
 
     is_bookkeeping_account.mockReturnValue(false);
 
@@ -112,14 +107,9 @@ test.dbOnly('Increments balances correctly', async () => {
 
 test.dbOnly('Does not go negative on system account that is not a bookkeeping account', async () => {
     const is_bookkeeping_account = jest.fn();
-    const repo = new BalanceRepository(
-        fixture.handle,
-        { insert: () => [] } as unknown as BalanceHistoryRepository,
-        {
-            is_bookkeeping_account,
-        },
-        '',
-    );
+    const repo = new BalanceRepository(fixture.handle, { insert: () => [] } as unknown as BalanceHistoryRepository, {
+        is_bookkeeping_account,
+    });
 
     is_bookkeeping_account.mockReturnValue(false);
 
@@ -156,14 +146,9 @@ test.dbOnly('Does not go negative on system account that is not a bookkeeping ac
 
 test.dbOnly('Does go negative on system account that is a bookkeeping account', async () => {
     const is_bookkeeping_account = jest.fn();
-    const repo = new BalanceRepository(
-        fixture.handle,
-        { insert: () => [] } as unknown as BalanceHistoryRepository,
-        {
-            is_bookkeeping_account,
-        },
-        '',
-    );
+    const repo = new BalanceRepository(fixture.handle, { insert: () => [] } as unknown as BalanceHistoryRepository, {
+        is_bookkeeping_account,
+    });
 
     is_bookkeeping_account.mockReturnValue(true);
 
@@ -196,14 +181,9 @@ test.dbOnly('Does go negative on system account that is a bookkeeping account', 
 
 test.dbOnly('Does go negative on account that is a bookkeeping account', async () => {
     const is_bookkeeping_account = jest.fn();
-    const repo = new BalanceRepository(
-        fixture.handle,
-        { insert: () => [] } as unknown as BalanceHistoryRepository,
-        {
-            is_bookkeeping_account,
-        },
-        '',
-    );
+    const repo = new BalanceRepository(fixture.handle, { insert: () => [] } as unknown as BalanceHistoryRepository, {
+        is_bookkeeping_account,
+    });
 
     is_bookkeeping_account.mockReturnValue(true);
 
