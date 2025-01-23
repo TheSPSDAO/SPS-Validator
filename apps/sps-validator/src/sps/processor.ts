@@ -44,7 +44,6 @@ export class SpsBlockProcessor extends BlockProcessor<SpsSynchronisationConfig> 
             hive,
             lastBlockCache,
             sync,
-            new Map([['sm_price_feed', 'price_feed']]),
         );
     }
 }
