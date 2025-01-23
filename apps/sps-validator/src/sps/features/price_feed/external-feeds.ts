@@ -14,14 +14,18 @@ export const DaoExternalPriceFeedOpts: InjectionToken<DaoExternalPriceFeedOpts> 
 export class DaoExternalPriceFeed implements ExternalPriceFeed {
     readonly name = 'dao';
 
-    constructor(@inject(DaoExternalPriceFeedOpts) private readonly opts: DaoExternalPriceFeedOpts) {}
+    private readonly apiUrl: string;
+
+    constructor(@inject(DaoExternalPriceFeedOpts) private readonly opts: DaoExternalPriceFeedOpts) {
+        this.apiUrl = opts.api_url?.endsWith('/') ? opts.api_url.slice(0, -1) : opts.api_url;
+    }
 
     async getTokenPriceInUSD(token: string): Promise<number | null> {
-        if (!this.opts || !this.opts.api_url) {
+        if (!this.opts || !this.apiUrl) {
             throw new Error('No url configured for DAO external feed');
         }
 
-        const response = await fetch(`${this.opts.api_url}/api/prices/${token}`);
+        const response = await fetch(`${this.apiUrl}/api/prices/${token}`);
         if (!response.ok) {
             throw new Error(`Failed to fetch price for ${token} from DAO external feed. Status: ${response.status}. Body: ${await response.text()}`);
         }
@@ -45,15 +49,19 @@ export const CoinGeckoExternalPriceFeedOpts: InjectionToken<CoinGeckoExternalPri
 export class CoinGeckoExternalPriceFeed implements ExternalPriceFeed {
     readonly name = 'coingecko';
 
-    constructor(@inject(CoinGeckoExternalPriceFeedOpts) private readonly opts: CoinGeckoExternalPriceFeedOpts) {}
+    private readonly apiUrl: string;
+
+    constructor(@inject(CoinGeckoExternalPriceFeedOpts) private readonly opts: CoinGeckoExternalPriceFeedOpts) {
+        this.apiUrl = opts.api_url?.endsWith('/') ? opts.api_url.slice(0, -1) : opts.api_url;
+    }
 
     async getTokenPriceInUSD(token: string): Promise<number | null> {
-        if (!this.opts || !this.opts.api_url || !this.opts.api_key) {
+        if (!this.opts || !this.apiUrl || !this.opts.api_key) {
             throw new Error('No url or api key configured for coin gecko external feed');
         }
 
         const response = await fetch(
-            `${this.opts.api_url}/api/v3/simple/price?ids=${encodeURIComponent(token)}&vs_currencies=USD&x_cg_pro_api_key=${encodeURIComponent(this.opts.api_key)}`,
+            `${this.apiUrl}/api/v3/simple/price?ids=${encodeURIComponent(token)}&vs_currencies=USD&x_cg_pro_api_key=${encodeURIComponent(this.opts.api_key)}`,
         );
         if (!response.ok) {
             throw new Error(`Failed to fetch price for ${token} from coingecko external feed. Status: ${response.status}. Body: ${await response.text()}`);
@@ -80,13 +88,15 @@ export class CoinMarketCapExternalPriceFeed implements ExternalPriceFeed {
     readonly name = 'coinmarketcap';
 
     private readonly token_map: Map<string, string>;
+    private readonly apiUrl: string;
 
     constructor(@inject(CoinMarketCapExternalPriceFeedOpts) private readonly opts: CoinMarketCapExternalPriceFeedOpts) {
         this.token_map = new Map(Object.entries(opts.token_map).map(([k, v]) => [k.toLowerCase(), v]));
+        this.apiUrl = opts.api_url?.endsWith('/') ? opts.api_url.slice(0, -1) : opts.api_url;
     }
 
     async getTokenPriceInUSD(token: string): Promise<number | null> {
-        if (!this.opts || !this.opts.api_url || !this.opts.api_key) {
+        if (!this.opts || !this.apiUrl || !this.opts.api_key) {
             throw new Error('No url or api key configured for coin market cap external feed');
         }
 
@@ -95,7 +105,7 @@ export class CoinMarketCapExternalPriceFeed implements ExternalPriceFeed {
             throw new Error(`No mapping found for token ${token}`);
         }
 
-        const response = await fetch(`${this.opts.api_url}/v2/cryptocurrency/quotes/latest?id=${tokenUcid}`, {
+        const response = await fetch(`${this.apiUrl}/v2/cryptocurrency/quotes/latest?id=${tokenUcid}`, {
             headers: {
                 'X-CMC_PRO_API_KEY': this.opts.api_key,
             },

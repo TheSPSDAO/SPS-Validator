@@ -79,7 +79,7 @@ export class PriceFeedPlugin implements Plugin, Prime {
             return;
         }
 
-        // plugins are run asynchronously, so we need to set nextCheckInBlock before calling into async code
+        // plugins are run asynchronously, so we need to set nextBlock before calling into async code
         this.nextBlock = this.getNextBlock(blockNumber);
 
         try {
