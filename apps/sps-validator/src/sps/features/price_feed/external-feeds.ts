@@ -21,13 +21,14 @@ export class DaoExternalPriceFeed implements ExternalPriceFeed {
             throw new Error('No url configured for DAO external feed');
         }
 
-        const response = await fetch(`${this.opts.api_url}/price/${token}`);
+        const response = await fetch(`${this.opts.api_url}/api/prices/${token}`);
         if (!response.ok) {
             throw new Error(`Failed to fetch price for ${token} from DAO external feed. Status: ${response.status}. Body: ${await response.text()}`);
         }
 
-        const json = (await response.json()) as { price: number };
-        return json?.price ?? null;
+        const json = (await response.json()) as { price_usd: string };
+        const price = json?.price_usd;
+        return price ? parseFloat(price) : null;
     }
 
     static isAvailable(opts: DaoExternalPriceFeedOpts) {

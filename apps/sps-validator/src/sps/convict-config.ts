@@ -308,7 +308,7 @@ const schema = {
         api_url: {
             doc: 'The URL of the DAO price feed API',
             format: 'url',
-            default: 'https://prices.spsvalidator.com',
+            default: 'https://prices.splinterlands.workers.dev',
             env: 'PRICE_FEED_DAO_API_URL',
         },
     },
