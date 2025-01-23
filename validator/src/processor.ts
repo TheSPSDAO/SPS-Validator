@@ -25,6 +25,7 @@ export type ValidatorOpts = {
     reward_account: string | null;
     validator_account: string | null;
     validator_key: string | null;
+    version: string;
 };
 export const ValidatorOpts: unique symbol = Symbol('ValidatorOpts');
 
@@ -96,7 +97,7 @@ export class BlockProcessor<T extends SynchronisationConfig> {
                 const maxBlockAge = this.watcher.validator?.max_block_age;
                 if (maxBlockAge && headBlock - maxBlockAge <= block_num) {
                     // TODO: this.hash can be undefined (not initialized in the constructor), so we can just force it to be set I guess.
-                    this.hive.submitBlockValidation(block_num, l2_block_id).then((r) => {
+                    this.hive.submitBlockValidation(block_num, l2_block_id, this.validatorOpts.version).then((r) => {
                         utils.log(`Submitted validation for block [${block_num}] with hash [${l2_block_id}] in tx [${r.id}]`);
                     });
                 } else {
@@ -114,7 +115,7 @@ export class BlockProcessor<T extends SynchronisationConfig> {
     }
 
     private isChosenValidator(validator: ValidatorEntry | null): boolean {
-        return !!this.validatorOpts.validator_account && this.validatorOpts.validator_account === validator?.account_name;
+        return !!this.validatorOpts.validator_account && !!this.validatorOpts.validator_key && this.validatorOpts.validator_account === validator?.account_name;
     }
 
     private static isCustomJsonOperation(op: BlockOperation): op is CustomJsonOperation {
