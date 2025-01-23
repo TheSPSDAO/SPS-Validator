@@ -46,7 +46,7 @@ You need to re-build the validator when getting started or when updating to a ne
 
 ### Price Feed
 
-The top validators will be responsible for the SPS price feed inside the validator. The DAO provides a free price feed to the validator network that the validator nodes will use by default. To avoid a single source of truth for the SPS price however, it is recommended to purchase API keys to either coingecko or coin market cap and set them in your .env file. If you are not a top validator, you do not have to do this.
+The top validators will be responsible for the SPS price feed inside the validator. The DAO provides a free price feed to the validator network that the validator nodes will use by default. To avoid a single source of truth for the SPS price however, you can purchase API keys to either coingecko or coin market cap and set them in your .env file. If you are not a top validator, you do not have to do this.
 ```
 # one or the other, or both. a random feed is picked to get the sps price every N blocks.
 PRICE_FEED_COIN_GECKO_API_KEY=
