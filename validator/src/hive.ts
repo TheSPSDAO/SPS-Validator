@@ -43,7 +43,7 @@ export class HiveClient extends Client {
         );
     }
 
-    public submitBlockValidation(block_num: number, hash: string): Promise<TransactionConfirmation> {
+    public submitBlockValidation(block_num: number, hash: string, version: string): Promise<TransactionConfirmation> {
         if (!this.validatorConfig.validator_account || !this.validatorConfig.validator_key) {
             throw new Error(`Attempting to submit block validation without setting up a validator account/key.`);
         }
@@ -53,7 +53,7 @@ export class HiveClient extends Client {
                 id: this.prefixOpts.custom_json_id,
                 json: {
                     action: 'validate_block',
-                    params: { block_num, hash, reward_account: this.validatorConfig.reward_account || undefined },
+                    params: { block_num, hash, reward_account: this.validatorConfig.reward_account || undefined, version },
                 },
                 account: this.validatorConfig.validator_account,
                 role: 'active',
