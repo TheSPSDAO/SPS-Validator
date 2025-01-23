@@ -328,7 +328,6 @@ export class CompositionRoot extends null {
             container.register<ExternalPriceFeed>(ExternalPriceFeed, { useClass: CoinGeckoExternalPriceFeed });
         }
         const cmcFeedConfig = cfg.price_feed_coin_market_cap;
-        console.log(cmcFeedConfig);
         if (CoinMarketCapExternalPriceFeed.isAvailable(cmcFeedConfig)) {
             container.register<CoinMarketCapExternalPriceFeedOpts>(CoinMarketCapExternalPriceFeedOpts, { useValue: cmcFeedConfig });
             container.register<ExternalPriceFeed>(ExternalPriceFeed, { useClass: CoinMarketCapExternalPriceFeed });
