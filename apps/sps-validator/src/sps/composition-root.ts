@@ -131,6 +131,7 @@ import {
     SpsTopPriceFeedWrapper,
 } from './features/price_feed';
 import { SpsValidatorCheckInRepository } from './entities/validator/validator_check_in';
+import { MedianPriceCalculator } from 'validator/src/utilities/price_feed';
 
 // Only use re-exported `container` to ensure composition root was loaded.
 export { container, singleton, inject, injectable } from 'tsyringe';
@@ -191,7 +192,7 @@ export class CompositionRoot extends null {
         container.register<TopPriceFeedWrapper>(TopPriceFeedWrapper, { useToken: SpsTopPriceFeedWrapper });
         container.register<PriceFeedConsumer>(PriceFeedConsumer, { useToken: RawPriceFeed });
         container.register<PriceFeedProducer>(PriceFeedProducer, { useToken: RawPriceFeed });
-        container.register<PriceCalculator>(PriceCalculator, { useValue: new AveragePriceCalculator() });
+        container.register<PriceCalculator>(PriceCalculator, { useValue: new MedianPriceCalculator() });
 
         // Token pool related stuff
         container.register<Pools>(Pools, { useValue: ValidatorPools });
