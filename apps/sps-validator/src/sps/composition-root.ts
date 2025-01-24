@@ -89,7 +89,7 @@ import {
     ValidatorWatch,
     VirtualActionRouter,
     VoteWeightCalculator,
-    AveragePriceCalculator,
+    MedianPriceCalculator,
     DisabledApiActivator,
     PluginDispatcherBuilder,
     AdminMembership,
@@ -131,7 +131,6 @@ import {
     SpsTopPriceFeedWrapper,
 } from './features/price_feed';
 import { SpsValidatorCheckInRepository } from './entities/validator/validator_check_in';
-import { MedianPriceCalculator } from 'validator/src/utilities/price_feed';
 
 // Only use re-exported `container` to ensure composition root was loaded.
 export { container, singleton, inject, injectable } from 'tsyringe';
