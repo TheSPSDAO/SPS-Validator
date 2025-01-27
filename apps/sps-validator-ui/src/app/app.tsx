@@ -123,7 +123,7 @@ function useTickers() {
             working.push({
                 name: 'SPS Price',
                 icon: <CurrencyDollarIcon className="size-6" />,
-                value: `$${spsPrice.price.toFixed(2)}`,
+                value: `$${spsPrice.price.toFixed(5)}`,
             });
         }
         if (status) {
