@@ -38,7 +38,7 @@ function MetricsCard() {
     const [metrics, setMetrics] = useState<{ label: string; value: string }[]>([]);
     useEffect(() => {
         setMetrics([
-            { label: 'SPS Price', value: `$${spsPrice?.price.toFixed(5) ?? '...'}` },
+            { label: 'SPS Price', value: `$${spsPrice?.price?.toFixed(5) ?? '...'}` },
             { label: 'Validator Nodes', value: validators?.count?.toString() ?? '...' },
             { label: 'Block Num', value: status?.last_block?.toString() ?? '...' },
         ]);
