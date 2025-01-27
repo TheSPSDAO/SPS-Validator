@@ -36,32 +36,23 @@ export interface PriceCalculator {
 }
 export const PriceCalculator: unique symbol = Symbol.for('PriceCalculator');
 
-export class AveragePriceCalculator implements PriceCalculator {
+export class MedianPriceCalculator implements PriceCalculator {
     calculate(block_time: Date, entries: PriceEntry[]): number {
         if (entries.length === 0) {
             throw new PriceFeedError(`Need at least one matching price entry`);
         } else {
-            let token;
-            let sum = 0;
-            for (const entry of entries) {
-                if (token && token !== entry.token) {
-                    throw new Error(`Cannot calculate prices for multiple tokens at once`);
-                }
-                token = entry.token;
-                sum += entry.token_price;
+            const token = entries[0].token;
+            if (entries.some((e) => e.token !== token)) {
+                throw new Error(`Cannot calculate prices for multiple tokens at once`);
             }
-            return sum / entries.length;
+
+            const prices = entries.map((e) => e.token_price).sort((a, b) => a - b);
+            if (prices.length % 2 === 0) {
+                return (prices[prices.length / 2 - 1] + prices[prices.length / 2]) / 2;
+            } else {
+                return prices[Math.floor(prices.length / 2)];
+            }
         }
-    }
-}
-
-export class TimedAveragePriceCalculator implements PriceCalculator {
-    private readonly calculator = new AveragePriceCalculator();
-    constructor(private readonly diffms = 24 * 3600 * 1000) {}
-
-    calculate(block_time: Date, entries: PriceEntry[]): number {
-        const filtered_entries = entries.filter((e) => block_time.getTime() - e.block_time.getTime() < this.diffms);
-        return this.calculator.calculate(block_time, filtered_entries);
     }
 }
 

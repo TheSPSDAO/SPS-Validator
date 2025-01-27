@@ -89,7 +89,7 @@ import {
     ValidatorWatch,
     VirtualActionRouter,
     VoteWeightCalculator,
-    AveragePriceCalculator,
+    MedianPriceCalculator,
     DisabledApiActivator,
     PluginDispatcherBuilder,
     AdminMembership,
@@ -191,7 +191,7 @@ export class CompositionRoot extends null {
         container.register<TopPriceFeedWrapper>(TopPriceFeedWrapper, { useToken: SpsTopPriceFeedWrapper });
         container.register<PriceFeedConsumer>(PriceFeedConsumer, { useToken: RawPriceFeed });
         container.register<PriceFeedProducer>(PriceFeedProducer, { useToken: RawPriceFeed });
-        container.register<PriceCalculator>(PriceCalculator, { useValue: new AveragePriceCalculator() });
+        container.register<PriceCalculator>(PriceCalculator, { useValue: new MedianPriceCalculator() });
 
         // Token pool related stuff
         container.register<Pools>(Pools, { useValue: ValidatorPools });

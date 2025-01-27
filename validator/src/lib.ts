@@ -55,7 +55,7 @@ export type { PostProcessor } from './processor';
 export { DelayedSocket, SocketLike, SocketOptions, SocketWrapper } from './socket';
 export { HiveStream, HiveStreamOptions } from './libs/hive-stream';
 export { HiveClient, HiveOptions } from './hive';
-export { PriceCalculator, PriceFeedConsumer, PriceFeedError, PriceFeedProducer, RawPriceFeed, TopPriceFeedWrapper, AveragePriceCalculator } from './utilities/price_feed';
+export { PriceCalculator, PriceFeedConsumer, PriceFeedError, PriceFeedProducer, RawPriceFeed, TopPriceFeedWrapper, MedianPriceCalculator } from './utilities/price_feed';
 export { Primer } from './utilities/primer';
 export { Snapshot, UnmanagedSnapshot } from './utilities/snapshot';
 export type { Injectable, AtomicState } from './utilities/snapshot';
