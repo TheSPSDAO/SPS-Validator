@@ -106,7 +106,7 @@ export function TablePager(props: TablePagerProps) {
 
     return (
         <div className={`flex items-center gap-4 ${props.className ?? ''}`}>
-            <Button variant="text" className="flex items-center gap-2" onClick={prev} disabled={props.page === 1}>
+            <Button variant="text" className="flex items-center gap-2" onClick={prev} disabled={props.page === 0}>
                 <ArrowLeftIcon strokeWidth={2} className="h-4 w-4" /> Previous
             </Button>
             <div className="flex items-center gap-2">
