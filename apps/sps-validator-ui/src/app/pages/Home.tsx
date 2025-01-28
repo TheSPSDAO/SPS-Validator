@@ -1,6 +1,6 @@
 import { Card, CardBody, List, ListItem, Spinner, Typography } from '@material-tailwind/react';
 import { Link } from 'react-router-dom';
-import { usePromise, usePromiseRefresh } from '../hooks/Promise';
+import { usePromise } from '../hooks/Promise';
 import { DefaultService } from '../services/openapi';
 import React, { useEffect, useState } from 'react';
 import { Table, TableHead, TableRow, TableColumn, TableBody, TableCell } from '../components/Table';
@@ -30,10 +30,10 @@ function UsefulLinksCard() {
 }
 
 function MetricsCard() {
-    const [spsPrice] = usePromiseRefresh(() => DefaultService.getPriceForToken('SPS'), 5000, []);
+    const [spsPrice] = usePromise(() => DefaultService.getPriceForToken('SPS'));
     // TODO switch to count endpoint
     const [validators] = usePromise(() => DefaultService.getValidators(0, 0));
-    const [status] = usePromiseRefresh(() => DefaultService.getStatus(), 5000, []);
+    const [status] = usePromise(() => DefaultService.getStatus());
 
     const [metrics, setMetrics] = useState<{ label: string; value: string }[]>([]);
     useEffect(() => {
