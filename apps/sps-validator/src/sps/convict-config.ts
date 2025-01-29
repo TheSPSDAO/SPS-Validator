@@ -267,12 +267,6 @@ const schema = {
         default: '$TOKEN_STAKING',
         env: 'STAKING_ACCOUNT',
     },
-    staking_rewards_account: {
-        doc: 'Default system account to track all staking rewards',
-        nullable: false,
-        default: '$TOKEN_STAKING_REWARDS',
-        env: 'STAKING_REWARDS_ACCOUNT',
-    },
     dao_account: {
         doc: 'SPS dao account',
         nullable: false,

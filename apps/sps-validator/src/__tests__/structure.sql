@@ -2,8 +2,8 @@
 -- PostgreSQL database dump
 --
 
--- Dumped from database version 13.14
--- Dumped by pg_dump version 14.13 (Ubuntu 14.13-1.pgdg20.04+1)
+-- Dumped from database version 16.6
+-- Dumped by pg_dump version 16.6 (Ubuntu 16.6-1.pgdg20.04+1)
 
 SET statement_timeout = 0;
 SET lock_timeout = 0;
@@ -48,9 +48,9 @@ CREATE TABLE public.active_delegations (
     token character varying(20) NOT NULL,
     delegator character varying(50) NOT NULL,
     delegatee character varying(50) NOT NULL,
-    amount numeric NOT NULL,
-    last_delegation_tx character varying(100),
-    last_delegation_date timestamp with time zone,
+    amount numeric(15,3) NOT NULL,
+    last_delegation_tx character varying(100) NOT NULL,
+    last_delegation_date timestamp with time zone NOT NULL,
     last_undelegation_date timestamp with time zone,
     last_undelegation_tx character varying(100)
 );
@@ -63,9 +63,9 @@ CREATE TABLE public.active_delegations (
 CREATE TABLE public.balance_history (
     player character varying(50) NOT NULL,
     token character varying(20) NOT NULL,
-    amount numeric NOT NULL,
-    balance_start numeric NOT NULL,
-    balance_end numeric NOT NULL,
+    amount numeric(14,3) NOT NULL,
+    balance_start numeric(15,3) NOT NULL,
+    balance_end numeric(15,3) NOT NULL,
     block_num integer NOT NULL,
     trx_id character varying(100) NOT NULL,
     type character varying(50) NOT NULL,
@@ -81,9 +81,9 @@ CREATE TABLE public.balance_history (
 CREATE TABLE public.balances (
     player character varying(50) NOT NULL,
     token character varying(20) NOT NULL,
-    balance numeric DEFAULT 0 NOT NULL
+    balance numeric(15,3) DEFAULT 0 NOT NULL
 )
-;
+WITH (fillfactor='80');
 
 
 --
@@ -148,7 +148,7 @@ CREATE TABLE public.price_history (
     token character varying(20) NOT NULL,
     block_num integer NOT NULL,
     block_time timestamp without time zone NOT NULL,
-    token_price numeric NOT NULL
+    token_price numeric(12,6) NOT NULL
 );
 
 
@@ -235,7 +235,7 @@ ALTER SEQUENCE public.promise_id_seq OWNED BY public.promise.id;
 CREATE TABLE public.staking_pool_reward_debt (
     player character varying(50) NOT NULL,
     pool_name character varying(50) NOT NULL,
-    reward_debt numeric DEFAULT 0 NOT NULL
+    reward_debt numeric(15,3) DEFAULT 0 NOT NULL
 );
 
 
@@ -249,9 +249,9 @@ CREATE TABLE public.token_unstaking (
     unstake_start_date timestamp without time zone NOT NULL,
     is_active boolean NOT NULL,
     token character varying(20) NOT NULL,
-    total_qty numeric NOT NULL,
+    total_qty numeric(15,3) NOT NULL,
     next_unstake_date timestamp without time zone NOT NULL,
-    total_unstaked numeric DEFAULT 0 NOT NULL,
+    total_unstaked numeric(15,3) DEFAULT 0 NOT NULL,
     unstaking_periods smallint NOT NULL,
     unstaking_interval_seconds integer NOT NULL,
     cancel_tx character varying(100)
@@ -294,9 +294,12 @@ CREATE TABLE public.validator_transactions (
     success boolean,
     error text,
     block_num integer,
+    index smallint NOT NULL,
     created_date timestamp without time zone,
     result text
 );
+ALTER TABLE ONLY public.validator_transactions ALTER COLUMN data SET COMPRESSION lz4;
+ALTER TABLE ONLY public.validator_transactions ALTER COLUMN result SET COMPRESSION lz4;
 
 
 --
@@ -309,7 +312,7 @@ CREATE TABLE public.validator_vote_history (
     voter character varying(20) NOT NULL,
     validator character varying(20) NOT NULL,
     is_approval boolean NOT NULL,
-    vote_weight numeric NOT NULL
+    vote_weight numeric(12,3) NOT NULL
 );
 
 
@@ -320,7 +323,7 @@ CREATE TABLE public.validator_vote_history (
 CREATE TABLE public.validator_votes (
     voter character varying(20) NOT NULL,
     validator character varying(20) NOT NULL,
-    vote_weight numeric NOT NULL
+    vote_weight numeric(12,3) NOT NULL
 );
 
 
@@ -332,7 +335,7 @@ CREATE TABLE public.validators (
     account_name character varying(20) NOT NULL,
     is_active boolean NOT NULL,
     post_url character varying(1024),
-    total_votes numeric DEFAULT 0 NOT NULL,
+    total_votes numeric(12,3) DEFAULT 0 NOT NULL,
     missed_blocks integer DEFAULT 0 NOT NULL
 );
 
@@ -480,6 +483,20 @@ ALTER TABLE ONLY public.validators
 
 
 --
+-- Name: balance_history_player_created_date_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX balance_history_player_created_date_idx ON public.balance_history USING btree (player, created_date);
+
+
+--
+-- Name: balance_history_token_player_type_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX balance_history_token_player_type_idx ON public.balance_history USING btree (token, player, type);
+
+
+--
 -- Name: idx_balance_history_created_date; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -525,7 +542,7 @@ CREATE INDEX validator_transaction_players_player_idx ON public.validator_transa
 -- Name: validator_transactions_block_num_idx; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE INDEX validator_transactions_block_num_idx ON public.validator_transactions USING btree (block_num);
+CREATE INDEX validator_transactions_block_num_idx ON public.validator_transactions USING btree (block_num, index);
 
 
 --
@@ -540,6 +557,20 @@ CREATE INDEX validator_transactions_created_date_idx ON public.validator_transac
 --
 
 CREATE INDEX validator_transactions_type_player_idx ON public.validator_transactions USING btree (player, type);
+
+
+--
+-- Name: validator_votes_validator_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX validator_votes_validator_idx ON public.validator_votes USING btree (validator);
+
+
+--
+-- Name: validators_total_votes_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX validators_total_votes_idx ON public.validators USING btree (total_votes DESC);
 
 
 --
