@@ -1,16 +1,16 @@
 import { AwardPool, PoolsHelper, ValidatedPool } from './pools';
 
 test('Forbidden name construction should fail', () => {
-    expect(() => new PoolsHelper([{ name: '_acc_tokens_per_share', token: 'EUR', stake: 'USD' }])).toThrow();
-    expect(() => new PoolsHelper([{ name: '_last_reward_block', token: 'USD', stake: 'USD' }])).toThrow();
+    expect(() => new PoolsHelper([{ name: '_acc_tokens_per_share', reward_account: '$TOKEN_STAKING_REWARDS', token: 'EUR', stake: 'USD' }])).toThrow();
+    expect(() => new PoolsHelper([{ name: '_last_reward_block', reward_account: '$TOKEN_STAKING_REWARDS', token: 'USD', stake: 'USD' }])).toThrow();
 });
 
 test('Duplicate name construction should fail', () => {
     expect(
         () =>
             new PoolsHelper([
-                { name: 'generic-name', token: 'EUR', stake: 'USD' },
-                { name: 'generic-name', token: 'USD', stake: 'USD' },
+                { name: 'generic-name', reward_account: '$TOKEN_STAKING_REWARDS', token: 'EUR', stake: 'USD' },
+                { name: 'generic-name', reward_account: '$TOKEN_STAKING_REWARDS', token: 'USD', stake: 'USD' },
             ]),
     ).toThrow();
 });
@@ -19,14 +19,14 @@ test('Duplicate token construction should not fail', () => {
     expect(
         () =>
             new PoolsHelper([
-                { name: 'special-name', token: 'EUR', stake: 'USD' },
-                { name: 'unique-name', token: 'EUR', stake: 'USD' },
+                { name: 'special-name', reward_account: '$TOKEN_STAKING_REWARDS', token: 'EUR', stake: 'USD' },
+                { name: 'unique-name', reward_account: '$TOKEN_STAKING_REWARDS', token: 'EUR', stake: 'USD' },
             ]),
     ).not.toThrow();
 });
 
 describe('Pool validation tests', () => {
-    const x: AwardPool<'x'> = { name: 'x', token: 'xtoken', stake: 'xtoken' };
+    const x: AwardPool<'x'> = { name: 'x', reward_account: '$TOKEN_STAKING_REWARDS', token: 'xtoken', stake: 'xtoken' };
     const xpool: ValidatedPool<'x'> = {
         x: {
             start_block: 1,
@@ -35,7 +35,7 @@ describe('Pool validation tests', () => {
         x_acc_tokens_per_share: 2e13,
         x_last_reward_block: 1,
     };
-    const y: AwardPool<'y'> = { name: 'y', token: 'ytoken', stake: 'ytoken' };
+    const y: AwardPool<'y'> = { name: 'y', reward_account: '$TOKEN_STAKING_REWARDS', token: 'ytoken', stake: 'ytoken' };
     const ypool: ValidatedPool<'y'> = {
         y: {
             start_block: 1,
