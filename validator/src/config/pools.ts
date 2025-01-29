@@ -38,6 +38,7 @@ const pool_settings_schema = object({
 
 export type AwardPool<T extends string> = {
     name: T;
+    reward_account: string;
     token: string;
     stake: string;
 };

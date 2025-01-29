@@ -90,15 +90,7 @@ export class StakingRewardsRepository extends BaseRepository {
 
             if (claim_amount > 0) {
                 result.push(
-                    ...(await this.balanceRepository.updateBalance(
-                        action,
-                        this.stakingConfiguration.staking_rewards_account,
-                        player,
-                        pool.token,
-                        claim_amount,
-                        `claim_staking_rewards_${pool_name}`,
-                        trx,
-                    )),
+                    ...(await this.balanceRepository.updateBalance(action, pool.reward_account, player, pool.token, claim_amount, `claim_staking_rewards_${pool_name}`, trx)),
                 );
 
                 // a record of the claim amount for bridges
