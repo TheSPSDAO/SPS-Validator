@@ -139,7 +139,6 @@ function useTickers() {
 }
 
 export function App() {
-    const tickers = useTickers();
     const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
     useEffect(() => {
         const listener = () => {
@@ -150,20 +149,28 @@ export function App() {
         window.addEventListener('resize', listener);
         return () => window.removeEventListener('resize', listener);
     });
+    
     return (
         <MetricsProvider>
-            <div className="h-screen w-full flex flex-col">
-                <AppNavbar tickers={tickers} toggleSidebar={() => setMobileSidebarOpen((prev) => !prev)} />
-                <div className="flex-grow flex relative">
-                    <AppSidebar isMobileOpen={mobileSidebarOpen}>
-                        <AppSidebarItems closeSidebar={() => setMobileSidebarOpen(false)} />
-                    </AppSidebar>
-                    <div className="flex-grow p-5">
-                        <AppRoutes />
-                    </div>
+            <AppContent mobileSidebarOpen={mobileSidebarOpen} setMobileSidebarOpen={setMobileSidebarOpen} />
+        </MetricsProvider>
+    );
+}
+function AppContent({ mobileSidebarOpen, setMobileSidebarOpen }: { mobileSidebarOpen: boolean, setMobileSidebarOpen: React.Dispatch<React.SetStateAction<boolean>> }) {
+    const tickers = useTickers(); 
+
+    return (
+        <div className="h-screen w-full flex flex-col">
+            <AppNavbar tickers={tickers} toggleSidebar={() => setMobileSidebarOpen((prev) => !prev)} />
+            <div className="flex-grow flex relative">
+                <AppSidebar isMobileOpen={mobileSidebarOpen}>
+                    <AppSidebarItems closeSidebar={() => setMobileSidebarOpen(false)} />
+                </AppSidebar>
+                <div className="flex-grow p-5">
+                    <AppRoutes />
                 </div>
             </div>
-        </MetricsProvider>
+        </div>
     );
 }
 
