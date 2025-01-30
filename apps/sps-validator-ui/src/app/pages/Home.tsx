@@ -1,9 +1,11 @@
+/* eslint-disable prettier/prettier */
 import { Card, CardBody, List, ListItem, Spinner, Typography } from '@material-tailwind/react';
 import { Link } from 'react-router-dom';
 import { usePromise } from '../hooks/Promise';
 import { DefaultService } from '../services/openapi';
 import React, { useEffect, useState } from 'react';
 import { Table, TableHead, TableRow, TableColumn, TableBody, TableCell } from '../components/Table';
+import { useMetrics } from '../context/MetricsContext';
 
 const usefulLinks = [
     { name: 'Splinterlands', url: 'https://splinterlands.com' },
@@ -29,21 +31,18 @@ function UsefulLinksCard() {
     );
 }
 
-function MetricsCard() {
-    const [spsPrice] = usePromise(() => DefaultService.getPriceForToken('SPS'));
-    // TODO switch to count endpoint
-    const [validators] = usePromise(() => DefaultService.getValidators(0, 0));
-    const [status] = usePromise(() => DefaultService.getStatus());
+function useMetricsCard() {
+    const { spsPrice, validators, lastBlock } = useMetrics(); // Get shared state
 
-    const [metrics, setMetrics] = useState<{ label: string; value: string }[]>([]);
-    useEffect(() => {
-        setMetrics([
-            { label: 'SPS Price', value: `$${spsPrice?.price?.toFixed(5) ?? '...'}` },
-            { label: 'Validator Nodes', value: validators?.count?.toString() ?? '...' },
-            { label: 'Block Num', value: status?.last_block?.toString() ?? '...' },
-        ]);
-    }, [spsPrice, validators, status]);
+    return [
+        { label: 'SPS Price', value: `$${spsPrice?.toFixed(5) ?? '...'}` },
+        { label: 'Validator Nodes', value: validators?.toString() ?? '...' },
+        { label: 'Block Num', value: lastBlock?.toString() ?? '...' },
+    ];
+}
 
+const MetricsCard = () => {
+    const metrics = useMetricsCard();
     return (
         <Card>
             <CardBody className="flex flex-col items-center justify-around gap-6">

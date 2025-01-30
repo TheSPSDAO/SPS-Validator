@@ -1,3 +1,4 @@
+/* eslint-disable prettier/prettier */
 import { Link, Route, Routes } from 'react-router-dom';
 import { useEffect, useState } from 'react';
 import {
@@ -26,6 +27,8 @@ import { ValidatorNodes } from './pages/ValidatorNodes';
 import { AccountVotes } from './pages/AccountVotes';
 import { ManageValidatorNode } from './pages/ManageValidatorNode';
 import { ManageVotes } from './pages/ManageVotes';
+import { MetricsProvider } from './context/MetricsContext';
+import { useMetrics } from './context/MetricsContext';
 
 function AppRoutes() {
     return (
@@ -114,27 +117,24 @@ function AppSidebarItems({ closeSidebar }: { closeSidebar: () => void }) {
 }
 
 function useTickers() {
-    const [spsPrice] = usePromiseRefresh(() => DefaultService.getPriceForToken('SPS'), 5000, []);
-    const [status] = usePromiseRefresh(() => DefaultService.getStatus(), 5000, []);
-    const [tickers, setTickers] = useState<AppNavbarTickerProps[]>([]);
-    useEffect(() => {
-        const working: AppNavbarTickerProps[] = [];
+    const { spsPrice, lastBlock } = useMetrics(); // Get shared state
+
+    
+        const tickers: AppNavbarTickerProps[] = [];
         if (spsPrice) {
-            working.push({
+            tickers.push({
                 name: 'SPS Price',
                 icon: <CurrencyDollarIcon className="size-6" />,
-                value: `$${spsPrice.price.toFixed(5)}`,
+                value: `$${spsPrice.toFixed(5)}`,
             });
         }
-        if (status) {
-            working.push({
+        if (lastBlock) {
+            tickers.push({
                 name: 'Block Num',
                 icon: <Square3Stack3DIcon className="size-6" />,
-                value: status.last_block.toString(),
+                value: lastBlock.toString(),
             });
         }
-        setTickers(working);
-    }, [spsPrice, status]);
     return tickers;
 }
 
@@ -151,17 +151,19 @@ export function App() {
         return () => window.removeEventListener('resize', listener);
     });
     return (
-        <div className="h-screen w-full flex flex-col">
-            <AppNavbar tickers={tickers} toggleSidebar={() => setMobileSidebarOpen((prev) => !prev)} />
-            <div className="flex-grow flex relative">
-                <AppSidebar isMobileOpen={mobileSidebarOpen}>
-                    <AppSidebarItems closeSidebar={() => setMobileSidebarOpen(false)} />
-                </AppSidebar>
-                <div className="flex-grow p-5">
-                    <AppRoutes />
+        <MetricsProvider>
+            <div className="h-screen w-full flex flex-col">
+                <AppNavbar tickers={tickers} toggleSidebar={() => setMobileSidebarOpen((prev) => !prev)} />
+                <div className="flex-grow flex relative">
+                    <AppSidebar isMobileOpen={mobileSidebarOpen}>
+                        <AppSidebarItems closeSidebar={() => setMobileSidebarOpen(false)} />
+                    </AppSidebar>
+                    <div className="flex-grow p-5">
+                        <AppRoutes />
+                    </div>
                 </div>
             </div>
-        </div>
+        </MetricsProvider>
     );
 }
 

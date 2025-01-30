@@ -14,5 +14,5 @@ coverage
 tmp
 snapshot.sql
 snapshot.zip
-
+link.txt
 vite.config.*.timestamp*
