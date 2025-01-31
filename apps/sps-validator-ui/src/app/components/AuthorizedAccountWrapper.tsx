@@ -82,6 +82,12 @@ export function AuthorizedAccountWrapper(props: AuthorizedAccountWrapperProps) {
                                     placeholder="Hive account to authorize"
                                     value={workingAccount}
                                     onChange={(e) => setWorkingAccount(e.target.value.trim())}
+                                    onKeyDown={(e) => {
+                                        if (e.key === 'Enter') {
+                                            e.preventDefault();
+                                            authorize(); 
+                                        }
+                                    }}
                                     disabled={progress}
                                 />
                             </div>
