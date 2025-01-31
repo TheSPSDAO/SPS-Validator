@@ -1,4 +1,3 @@
-/* eslint-disable prettier/prettier */
 import { Link, Route, Routes } from 'react-router-dom';
 import { useEffect, useState } from 'react';
 import {
@@ -16,8 +15,6 @@ import {
 } from '@heroicons/react/24/solid';
 import { ListItem, ListItemPrefix } from '@material-tailwind/react';
 import { AppNavbar, AppNavbarTickerProps } from './components/layout/Navbar';
-import { DefaultService } from './services/openapi';
-import { usePromiseRefresh } from './hooks/Promise';
 import { AppSidebar } from './components/layout/Sidebar';
 import { Home } from './pages/Home';
 import { Settings } from './pages/Settings';

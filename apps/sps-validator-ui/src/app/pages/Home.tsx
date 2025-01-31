@@ -1,9 +1,8 @@
-/* eslint-disable prettier/prettier */
 import { Card, CardBody, List, ListItem, Spinner, Typography } from '@material-tailwind/react';
 import { Link } from 'react-router-dom';
 import { usePromise } from '../hooks/Promise';
 import { DefaultService } from '../services/openapi';
-import React, { useEffect, useState } from 'react';
+import React from 'react';
 import { Table, TableHead, TableRow, TableColumn, TableBody, TableCell } from '../components/Table';
 import { useMetrics } from '../context/MetricsContext';
 
