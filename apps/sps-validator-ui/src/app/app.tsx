@@ -15,8 +15,6 @@ import {
 } from '@heroicons/react/24/solid';
 import { ListItem, ListItemPrefix } from '@material-tailwind/react';
 import { AppNavbar, AppNavbarTickerProps } from './components/layout/Navbar';
-import { DefaultService } from './services/openapi';
-import { usePromiseRefresh } from './hooks/Promise';
 import { AppSidebar } from './components/layout/Sidebar';
 import { Home } from './pages/Home';
 import { Settings } from './pages/Settings';
@@ -26,6 +24,8 @@ import { ValidatorNodes } from './pages/ValidatorNodes';
 import { AccountVotes } from './pages/AccountVotes';
 import { ManageValidatorNode } from './pages/ManageValidatorNode';
 import { ManageVotes } from './pages/ManageVotes';
+import { MetricsProvider } from './context/MetricsContext';
+import { useMetrics } from './context/MetricsContext';
 
 function AppRoutes() {
     return (
@@ -114,32 +114,28 @@ function AppSidebarItems({ closeSidebar }: { closeSidebar: () => void }) {
 }
 
 function useTickers() {
-    const [spsPrice] = usePromiseRefresh(() => DefaultService.getPriceForToken('SPS'), 5000, []);
-    const [status] = usePromiseRefresh(() => DefaultService.getStatus(), 5000, []);
-    const [tickers, setTickers] = useState<AppNavbarTickerProps[]>([]);
-    useEffect(() => {
-        const working: AppNavbarTickerProps[] = [];
+    const { spsPrice, lastBlock } = useMetrics(); // Get shared state
+
+    
+        const tickers: AppNavbarTickerProps[] = [];
         if (spsPrice) {
-            working.push({
+            tickers.push({
                 name: 'SPS Price',
                 icon: <CurrencyDollarIcon className="size-6" />,
-                value: `$${spsPrice.price.toFixed(5)}`,
+                value: `$${spsPrice.toFixed(5)}`,
             });
         }
-        if (status) {
-            working.push({
+        if (lastBlock) {
+            tickers.push({
                 name: 'Block Num',
                 icon: <Square3Stack3DIcon className="size-6" />,
-                value: status.last_block.toString(),
+                value: lastBlock.toString(),
             });
         }
-        setTickers(working);
-    }, [spsPrice, status]);
     return tickers;
 }
 
 export function App() {
-    const tickers = useTickers();
     const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
     useEffect(() => {
         const listener = () => {
@@ -150,6 +146,16 @@ export function App() {
         window.addEventListener('resize', listener);
         return () => window.removeEventListener('resize', listener);
     });
+    
+    return (
+        <MetricsProvider>
+            <AppContent mobileSidebarOpen={mobileSidebarOpen} setMobileSidebarOpen={setMobileSidebarOpen} />
+        </MetricsProvider>
+    );
+}
+function AppContent({ mobileSidebarOpen, setMobileSidebarOpen }: { mobileSidebarOpen: boolean, setMobileSidebarOpen: React.Dispatch<React.SetStateAction<boolean>> }) {
+    const tickers = useTickers(); 
+
     return (
         <div className="h-screen w-full flex flex-col">
             <AppNavbar tickers={tickers} toggleSidebar={() => setMobileSidebarOpen((prev) => !prev)} />
