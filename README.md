@@ -24,7 +24,7 @@ You need to re-build the validator when getting started or when updating to a ne
 
 ### Registering your node
 
-- Set the `VALIDATOR_ACCOUNT` and `VALIDATOR_KEY` (active key) environment variables in your .env file
+- Set the `VALIDATOR_ACCOUNT` and `VALIDATOR_KEY` (posting key) environment variables in your .env file
 - _(Optional)_ Set `REWARD_ACCOUNT` to the account that you want to receive the block validation rewards.
 - If you've already started your node, run `./run.sh rebuild_service validator` to apply the new environment variables
 - Go to the management ui, http://localhost:8888/validator-nodes/manage, and follow the registration steps. Post URL is NOT required.
@@ -37,7 +37,7 @@ You need to re-build the validator when getting started or when updating to a ne
 
 ### Staking your licenses for LICENSE rewards
 
-- Set the `VALIDATOR_ACCOUNT` and `VALIDATOR_KEY` (active key) environment variables in your .env file
+- Set the `VALIDATOR_ACCOUNT` and `VALIDATOR_KEY` (posting key) environment variables in your .env file
 - _(Optional)_ Set `REWARD_ACCOUNT` to the account that you want to receive the license rewards. The `REWARD_ACCOUNT` must have a staked license to receive rewards. If you do not set a `REWARD_ACCOUNT`, then the `VALIDATOR_ACCOUNT` must have a staked license.
 - _(Note)_ LICENSE rewards do not require you to register your node, only that you have a staked license.
 - If you've already started your node, run `./run.sh rebuild_service validator` to apply the new environment variables
