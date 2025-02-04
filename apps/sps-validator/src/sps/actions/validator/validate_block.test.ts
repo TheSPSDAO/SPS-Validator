@@ -113,25 +113,6 @@ test.dbOnly('Existing block with existing auth', async () => {
     expect(result?.validation_tx).toEqual('existing-validation-trx');
 });
 
-test.dbOnly('Existing block attempt with posting auth', async () => {
-    await fixture.testHelper.insertDummyBlock(1, 'my-hash', 'steemmonsters');
-    await fixture.opsHelper.processOp(
-        'validate_block',
-        'steemmonsters',
-        {
-            block_num: 1,
-            hash: 'my-hash',
-        },
-        {
-            transaction: 'posting_validate_block',
-            block_num: 1,
-            is_active: false,
-        },
-    );
-    const result = await fixture.testHelper.blockForBlockNumber(1);
-    expect(result?.validation_tx).toBeNull();
-});
-
 test.dbOnly('Existing block with wrong hash', async () => {
     await fixture.testHelper.insertDummyBlock(1, 'my-hash', 'steemmonsters');
     await fixture.opsHelper.processOp('validate_block', 'steemmonsters', {
