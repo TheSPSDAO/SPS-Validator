@@ -47,7 +47,7 @@ export class HiveClient extends Client {
                     params: { block_num, hash, reward_account: this.validatorConfig.reward_account || undefined },
                 },
                 account: this.validatorConfig.validator_account,
-                role: 'active',
+                role: 'posting',
             },
             this.validatorConfig.validator_key,
         );
@@ -66,7 +66,7 @@ export class HiveClient extends Client {
                     params: { block_num, hash, reward_account: this.validatorConfig.reward_account || undefined, version },
                 },
                 account: this.validatorConfig.validator_account,
-                role: 'active',
+                role: 'posting',
             },
             this.validatorConfig.validator_key,
         );
@@ -85,7 +85,7 @@ export class HiveClient extends Client {
                     params: { updates, metadata },
                 },
                 account: this.validatorConfig.validator_account,
-                role: 'active',
+                role: 'posting',
             },
             this.validatorConfig.validator_key,
         );
