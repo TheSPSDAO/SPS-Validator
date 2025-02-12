@@ -19,6 +19,11 @@ export class TokenAwardAction extends AdminAction<typeof token_award.actionSchem
             throw new ValidationError('Tokens may only be awarded from a system account.', this, ErrorType.NoSystemAccount);
         }
 
+        const balance = await this.balanceRepository.getBalance(this.params.from, this.params.token, trx);
+        if (balance < this.params.qty) {
+            throw new ValidationError('Cannot award more than the currently available liquid token balance.', this, ErrorType.InsufficientBalance);
+        }
+
         return true;
     }
 

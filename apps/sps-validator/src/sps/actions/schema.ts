@@ -102,6 +102,22 @@ const stake_tokens = new Schema.Schema(
     }),
 );
 
+const stake_tokens_multi = new Schema.Schema(
+    'stake_tokens_multi',
+    object({
+        token: Schema.token,
+        to_player: Schema.hiveUsernameOrSystemAccount,
+        multi: array(
+            object({
+                from: Schema.systemAccount.required(),
+                qty: Schema.qty.positive(),
+            }),
+        )
+            .min(1)
+            .required(),
+    }),
+);
+
 const unstake_tokens = new Schema.Schema(
     'unstake_tokens',
     object({
@@ -401,6 +417,7 @@ export {
     undelegate_tokens,
     undelegate_tokens_multi,
     stake_tokens,
+    stake_tokens_multi,
     unstake_tokens,
     cancel_unstake_tokens,
     claim_staking_rewards,
