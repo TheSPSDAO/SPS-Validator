@@ -109,7 +109,13 @@ export class ValidatorRepository extends BaseRepository {
         return record ? ValidatorRepository.into(record) : null;
     }
 
-    public async getBlockValidator(block: Pick<BlockRef, 'prng'>, trx?: Trx): Promise<ValidatorEntry | null> {
+    public async getBlockValidator(block: Pick<BlockRef, 'prng' | 'block_num'>, trx?: Trx): Promise<ValidatorEntry | null> {
+        if (!this.watcher.validator) {
+            return null;
+        } else if (this.watcher.validator.paused_until_block > block.block_num) {
+            return null;
+        }
+
         const validators = await this.query(Validator_, trx)
             .where('is_active', true)
             .where('total_votes', '>', 0 as unknown as string)

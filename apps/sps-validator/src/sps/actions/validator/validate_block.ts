@@ -40,14 +40,17 @@ export class ValidateBlockAction extends Action<typeof validate_block.actionSche
             throw new ValidationError('The specified block was not assigned to this account to validate.', this, ErrorType.WrongBlockValidator);
         }
 
-        const max_block_age = this.watcher.validator?.max_block_age;
-        if (max_block_age === undefined) {
+        if (!this.watcher.validator) {
             throw new ValidationError('This validator node has an incompatible configuration. try again later', this, ErrorType.MisconfiguredValidator);
         }
 
         // Check that the block is not too old
-        if (this.op.block_num - this.params.block_num > max_block_age) {
+        if (this.op.block_num - this.params.block_num > this.watcher.validator.max_block_age) {
             throw new ValidationError('The specified block is too old to be validated.', this, ErrorType.OldBlock);
+        }
+
+        if (this.watcher.validator?.paused_until_block > this.op.block_num) {
+            throw new ValidationError('The validator is paused.', this, ErrorType.BlockValidationPaused);
         }
 
         // Make sure the block hasn't already been validated

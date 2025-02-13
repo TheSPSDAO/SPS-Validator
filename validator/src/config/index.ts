@@ -12,6 +12,7 @@ export * from './updater';
 export type ValidatorConfig = {
     reward_start_block: number;
     tokens_per_block: number;
+    paused_until_block: number;
     reward_token: token;
     min_validators: number;
     reduction_blocks: number;

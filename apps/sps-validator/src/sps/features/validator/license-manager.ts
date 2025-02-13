@@ -197,7 +197,10 @@ export class SpsValidatorLicenseManager implements VirtualPayloadSource {
             };
         }
 
-        const canCheckIn = activatedLicenses > 0 && block_num - checkIn.last_check_in_block_num >= this.#checkInConfig!.check_in_interval_blocks;
+        const canCheckIn =
+            activatedLicenses > 0 &&
+            block_num >= this.#checkInConfig.paused_until_block &&
+            block_num - checkIn.last_check_in_block_num >= this.#checkInConfig!.check_in_interval_blocks;
         return {
             account,
             can_check_in: canCheckIn,
@@ -210,6 +213,8 @@ export class SpsValidatorLicenseManager implements VirtualPayloadSource {
     async checkIn(action: IAction, account: string, trx?: Trx) {
         if (this.#checkInConfig === undefined) {
             log('Invalid check in config. Ignoring check in.', LogLevel.Warning);
+            return [];
+        } else if (this.#checkInConfig.paused_until_block > action.op.block_num) {
             return [];
         }
 
