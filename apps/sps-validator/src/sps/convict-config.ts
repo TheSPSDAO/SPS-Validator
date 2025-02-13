@@ -332,6 +332,18 @@ const schema = {
             default: 'https://pro-api.coingecko.com',
             env: 'PRICE_FEED_COIN_GECKO_API_URL',
         },
+        demo_api_url: {
+            doc: 'The URL of the CoinGecko price feed API',
+            format: 'url',
+            default: 'https://coingecko.com',
+            env: 'PRICE_FEED_COIN_GECKO_DEMO_API_URL',
+        },
+        demo: {
+            doc: 'Use the demo API',
+            format: Boolean,
+            default: false,
+            env: 'PRICE_FEED_COIN_GECKO_DEMO',
+        },
         api_key: {
             doc: 'The API key for the CoinGecko price feed API',
             nullable: true,

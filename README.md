@@ -50,6 +50,8 @@ The top validators will be responsible for the SPS price feed inside the validat
 ```
 # one or the other, or both. a random feed is picked to get the sps price every N blocks.
 PRICE_FEED_COIN_GECKO_API_KEY=
+# set to true if you are using a coin gecko demo api key
+# PRICE_FEED_COIN_GECKO_DEMO=true
 PRICE_FEED_COIN_MARKET_CAP_API_KEY=
 ```
 
