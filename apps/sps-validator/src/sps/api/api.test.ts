@@ -75,9 +75,14 @@ describe('Price feed API endpoint', () => {
         ${'DEC'}     | ${404} | ${undefined}
         ${'not-SPS'} | ${404} | ${undefined}
     `(`Checking [$token] after one price point for SPS should give HTTP status [$status] with price [$price]`, async ({ token, status, price }) => {
-        await fixture.opsHelper.processOp('price_feed', 'someadmin1', {
-            updates: [{ token: 'SPS', price: 7331.2 }],
-        });
+        await fixture.opsHelper.processOp(
+            'price_feed',
+            'someadmin1',
+            {
+                updates: [{ token: 'SPS', price: 7331.2 }],
+            },
+            { block_num: fixture.loader.validator!.reward_start_block + 1 },
+        );
         const response = await fixture.request.get(`/price_feed/${token}`);
         expect(response.status).toBe(status);
         expect(response.body.token).toBe(token);
@@ -90,15 +95,30 @@ describe('Price feed API endpoint', () => {
         ${'DEC'}     | ${404} | ${undefined}
         ${'not-SPS'} | ${404} | ${undefined}
     `(`Checking [$token] after several price points should give HTTP status [$status] with price [$price]`, async ({ token, status, price }) => {
-        await fixture.opsHelper.processOp('price_feed', 'someadmin1', {
-            updates: [{ token: 'SPS', price: 100 }],
-        });
-        await fixture.opsHelper.processOp('price_feed', 'someadmin2', {
-            updates: [{ token: 'SPS', price: 500 }],
-        });
-        await fixture.opsHelper.processOp('price_feed', 'someadmin3', {
-            updates: [{ token: 'SPS', price: 300 }],
-        });
+        await fixture.opsHelper.processOp(
+            'price_feed',
+            'someadmin1',
+            {
+                updates: [{ token: 'SPS', price: 100 }],
+            },
+            { block_num: fixture.loader.validator!.reward_start_block + 1 },
+        );
+        await fixture.opsHelper.processOp(
+            'price_feed',
+            'someadmin2',
+            {
+                updates: [{ token: 'SPS', price: 500 }],
+            },
+            { block_num: fixture.loader.validator!.reward_start_block + 1 },
+        );
+        await fixture.opsHelper.processOp(
+            'price_feed',
+            'someadmin3',
+            {
+                updates: [{ token: 'SPS', price: 300 }],
+            },
+            { block_num: fixture.loader.validator!.reward_start_block + 1 },
+        );
         const response = await fixture.request.get(`/price_feed/${token}`);
         expect(response.status).toBe(status);
         expect(response.body.token).toBe(token);
