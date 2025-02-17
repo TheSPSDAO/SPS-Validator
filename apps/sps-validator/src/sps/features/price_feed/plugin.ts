@@ -79,6 +79,14 @@ export class PriceFeedPlugin implements Plugin, Prime {
             return;
         }
 
+        if (this.validatorWatch.validator.reward_start_block > headBlockNumber) {
+            log('Validator rewards have not started yet. Not sending price.', LogLevel.Debug);
+            return;
+        } else if (this.validatorWatch.validator.paused_until_block > 0 && this.validatorWatch.validator.paused_until_block > headBlockNumber) {
+            log('Validator rewards are paused. Not sending price.', LogLevel.Debug);
+            return;
+        }
+
         // plugins are run asynchronously, so we need to set nextBlock before calling into async code
         this.nextBlock = this.getNextBlock(headBlockNumber);
 
