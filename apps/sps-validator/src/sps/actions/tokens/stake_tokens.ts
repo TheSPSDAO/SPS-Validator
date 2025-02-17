@@ -59,7 +59,7 @@ export class StakeTokensAction extends Action<typeof stake_tokens.actionSchema> 
         }
 
         // Check that they have enough tokens in their account
-        const balance = await this.balanceRepository.getBalance(this.op.account, this.params.token, trx);
+        const balance = await this.balanceRepository.getBalance(this.params.from_player, this.params.token, trx);
         if (balance < this.params.qty) {
             throw new ValidationError('Cannot stake more than the currently available liquid token balance.', this, ErrorType.InsufficientBalance);
         }
