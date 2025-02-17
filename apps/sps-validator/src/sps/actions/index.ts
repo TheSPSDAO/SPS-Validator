@@ -8,6 +8,7 @@ import { Router as UndelegateTokensRouter } from './tokens/undelegate_tokens';
 import { Router as UndelegateTokensMultiRouter } from './tokens/undelegate_tokens_multi';
 import { Router as ReturnTokensRouter } from './tokens/return_tokens';
 import { Router as StakeTokensRouter } from './tokens/stake_tokens';
+import { Router as StakeTokensMultiRouter } from './tokens/stake_tokens_multi';
 import { Router as CancelUnstakeTokensRouter } from './tokens/cancel_unstake_tokens';
 import { Router as ApproveValidatorRouter } from './validator/approve_validator';
 import { Router as UnstakeTokensRouter } from './tokens/unstake_tokens';
@@ -51,6 +52,7 @@ export const RouterImpl = MakeMultiRouter(
     UndelegateTokensMultiRouter,
     ReturnTokensRouter,
     StakeTokensRouter,
+    StakeTokensMultiRouter,
     CancelUnstakeTokensRouter,
     ApproveValidatorRouter,
     UnstakeTokensRouter,

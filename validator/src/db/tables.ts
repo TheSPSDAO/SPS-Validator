@@ -242,4 +242,5 @@ export class ValidatorEntity {
     @Column() public post_url!: string | null;
     @Column() public total_votes = '0'; // numeric(12, 3)
     @Column() public missed_blocks = 0;
+    @Column() public reward_account!: string | null;
 }

@@ -8,13 +8,13 @@ import {
     OperationData,
     Trx,
     ValidationError,
+    ValidatorRepository,
     ValidatorWatch,
 } from '@steem-monsters/splinterlands-validator';
 import { validate_block } from '../schema';
 import { MakeActionFactory, MakeRouter } from '../utils';
 
 export class ValidateBlockAction extends Action<typeof validate_block.actionSchema> {
-    private readonly reward_account: string;
     constructor(
         op: OperationData,
         data: unknown,
@@ -22,10 +22,9 @@ export class ValidateBlockAction extends Action<typeof validate_block.actionSche
         private readonly watcher: ValidatorWatch,
         private readonly blockRepository: BlockRepository,
         private readonly balanceRepository: BalanceRepository,
-        private readonly accountRepository: HiveAccountRepository,
+        private readonly validatorRepository: ValidatorRepository,
     ) {
         super(validate_block, op, data, index);
-        this.reward_account = this.params.reward_account ?? this.op.account;
     }
 
     async validate(trx?: Trx) {
@@ -40,14 +39,17 @@ export class ValidateBlockAction extends Action<typeof validate_block.actionSche
             throw new ValidationError('The specified block was not assigned to this account to validate.', this, ErrorType.WrongBlockValidator);
         }
 
-        const max_block_age = this.watcher.validator?.max_block_age;
-        if (max_block_age === undefined) {
+        if (!this.watcher.validator) {
             throw new ValidationError('This validator node has an incompatible configuration. try again later', this, ErrorType.MisconfiguredValidator);
         }
 
         // Check that the block is not too old
-        if (this.op.block_num - this.params.block_num > max_block_age) {
+        if (this.op.block_num - this.params.block_num > this.watcher.validator.max_block_age) {
             throw new ValidationError('The specified block is too old to be validated.', this, ErrorType.OldBlock);
+        }
+
+        if (this.watcher.validator?.paused_until_block > this.params.block_num) {
+            throw new ValidationError('Block validation is paused.', this, ErrorType.BlockValidationPaused);
         }
 
         // Make sure the block hasn't already been validated
@@ -60,15 +62,12 @@ export class ValidateBlockAction extends Action<typeof validate_block.actionSche
             throw new ValidationError('The specified hash does not match.', this, ErrorType.BlockHashMismatch);
         }
 
-        const validRewardAccount = await this.accountRepository.onlyHiveAccounts([this.reward_account], trx);
-        if (!validRewardAccount) {
-            throw new ValidationError('The specified reward account does not exist.', this, ErrorType.AccountNotKnown);
-        }
-
         return true;
     }
 
     async process(trx?: Trx): Promise<EventLog[]> {
+        const validator = await this.validatorRepository.lookup(this.op.account, trx);
+        const reward_account = validator!.reward_account ?? this.op.account;
         // Log the validation transaction id for the validated block
         const results: EventLog[] = [await this.blockRepository.insertValidation(this.params.block_num, this.op.transaction_id, trx)];
 
@@ -78,7 +77,7 @@ export class ValidateBlockAction extends Action<typeof validate_block.actionSche
         if (reward !== 0) {
             const [amount, token] = reward;
             if (amount > 0) {
-                results.push(...(await this.balanceRepository.updateBalance(this, '$VALIDATOR_REWARDS', this.reward_account, token, amount, this.action_name, trx)));
+                results.push(...(await this.balanceRepository.updateBalance(this, '$VALIDATOR_REWARDS', reward_account, token, amount, this.action_name, trx)));
             }
         }
 
@@ -86,5 +85,5 @@ export class ValidateBlockAction extends Action<typeof validate_block.actionSche
     }
 }
 
-const Builder = MakeActionFactory(ValidateBlockAction, ValidatorWatch, BlockRepository, BalanceRepository, HiveAccountRepository);
+const Builder = MakeActionFactory(ValidateBlockAction, ValidatorWatch, BlockRepository, BalanceRepository, ValidatorRepository);
 export const Router = MakeRouter(validate_block.action_name, Builder);

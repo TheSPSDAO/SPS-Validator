@@ -8,5 +8,6 @@ export type Validator = {
     post_url: string | null;
     total_votes: number;
     missed_blocks: number;
+    reward_account: string | null;
 };
 

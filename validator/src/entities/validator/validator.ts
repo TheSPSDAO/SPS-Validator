@@ -10,6 +10,7 @@ export type ValidatorEntry = {
     post_url: string | null;
     total_votes: number;
     missed_blocks: number;
+    reward_account: string | null;
 };
 
 export type GetValidatorsParams = {
@@ -18,6 +19,7 @@ export type GetValidatorsParams = {
     is_active?: boolean;
     count?: boolean;
     search?: string;
+    reward_account?: string;
 };
 
 export class ValidatorRepository extends BaseRepository {
@@ -31,7 +33,7 @@ export class ValidatorRepository extends BaseRepository {
         return { ...row, total_votes: parseFloat(row.total_votes) };
     }
 
-    public async register(params: { account: string; is_active: boolean; post_url?: string }, trx?: Trx) {
+    public async register(params: { account: string; is_active: boolean; post_url?: string; reward_account?: string }, trx?: Trx) {
         const record = await this.query(Validator_, trx)
             .useKnexQueryBuilder((query) =>
                 query
@@ -39,6 +41,7 @@ export class ValidatorRepository extends BaseRepository {
                         account_name: params.account,
                         is_active: params.is_active,
                         post_url: params.post_url,
+                        reward_account: params.reward_account ?? null,
                     })
                     .onConflict('account_name')
                     .merge()
@@ -52,7 +55,7 @@ export class ValidatorRepository extends BaseRepository {
         const record = await this.query(Validator_, trx)
             .where('account_name', account)
             .useKnexQueryBuilder((query) => query.increment('missed_blocks', increment))
-            .updateItemWithReturning({}, ['account_name', 'missed_blocks', 'is_active', 'post_url', 'total_votes']);
+            .updateItemWithReturning({}, ['account_name', 'missed_blocks', 'is_active', 'post_url', 'total_votes', 'reward_account']);
         return [new EventLog(EventTypes.UPDATE, this, ValidatorRepository.into(record))];
     }
 
@@ -63,6 +66,10 @@ export class ValidatorRepository extends BaseRepository {
         if (params?.is_active !== undefined) {
             q = q.where('is_active', params.is_active);
             countQuery = countQuery.where('is_active', params.is_active);
+        }
+        if (params?.reward_account !== undefined) {
+            q = q.where('reward_account', params.reward_account);
+            countQuery = countQuery.where('reward_account', params.reward_account);
         }
         if (params?.limit !== undefined) {
             q = q.limit(params.limit);
@@ -109,7 +116,13 @@ export class ValidatorRepository extends BaseRepository {
         return record ? ValidatorRepository.into(record) : null;
     }
 
-    public async getBlockValidator(block: Pick<BlockRef, 'prng'>, trx?: Trx): Promise<ValidatorEntry | null> {
+    public async getBlockValidator(block: Pick<BlockRef, 'prng' | 'block_num'>, trx?: Trx): Promise<ValidatorEntry | null> {
+        if (!this.watcher.validator) {
+            return null;
+        } else if (this.watcher.validator.paused_until_block > block.block_num) {
+            return null;
+        }
+
         const validators = await this.query(Validator_, trx)
             .where('is_active', true)
             .where('total_votes', '>', 0 as unknown as string)

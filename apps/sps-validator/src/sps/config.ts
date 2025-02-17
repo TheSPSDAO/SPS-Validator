@@ -80,6 +80,7 @@ export class SpsConfigLoader
     public static readonly DEFAULT = Object.freeze({
         validator: {
             reward_start_block: 60963785,
+            paused_until_block: 0,
             last_checked_block: 60963784,
             tokens_per_block: 4.34,
             min_validators: 3,
@@ -109,6 +110,7 @@ export class SpsConfigLoader
         validator_check_in: {
             check_in_window_blocks: 300,
             check_in_interval_blocks: 28800,
+            paused_until_block: 0,
         },
         price_feed: {
             interval_blocks: 200,

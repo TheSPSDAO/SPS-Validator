@@ -25,7 +25,6 @@ You need to re-build the validator when getting started or when updating to a ne
 ### Registering your node
 
 - Set the `VALIDATOR_ACCOUNT` and `VALIDATOR_KEY` (posting key) environment variables in your .env file
-- _(Optional)_ Set `REWARD_ACCOUNT` to the account that you want to receive the block validation rewards.
 - If you've already started your node, run `./run.sh rebuild_service validator` to apply the new environment variables
 - Go to the management ui, http://localhost:8888/validator-nodes/manage, and follow the registration steps. Post URL is NOT required.
 - _(Note)_ If you have just restored from a snapshot, you will have to wait until your node catches up before your UI will see you as registered. You can use the shared management UI here which will most likely be caught up: https://thespsdao.github.io/SPS-Validator/validator-nodes/manage.
@@ -38,8 +37,8 @@ You need to re-build the validator when getting started or when updating to a ne
 ### Staking your licenses for LICENSE rewards
 
 - Set the `VALIDATOR_ACCOUNT` and `VALIDATOR_KEY` (posting key) environment variables in your .env file
-- _(Optional)_ Set `REWARD_ACCOUNT` to the account that you want to receive the license rewards. The `REWARD_ACCOUNT` must have a staked license to receive rewards. If you do not set a `REWARD_ACCOUNT`, then the `VALIDATOR_ACCOUNT` must have a staked license.
-- _(Note)_ LICENSE rewards do not require you to register your node, only that you have a staked license.
+- Register your node using the instructions in the README.
+- _(Optional)_ If you set a reward account when registering your node, that account must have staked licenses.
 - If you've already started your node, run `./run.sh rebuild_service validator` to apply the new environment variables
 - Go to the splinterlands license management page here, https://validator.qa.splinterlands.com/dashboard/licenses, and click `STAKE LICENSES`.
 - Once you've staked your licenses, and you have the environment variables set, your node will start sending check ins to prove you are running the software so you can receive rewards.
@@ -50,6 +49,8 @@ The top validators will be responsible for the SPS price feed inside the validat
 ```
 # one or the other, or both. a random feed is picked to get the sps price every N blocks.
 PRICE_FEED_COIN_GECKO_API_KEY=
+# set to true if you are using a coin gecko demo api key
+# PRICE_FEED_COIN_GECKO_DEMO=true
 PRICE_FEED_COIN_MARKET_CAP_API_KEY=
 ```
 
@@ -57,7 +58,7 @@ Once those are set, you can run `./run.sh rebuild_service validator` to apply th
 
 ### Known Bugs
 
-- If your node is running and licenses are then staked for its `VALIDATOR_ACCOUNT` or `REWARD_ACCOUNT`, it is not picking up the change and starting the check in process. You can resolve this by restarting your node after you've staked your licenses.
+- If your node is running and licenses are then staked for its `VALIDATOR_ACCOUNT` or reward account, it is not picking up the change and starting the check in process. You can resolve this by restarting your node after you've staked your licenses.
 
 ### Additional Commands
 

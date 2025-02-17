@@ -151,13 +151,6 @@ const schema = {
         default: 25,
         env: 'REPLAY_BATCH_SIZE',
     },
-    reward_account: {
-        format: String,
-        doc: 'The account that receives the rewards',
-        nullable: true,
-        default: null as null | string,
-        env: 'REWARD_ACCOUNT',
-    },
     validator_account: {
         format: String,
         nullable: true,
@@ -331,6 +324,18 @@ const schema = {
             format: 'url',
             default: 'https://pro-api.coingecko.com',
             env: 'PRICE_FEED_COIN_GECKO_API_URL',
+        },
+        demo_api_url: {
+            doc: 'The URL of the CoinGecko price feed API',
+            format: 'url',
+            default: 'https://coingecko.com',
+            env: 'PRICE_FEED_COIN_GECKO_DEMO_API_URL',
+        },
+        demo: {
+            doc: 'Use the demo API',
+            format: Boolean,
+            default: false,
+            env: 'PRICE_FEED_COIN_GECKO_DEMO',
         },
         api_key: {
             doc: 'The API key for the CoinGecko price feed API',

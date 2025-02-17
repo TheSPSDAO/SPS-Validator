@@ -11,6 +11,7 @@ import { payout } from '../utilities/token_support';
 const posting_auth_actions = [
     'token_award',
     'stake_tokens',
+    'stake_tokens_multi',
     'unstake_tokens',
     'claim_staking_rewards',
     'cancel_unstake_tokens',

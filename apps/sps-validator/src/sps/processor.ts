@@ -44,6 +44,9 @@ export class SpsBlockProcessor extends BlockProcessor<SpsSynchronisationConfig> 
             hive,
             lastBlockCache,
             sync,
+            // helper to map price feed in qa environments. when we switch over to network block validation
+            // this can be removed.
+            new Map([['sm_price_feed', 'price_feed']]),
         );
     }
 }

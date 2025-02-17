@@ -58,13 +58,10 @@ export class StakeTokensAction extends Action<typeof stake_tokens.actionSchema> 
             throw new ValidationError('Cannot stake from system account as non admin', this, ErrorType.AdminOnly);
         }
 
-        if (!isFromSystemAccount) {
-            // Check that non-system accounts have enough tokens in their account
-            const balance = await this.balanceRepository.getBalance(this.op.account, this.params.token, trx);
-
-            if (balance < this.params.qty) {
-                throw new ValidationError('Cannot stake more than the currently available liquid token balance.', this, ErrorType.InsufficientBalance);
-            }
+        // Check that they have enough tokens in their account
+        const balance = await this.balanceRepository.getBalance(this.params.from_player, this.params.token, trx);
+        if (balance < this.params.qty) {
+            throw new ValidationError('Cannot stake more than the currently available liquid token balance.', this, ErrorType.InsufficientBalance);
         }
 
         return true;

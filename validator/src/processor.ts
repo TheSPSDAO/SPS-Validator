@@ -22,7 +22,6 @@ import { isDefined } from './libs/guards';
 import { Trx } from './lib';
 
 export type ValidatorOpts = {
-    reward_account: string | null;
     validator_account: string | null;
     validator_key: string | null;
     version: string;
@@ -50,6 +49,7 @@ export class BlockProcessor<T extends SynchronisationConfig> {
         private readonly hive: HiveClient,
         public readonly lastBlockCache: LastBlockCache,
         private readonly sync: SynchronisationClosure<T>,
+        private readonly special_ops: Map<string, string> = new Map(),
     ) {}
 
     public async process(block: NBlock, headBlock: number): Promise<{ block_hash: string; event_logs: EventLog[] }> {
@@ -77,7 +77,7 @@ export class BlockProcessor<T extends SynchronisationConfig> {
                     }
 
                     // Check if this is an operation that validator nodes should process
-                    if (!(BlockProcessor.isCustomJsonOperation(op) && this.isValidatorOperation(op))) {
+                    if (!(BlockProcessor.isCustomJsonOperation(op) && (this.isValidatorOperation(op) || this.isSpecialCustomJsonOperation(op)))) {
                         continue;
                     }
                     const operation = this.operationFactory.build(block, reward, op, t.id, op_index);
@@ -123,6 +123,13 @@ export class BlockProcessor<T extends SynchronisationConfig> {
 
     private static isAccountCreationOperation(op: BlockOperation): op is UnionAccountCreation {
         return ['account_create', 'account_create_with_delegation', 'create_claimed_account'].includes(op[0]);
+    }
+
+    private isSpecialCustomJsonOperation(op: CustomJsonOperation): boolean {
+        const special_id = this.special_ops.get(op[1].id);
+        op[1].id = special_id ?? op[1].id;
+
+        return !!special_id;
     }
 
     private isValidatorOperation(op: CustomJsonOperation): boolean {

@@ -55,9 +55,9 @@ BEGIN
 
     INSERT INTO snapshot.validators
 	(
-		account_name, is_active, post_url, total_votes, missed_blocks
+		account_name, is_active, post_url, total_votes, missed_blocks, reward_account
 	)
-    SELECT account_name, is_active, post_url, total_votes, missed_blocks
+    SELECT account_name, is_active, post_url, total_votes, missed_blocks, reward_account
     FROM validators;
 
     INSERT INTO snapshot.validator_vote_history

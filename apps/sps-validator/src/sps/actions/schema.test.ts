@@ -4,7 +4,7 @@ import { validate_block } from './schema';
 describe('schema validation', () => {
     it.each`
         schema            | isValid  | params
-        ${validate_block} | ${true}  | ${{ block_num: 12345, hash: 'abc123', reward_account: 'account1' }}
+        ${validate_block} | ${true}  | ${{ block_num: 12345, hash: 'abc123' }}
         ${validate_block} | ${true}  | ${{ block_num: 12345, hash: 'abc123' }}
         ${validate_block} | ${true}  | ${{ block_num: '12345', hash: 'abc123' }}
         ${validate_block} | ${false} | ${{ block_num: 12345, hash: 12345 }}

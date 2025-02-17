@@ -280,11 +280,11 @@ export class StakingRewardsRepository extends BaseRepository {
         return [...claim_results, ...balance_results];
     }
 
-    private async claimUnclaimedRewards(action: IAction, toPlayer: string, stakedToken: string, qty: number, trx?: Trx) {
+    public async claimUnclaimedRewards(action: IAction, toPlayer: string, stakedToken: string, qty: number, trx?: Trx) {
         return await this.claimAll(toPlayer, [qty, stakedToken!], action, trx);
     }
 
-    private async updatedBalancesAfterStaking(
+    public async updatedBalancesAfterStaking(
         action: IAction,
         fromPlayer: string,
         toPlayer: string,

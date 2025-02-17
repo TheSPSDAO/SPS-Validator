@@ -14,6 +14,8 @@ const validator_rewards_settings = {
     start_block: 67857521,
 };
 
+const rewards_paused_until_block = 67857530;
+
 beforeAll(async () => {
     await fixture.init();
 });
@@ -21,13 +23,28 @@ beforeAll(async () => {
 beforeEach(async () => {
     await fixture.restore();
     await fixture.testHelper.insertDefaultConfiguration();
+
     await fixture.handle
         .query(ConfigEntity)
         .where('group_name', 'sps')
         .where('name', 'validator_rewards')
         .updateItem({ value: JSON.stringify(validator_rewards_settings) });
+
+    await fixture.handle
+        .query(ConfigEntity)
+        .where('group_name', 'validator_check_in')
+        .where('name', 'paused_until_block')
+        .updateItem({ value: rewards_paused_until_block.toString() });
+
     await fixture.testHelper.setHiveAccount('steemmonsters');
     await fixture.testHelper.setHiveAccount('steemmonsters2');
+    await fixture.testHelper.setHiveAccount('steemmonsters3');
+    await fixture.testHelper.setHiveAccount('steemmonsters4');
+
+    await fixture.testHelper.insertDummyValidator('steemmonsters', true, 100);
+    await fixture.testHelper.insertDummyValidator('steemmonsters2', true, 100);
+    await fixture.testHelper.insertDummyValidator('steemmonsters3', true, 100, 'steemmonsters2');
+
     await fixture.loader.load();
 });
 
@@ -44,7 +61,7 @@ test.dbOnly('Lots of emoji for check_in_validator does not crash.', () => {
 });
 
 test.dbOnly('check_in_validator succeeds', async () => {
-    const block_num = validator_rewards_settings.start_block + 1;
+    const block_num = rewards_paused_until_block + 1;
     const block_hash = 'abc';
     const check_in_hash = sha256(`${block_hash}steemmonsters`);
     await fixture.testHelper.insertDummyBlock(block_num - 1, block_hash, 'steemmonsters');
@@ -72,8 +89,35 @@ test.dbOnly('check_in_validator succeeds', async () => {
     expect(runningLicenses?.balance).toBe(1);
 });
 
+test.dbOnly('check_in_validator fails for non-validator', async () => {
+    const block_num = rewards_paused_until_block + 1;
+    const block_hash = 'abc';
+    const check_in_hash = sha256(`${block_hash}steemmonsters4`);
+    await fixture.testHelper.insertDummyBlock(block_num - 1, block_hash, 'steemmonsters');
+    await fixture.testHelper.setDummyToken('steemmonsters4', 1, TOKENS.ACTIVATED_LICENSE);
+    await expect(
+        fixture.opsHelper.processOp(
+            'check_in_validator',
+            'steemmonsters4',
+            {
+                block_num: block_num - 1,
+                hash: check_in_hash,
+            },
+            { block_num },
+        ),
+    ).resolves.toBeUndefined();
+
+    // should have a valid check in
+    const checkIn = await fixture.testHelper.getCheckIn('steemmonsters4');
+    expect(checkIn).toBeFalsy();
+
+    // shouldnt be in the validator reward pool
+    const runningLicenses = await fixture.testHelper.getDummyToken('steemmonsters4', TOKENS.RUNNING_LICENSE);
+    expect(runningLicenses?.balance ?? 0).toBe(0);
+});
+
 test.dbOnly('check_in_validator for reward_account succeeds', async () => {
-    const block_num = validator_rewards_settings.start_block + 1;
+    const block_num = rewards_paused_until_block + 1;
     const block_hash = 'abc';
     const check_in_hash = sha256(`${block_hash}steemmonsters2`);
     await fixture.testHelper.insertDummyBlock(block_num - 1, block_hash, 'steemmonsters');
@@ -81,11 +125,10 @@ test.dbOnly('check_in_validator for reward_account succeeds', async () => {
     await expect(
         fixture.opsHelper.processOp(
             'check_in_validator',
-            'steemmonsters',
+            'steemmonsters3',
             {
                 block_num: block_num - 1,
                 hash: check_in_hash,
-                reward_account: 'steemmonsters2',
             },
             { block_num },
         ),
@@ -102,35 +145,35 @@ test.dbOnly('check_in_validator for reward_account succeeds', async () => {
     expect(runningLicenses?.balance).toBe(1);
 });
 
-test.dbOnly('check_in_validator for invalid reward_account fails', async () => {
-    const block_num = validator_rewards_settings.start_block + 1;
+test.dbOnly('check_in_validator for reward_account with no licenses fails', async () => {
+    const block_num = rewards_paused_until_block + 1;
     const block_hash = 'abc';
-    const check_in_hash = sha256(`${block_hash}notanaccount`);
+    const check_in_hash = sha256(`${block_hash}steemmonsters2`);
     await fixture.testHelper.insertDummyBlock(block_num - 1, block_hash, 'steemmonsters');
+    await fixture.testHelper.setDummyToken('steemmonsters2', 0, TOKENS.ACTIVATED_LICENSE);
     await expect(
         fixture.opsHelper.processOp(
             'check_in_validator',
-            'steemmonsters',
+            'steemmonsters3',
             {
                 block_num: block_num - 1,
                 hash: check_in_hash,
-                reward_account: 'notanaccount',
             },
             { block_num },
         ),
     ).resolves.toBeUndefined();
 
     // should have a valid check in
-    const checkIn = await fixture.testHelper.getCheckIn('notanaccount');
-    expect(checkIn).toBeNull();
+    const checkIn = await fixture.testHelper.getCheckIn('steemmonsters2');
+    expect(checkIn).toBeFalsy();
 
-    // shouldnt be in the validator reward pool
-    const runningLicenses = await fixture.testHelper.getDummyToken('notanaccount', TOKENS.RUNNING_LICENSE);
+    // should be in the validator reward pool
+    const runningLicenses = await fixture.testHelper.getDummyToken('steemmonsters2', TOKENS.RUNNING_LICENSE);
     expect(runningLicenses?.balance ?? 0).toBe(0);
 });
 
 test.dbOnly('check_in_validator fails without a license', async () => {
-    const block_num = validator_rewards_settings.start_block + 1;
+    const block_num = rewards_paused_until_block + 1;
     const block_hash = 'abc';
     const check_in_hash = sha256(`${block_hash}steemmonsters`);
     await fixture.testHelper.insertDummyBlock(block_num - 1, block_hash, 'steemmonsters');
@@ -157,7 +200,7 @@ test.dbOnly('check_in_validator fails without a license', async () => {
 });
 
 test.dbOnly('check_in_validator fails with invalid check in hash', async () => {
-    const block_num = validator_rewards_settings.start_block + 1;
+    const block_num = rewards_paused_until_block + 1;
     const block_hash = 'abc';
     const check_in_hash = sha256(`${block_hash}abc123244`);
     await fixture.testHelper.insertDummyBlock(block_num - 1, block_hash, 'steemmonsters');
@@ -174,7 +217,33 @@ test.dbOnly('check_in_validator fails with invalid check in hash', async () => {
         ),
     ).resolves.toBeUndefined();
 
-    // should have a valid check in
+    const checkIn = await fixture.testHelper.getCheckIn('steemmonsters');
+    expect(checkIn).toBeFalsy();
+
+    const runningLicenses = await fixture.testHelper.getDummyToken('steemmonsters', TOKENS.RUNNING_LICENSE);
+    expect(runningLicenses?.balance ?? 0).toBe(0);
+});
+
+test.dbOnly('check_in_validator fails when reward pool is paused', async () => {
+    const block_num = rewards_paused_until_block - 1;
+    const block_hash = 'abc';
+    const check_in_hash = sha256(`${block_hash}steemmonsters`);
+    await fixture.testHelper.insertDummyBlock(block_num - 1, block_hash, 'steemmonsters');
+    await fixture.testHelper.setDummyToken('steemmonsters', 1, TOKENS.ACTIVATED_LICENSE);
+
+    await expect(
+        fixture.opsHelper.processOp(
+            'check_in_validator',
+            'steemmonsters',
+            {
+                block_num: block_num - 1,
+                hash: check_in_hash,
+            },
+            { block_num },
+        ),
+    ).resolves.toBeUndefined();
+
+    // should not have a valid check in
     const checkIn = await fixture.testHelper.getCheckIn('steemmonsters');
     expect(checkIn).toBeFalsy();
 
@@ -184,7 +253,7 @@ test.dbOnly('check_in_validator fails with invalid check in hash', async () => {
 });
 
 test.dbOnly('check_in_validator fails when checking in too soon', async () => {
-    const block_num = validator_rewards_settings.start_block + 1;
+    const block_num = rewards_paused_until_block + 1;
     const block_hash = 'abc';
     const check_in_hash = sha256(`${block_hash}steemmonsters`);
     await fixture.testHelper.insertDummyBlock(block_num - 1, block_hash, 'steemmonsters');
@@ -229,7 +298,7 @@ test.dbOnly('check_in_validator fails when checking in too soon', async () => {
 });
 
 test.dbOnly('check_in_validator succeeds twice without adding to the reward pool twice', async () => {
-    const block_num = validator_rewards_settings.start_block + 1;
+    const block_num = rewards_paused_until_block + 1;
     const block_hash = 'abc';
     const check_in_hash = sha256(`${block_hash}steemmonsters`);
     await fixture.testHelper.insertDummyBlock(block_num - 1, block_hash, 'steemmonsters');

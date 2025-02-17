@@ -403,8 +403,11 @@ components:
                 - post_url
                 - total_votes
                 - missed_blocks
+                - reward_account
             properties:
                 account_name:
+                    type: string
+                reward_account:
                     type: string
                 is_active:
                     type: boolean
@@ -462,8 +465,11 @@ components:
                 - reduction_pct
                 - max_votes
                 - num_top_validators
+                - paused_until_block
             properties:
                 reward_start_block:
+                    type: number
+                paused_until_block:
                     type: number
                 tokens_per_block:
                     type: number

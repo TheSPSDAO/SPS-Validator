@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-pg_dump --no-owner --no-acl --disable-triggers \
+pg_dump --no-owner --no-acl \
   --no-comments --no-publications --no-security-labels \
   --schema snapshot -T snapshot.snapshot_history -T snapshot.state \
   --no-subscriptions --no-tablespaces --data-only \

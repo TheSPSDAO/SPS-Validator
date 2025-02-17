@@ -243,7 +243,7 @@ test.dbOnly('Stake negative amount fails.', async () => {
     expect(liquid_balance_after).toBe(100);
 });
 
-test.dbOnly('stake tokens from system accounts from admin with negative balance works', async () => {
+test.dbOnly('stake tokens from system accounts from admin with negative balance fails', async () => {
     const sysAccount = '$SOME_SYSTEM_ACCOUNT';
     const account = 'someplayer';
     const someAdmin = 'someadmin';
@@ -263,8 +263,8 @@ test.dbOnly('stake tokens from system accounts from admin with negative balance 
 
     expect(liquid_balance_before).toBe(0);
     expect(staked_balance_before).toBe(0);
-    expect(liquid_balance_after).toBe(-7);
-    expect(staked_balance_after).toBe(7);
+    expect(liquid_balance_after).toBe(0);
+    expect(staked_balance_after).toBe(0);
 });
 
 test.dbOnly('stake tokens from system account from non-admin does not work', async () => {
