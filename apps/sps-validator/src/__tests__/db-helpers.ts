@@ -44,12 +44,13 @@ export class TestHelper extends BaseRepository {
         }
     }
 
-    insertDummyValidator(account_name: string, is_active = true, total_votes = 0, trx?: Trx) {
+    insertDummyValidator(account_name: string, is_active = true, total_votes = 0, reward_account: string | null = null, trx?: Trx) {
         return this.query(ValidatorEntity, trx).insertItem({
             account_name,
             is_active,
             total_votes: String(total_votes),
             missed_blocks: 0,
+            reward_account,
         });
     }
 

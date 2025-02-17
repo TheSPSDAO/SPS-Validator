@@ -48,7 +48,6 @@ services:
       DB: '{ "host": "pg", "port": 5432, "database": "${APP_DATABASE:-validator}", "user": "${APP_USER:-validator}", "password": "${APP_PASSWORD:-validator}" }'
       VALIDATOR_ACCOUNT: ${VALIDATOR_ACCOUNT:-}
       VALIDATOR_KEY: ${VALIDATOR_KEY:-}
-      REWARD_ACCOUNT: ${REWARD_ACCOUNT:-}
       VERSION: ${GIT_COMMIT:-development}
       ENABLE_CHECK_INS: ${ENABLE_CHECK_INS:-true}
       BLOCK_PROCESSING: ${BLOCK_PROCESSING:-true}

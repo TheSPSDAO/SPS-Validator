@@ -1,4 +1,4 @@
-import { EventLog, HiveClient, LogLevel, Plugin, Prime, Trx, log } from '@steem-monsters/splinterlands-validator';
+import { EventLog, HiveClient, LogLevel, Plugin, Prime, Trx, ValidatorRepository, log } from '@steem-monsters/splinterlands-validator';
 import { inject, singleton } from 'tsyringe';
 import config from '../../convict-config';
 import { SpsValidatorCheckInRepository } from '../../entities/validator/validator_check_in';
@@ -11,7 +11,7 @@ export class ValidatorCheckInPlugin implements Plugin, Prime {
 
     private readonly CHANGE_KEY = Symbol('CHECKIN_PLUGIN_CHANGE_KEY');
 
-    private readonly checkInAccount: string;
+    private readonly validatorAccount: string;
 
     private primed = false;
     private lastCheckInBlock: number | undefined;
@@ -26,9 +26,11 @@ export class ValidatorCheckInPlugin implements Plugin, Prime {
         private readonly hive: HiveClient,
         @inject(SpsValidatorLicenseManager)
         private readonly licenseManager: SpsValidatorLicenseManager,
+        @inject(ValidatorRepository)
+        private readonly validatorRepository: ValidatorRepository,
     ) {
-        this.checkInAccount = config.reward_account || config.validator_account;
-        this.checkInWatcher.addValidatorCheckInWatcher(this.CHANGE_KEY, () => {
+        this.validatorAccount = config.validator_account;
+        this.checkInWatcher.addValidatorCheckInWatcher(this.CHANGE_KEY, (value) => {
             this.nextCheckInBlock = this.lastCheckInBlock ? this.getNextCheckInBlock(this.lastCheckInBlock) : undefined;
         });
     }
@@ -38,14 +40,16 @@ export class ValidatorCheckInPlugin implements Plugin, Prime {
             return;
         }
         this.primed = true;
-        if (!this.checkInAccount) {
+        if (!this.validatorAccount) {
             log('No check in account configured. Not setting next check in block.', LogLevel.Warning);
             return;
         } else if (!this.checkInWatcher.validator_check_in) {
             log('Validator check in config is invalid. Not setting next check in block.', LogLevel.Warning);
             return;
         }
-        const checkIn = await this.checkInRepository.getByAccount(this.checkInAccount, trx);
+        const validator = await this.validatorRepository.lookup(this.validatorAccount, trx);
+        const rewardAccount = validator ? validator?.reward_account ?? this.validatorAccount : undefined;
+        const checkIn = rewardAccount ? await this.checkInRepository.getByAccount(rewardAccount, trx) : undefined;
         this.lastCheckInBlock = checkIn ? checkIn.last_check_in_block_num : undefined;
         this.nextCheckInBlock = this.lastCheckInBlock ? this.getNextCheckInBlock(this.lastCheckInBlock) : undefined;
         log(`Next check in block: ${this.nextCheckInBlock ?? 'asap'}`, LogLevel.Info);
@@ -59,17 +63,30 @@ export class ValidatorCheckInPlugin implements Plugin, Prime {
         if (!this.checkInWatcher.validator_check_in) {
             log('Validator check in config is invalid. Not sending check in.', LogLevel.Warning);
             return;
-        } else if (this.nextCheckInBlock && blockNumber < this.nextCheckInBlock) {
-            return;
         } else if (!this.licenseManager.isCheckInBlockWithinWindow(headBlockNumber, blockNumber)) {
             log('Check in would be too late. Not sending check in.', LogLevel.Debug);
             return;
         }
 
+        const validator = await this.validatorRepository.lookup(this.validatorAccount);
+        if (!validator || !validator.is_active) {
+            log('Validator not found or inactive. Not sending check in.', LogLevel.Warning);
+            return;
+        }
+        const rewardAccount = validator.reward_account ?? this.validatorAccount;
+
         // determine if we should check in (do we have staked licenses?). if we don't, we'll try again in the next block
-        const { can_check_in } = await this.licenseManager.getCheckIn(this.checkInAccount, blockNumber);
+        const { can_check_in } = await this.licenseManager.getCheckIn(rewardAccount, blockNumber);
         if (!can_check_in) {
             log('Cannot check in at this block.', LogLevel.Debug);
+            return;
+        }
+
+        // if we _can_ check in, but we're not at the next check in block, we should check that something didnt change
+        // like the validator becoming inactive, or the check in window changing.
+        // checking if we're within the check in window should be enough
+        const blocksToCheckIn = this.nextCheckInBlock ? blockNumber - this.nextCheckInBlock : 0;
+        if (blocksToCheckIn < this.checkInWatcher.validator_check_in!.check_in_window_blocks) {
             return;
         }
 
@@ -77,7 +94,7 @@ export class ValidatorCheckInPlugin implements Plugin, Prime {
         this.nextCheckInBlock = this.getNextCheckInBlock(blockNumber);
 
         // Check in
-        const hash = this.licenseManager.getCheckInHash(blockHash, this.checkInAccount);
+        const hash = this.licenseManager.getCheckInHash(blockHash, this.validatorAccount);
         try {
             const confirmation = await this.hive.submitCheckIn(blockNumber, hash);
             this.lastCheckInBlock = blockNumber;

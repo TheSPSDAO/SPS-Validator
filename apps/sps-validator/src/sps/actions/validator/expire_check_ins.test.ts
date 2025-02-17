@@ -12,6 +12,7 @@ const validator_rewards_settings = {
     reduction_blocks: 864000,
     reduction_pct: 1,
     start_block: 67857521,
+    paused_until_block: 67857500,
 };
 
 beforeAll(async () => {

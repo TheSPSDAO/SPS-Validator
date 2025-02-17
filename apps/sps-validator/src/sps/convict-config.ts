@@ -151,13 +151,6 @@ const schema = {
         default: 25,
         env: 'REPLAY_BATCH_SIZE',
     },
-    reward_account: {
-        format: String,
-        doc: 'The account that receives the rewards',
-        nullable: true,
-        default: null as null | string,
-        env: 'REWARD_ACCOUNT',
-    },
     validator_account: {
         format: String,
         nullable: true,

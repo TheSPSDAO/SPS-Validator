@@ -17,6 +17,13 @@ SET client_min_messages = warning;
 SET row_security = off;
 
 --
+-- Name: public; Type: SCHEMA; Schema: -; Owner: -
+--
+
+-- *not* creating schema, since initdb creates it
+
+
+--
 -- Name: promise_status; Type: TYPE; Schema: public; Owner: -
 --
 
@@ -333,6 +340,7 @@ CREATE TABLE public.validator_votes (
 
 CREATE TABLE public.validators (
     account_name character varying(20) NOT NULL,
+    reward_account character varying(20) DEFAULT NULL::character varying,
     is_active boolean NOT NULL,
     post_url character varying(1024),
     total_votes numeric(12,3) DEFAULT 0 NOT NULL,
@@ -564,6 +572,20 @@ CREATE INDEX validator_transactions_type_player_idx ON public.validator_transact
 --
 
 CREATE INDEX validator_votes_validator_idx ON public.validator_votes USING btree (validator);
+
+
+--
+-- Name: validators_active; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX validators_active ON public.validators USING btree (is_active);
+
+
+--
+-- Name: validators_reward_account; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX validators_reward_account ON public.validators USING btree (reward_account);
 
 
 --

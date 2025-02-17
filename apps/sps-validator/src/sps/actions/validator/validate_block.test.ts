@@ -14,7 +14,11 @@ beforeEach(async () => {
     await fixture.testHelper.insertDefaultConfiguration();
     await fixture.testHelper.setHiveAccount('steemmonsters');
     await fixture.testHelper.setHiveAccount('steemmonsters2');
+    await fixture.testHelper.insertDummyValidator('steemmonsters', true, 100, 'steemmonsters2');
+    await fixture.testHelper.insertDummyValidator('steemmonsters2', true, 100);
     await fixture.handle.query(ConfigEntity).where('group_name', 'validator').andWhere('name', 'max_block_age').updateItem({ value: '100' });
+    await fixture.handle.query(ConfigEntity).where('group_name', 'validator').andWhere('name', 'paused_until_block').updateItem({ value: '10' });
+    await fixture.handle.query(ConfigEntity).where('group_name', 'validator').andWhere('name', 'min_validators').updateItem({ value: '1' });
     await fixture.loader.load();
 });
 
@@ -32,66 +36,85 @@ test.dbOnly('Lots of emoji for validate_block does not crash.', () => {
 
 test.dbOnly('Inexistent block does not crash', async () => {
     await fixture.opsHelper.processOp('validate_block', 'steemmonsters', {
-        block_num: 0,
+        block_num: 50,
         hash: 'some-hash',
     });
     expect(true);
 });
 
 test.dbOnly('Existing block works', async () => {
-    await fixture.testHelper.insertDummyBlock(1, 'my-hash', 'steemmonsters');
+    await fixture.testHelper.insertDummyBlock(11, 'my-hash', 'steemmonsters');
     await fixture.opsHelper.processOp(
         'validate_block',
         'steemmonsters',
         {
-            block_num: 1,
+            block_num: 11,
             hash: 'my-hash',
         },
         { transaction: 'proper_validate_block' },
     );
-    const result = await fixture.testHelper.blockForBlockNumber(1);
+    const result = await fixture.testHelper.blockForBlockNumber(11);
     expect(result?.validation_tx).toEqual('proper_validate_block');
+});
+
+test.dbOnly('Existing block pays out', async () => {
+    await fixture.testHelper.insertDummyBlock(11, 'my-hash', 'steemmonsters2');
+    await fixture.opsHelper.processOp(
+        'validate_block',
+        'steemmonsters2',
+        {
+            block_num: 11,
+            hash: 'my-hash',
+        },
+        { transaction: 'proper_validate_block', block_reward: [10, 'SPS'] },
+    );
+    const result = await fixture.testHelper.blockForBlockNumber(11);
+    expect(result?.validation_tx).toEqual('proper_validate_block');
+
+    const balance = await fixture.testHelper.getDummyToken('steemmonsters2', 'SPS');
+    expect(balance?.balance ?? 0).toEqual(10);
 });
 
 test.dbOnly('Existing block works with reward_account', async () => {
-    await fixture.testHelper.insertDummyBlock(1, 'my-hash', 'steemmonsters');
+    await fixture.testHelper.insertDummyBlock(11, 'my-hash', 'steemmonsters');
     await fixture.opsHelper.processOp(
         'validate_block',
         'steemmonsters',
         {
-            block_num: 1,
+            block_num: 11,
             hash: 'my-hash',
-            reward_account: 'steemmonsters2',
         },
         { transaction: 'proper_validate_block' },
     );
-    const result = await fixture.testHelper.blockForBlockNumber(1);
+    const result = await fixture.testHelper.blockForBlockNumber(11);
     expect(result?.validation_tx).toEqual('proper_validate_block');
 });
 
-test.dbOnly('Existing block works with invalid reward_account does not work', async () => {
-    await fixture.testHelper.insertDummyBlock(1, 'my-hash', 'steemmonsters');
+test.dbOnly('Existing block pays out with with reward_account', async () => {
+    await fixture.testHelper.insertDummyBlock(11, 'my-hash', 'steemmonsters');
     await fixture.opsHelper.processOp(
         'validate_block',
         'steemmonsters',
         {
-            block_num: 1,
+            block_num: 11,
             hash: 'my-hash',
-            reward_account: 'notanaccount',
         },
-        { transaction: 'proper_validate_block' },
+        { transaction: 'proper_validate_block', block_reward: [10, 'SPS'] },
     );
-    const result = await fixture.testHelper.blockForBlockNumber(1);
-    expect(result?.validation_tx).toBeNull();
+    const result = await fixture.testHelper.blockForBlockNumber(11);
+    expect(result?.validation_tx).toEqual('proper_validate_block');
+
+    const balance = await fixture.testHelper.getDummyToken('steemmonsters2', 'SPS');
+    expect(balance?.balance ?? 0).toEqual(10);
 });
 
 test.dbOnly('Existing old block does not work', async () => {
-    await fixture.testHelper.insertDummyBlock(1, 'my-hash', 'steemmonsters');
+    await fixture.testHelper.insertDummyBlock(11, 'my-hash', 'steemmonsters');
     await fixture.opsHelper.processOp(
         'validate_block',
         'steemmonsters',
         {
-            block_num: 1,
+            block_num: 11,
             hash: 'my-hash',
         },
         {
@@ -99,36 +122,46 @@ test.dbOnly('Existing old block does not work', async () => {
             block_num: 7331,
         },
     );
-    const result = await fixture.testHelper.blockForBlockNumber(1);
+    const result = await fixture.testHelper.blockForBlockNumber(11);
+    expect(result?.validation_tx).toBeNull();
+});
+
+test.dbOnly('Paused block does not work', async () => {
+    await fixture.testHelper.insertDummyBlock(5, 'my-hash', 'steemmonsters');
+    await fixture.opsHelper.processOp('validate_block', 'steemmonsters', {
+        block_num: 5,
+        hash: 'my-hash',
+    });
+    const result = await fixture.testHelper.blockForBlockNumber(5);
     expect(result?.validation_tx).toBeNull();
 });
 
 test.dbOnly('Existing block with existing auth', async () => {
-    await fixture.testHelper.insertDummyBlock(1, 'my-hash', 'steemmonsters', 'existing-validation-trx');
+    await fixture.testHelper.insertDummyBlock(11, 'my-hash', 'steemmonsters', 'existing-validation-trx');
     await fixture.opsHelper.processOp('validate_block', 'steemmonsters', {
-        block_num: 1,
+        block_num: 11,
         hash: 'my-hash',
     });
-    const result = await fixture.testHelper.blockForBlockNumber(1);
+    const result = await fixture.testHelper.blockForBlockNumber(11);
     expect(result?.validation_tx).toEqual('existing-validation-trx');
 });
 
 test.dbOnly('Existing block with wrong hash', async () => {
-    await fixture.testHelper.insertDummyBlock(1, 'my-hash', 'steemmonsters');
+    await fixture.testHelper.insertDummyBlock(11, 'my-hash', 'steemmonsters');
     await fixture.opsHelper.processOp('validate_block', 'steemmonsters', {
-        block_num: 1,
+        block_num: 11,
         hash: 'not-my-hash',
     });
-    const result = await fixture.testHelper.blockForBlockNumber(1);
+    const result = await fixture.testHelper.blockForBlockNumber(11);
     expect(result?.validation_tx).toBeNull();
 });
 
 test.dbOnly('Existing block with wrong validator', async () => {
-    await fixture.testHelper.insertDummyBlock(1, 'my-hash', 'not-steemmonsters');
+    await fixture.testHelper.insertDummyBlock(11, 'my-hash', 'not-steemmonsters');
     await fixture.opsHelper.processOp('validate_block', 'steemmonsters', {
-        block_num: 1,
+        block_num: 11,
         hash: 'not-my-hash',
     });
-    const result = await fixture.testHelper.blockForBlockNumber(1);
+    const result = await fixture.testHelper.blockForBlockNumber(11);
     expect(result?.validation_tx).toBeNull();
 });

@@ -187,20 +187,20 @@ export class SpsValidatorLicenseManager implements VirtualPayloadSource {
             };
         }
 
+        const poolPaused = block_num < this.#checkInConfig.paused_until_block;
+
         const checkIn = await this.checkInRepository.getByAccount(account, trx);
         const activatedLicenses = await this.balanceRepository.getBalance(account, TOKENS.ACTIVATED_LICENSE, trx);
         if (!checkIn) {
             return {
                 account,
-                can_check_in: activatedLicenses > 0,
+                can_check_in: !poolPaused && activatedLicenses > 0,
                 is_valid: false,
             };
         }
 
-        const canCheckIn =
-            activatedLicenses > 0 &&
-            block_num >= this.#checkInConfig.paused_until_block &&
-            block_num - checkIn.last_check_in_block_num >= this.#checkInConfig!.check_in_interval_blocks;
+        const canCheckIn = activatedLicenses > 0 && !poolPaused && block_num - checkIn.last_check_in_block_num >= this.#checkInConfig!.check_in_interval_blocks;
+
         return {
             account,
             can_check_in: canCheckIn,
@@ -248,7 +248,7 @@ export class SpsValidatorLicenseManager implements VirtualPayloadSource {
         return block_num - this.#checkInConfig!.check_in_window_blocks - this.#checkInConfig!.check_in_interval_blocks;
     }
 
-    private async expireCheckIn(account: string, action: IAction, trx?: Trx) {
+    public async expireCheckIn(account: string, action: IAction, trx?: Trx) {
         const results: EventLog[] = [];
 
         results.push(await this.checkInRepository.setInactive(account, trx));

@@ -50,6 +50,7 @@ function ErrorCard({ error, retry }: { error: Error; retry: () => void }) {
 
 function RegisterCard({ account, registered }: { account: string; registered: () => void }) {
     const [postUrl, setPostUrl] = useState('');
+    const [rewardAccount, setRewardAccount] = useState('');
     const [error, setError] = useState('');
     const [progress, setProgress] = useState(false);
 
@@ -61,6 +62,7 @@ function RegisterCard({ account, registered }: { account: string; registered: ()
                 {
                     is_active: false,
                     post_url: postUrl,
+                    reward_account: rewardAccount === '' ? null : rewardAccount,
                 },
                 account,
             );
@@ -104,6 +106,16 @@ function RegisterCard({ account, registered }: { account: string; registered: ()
                                 onChange={(e) => setPostUrl(e.target.value.trim())}
                             />
                         </div>
+                        <div>
+                            <Input
+                                size="lg"
+                                label="Reward Account"
+                                placeholder="The accounts that your nodes rewards will be sent to. If not set, they will go to the nodes account."
+                                value={rewardAccount}
+                                disabled={progress}
+                                onChange={(e) => setRewardAccount(e.target.value.trim())}
+                            />
+                        </div>
                     </form>
                 </CardBody>
                 <CardFooter>
@@ -127,6 +139,7 @@ function RegisterCard({ account, registered }: { account: string; registered: ()
 function ManageCard({ account, validator, reloadValidator }: { account: string; validator: Validator; reloadValidator: () => void }) {
     const [isActive, setIsActive] = useState<boolean>(validator.is_active);
     const [postUrl, setPostUrl] = useState<string>(validator.post_url ?? '');
+    const [rewardAccount, setRewardAccount] = useState<string>(validator.reward_account ?? '');
     const [error, setError] = useState('');
     const [progress, setProgress] = useState(false);
 
@@ -138,6 +151,7 @@ function ManageCard({ account, validator, reloadValidator }: { account: string; 
                 {
                     is_active: isActive,
                     post_url: postUrl,
+                    reward_account: rewardAccount === '' ? null : rewardAccount,
                 },
                 account,
             );
@@ -195,6 +209,16 @@ function ManageCard({ account, validator, reloadValidator }: { account: string; 
                                     value={postUrl}
                                     disabled={progress}
                                     onChange={(e) => setPostUrl(e.target.value.trim())}
+                                />
+                            </div>
+                            <div>
+                                <Input
+                                    size="lg"
+                                    label="Reward Account"
+                                    placeholder="The accounts that your nodes rewards will be sent to. If not set, they will go to the nodes account."
+                                    value={rewardAccount}
+                                    disabled={progress}
+                                    onChange={(e) => setRewardAccount(e.target.value.trim())}
                                 />
                             </div>{' '}
                             {!isActive && (

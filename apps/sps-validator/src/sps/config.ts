@@ -110,6 +110,7 @@ export class SpsConfigLoader
         validator_check_in: {
             check_in_window_blocks: 300,
             check_in_interval_blocks: 28800,
+            paused_until_block: 0,
         },
         price_feed: {
             interval_blocks: 200,

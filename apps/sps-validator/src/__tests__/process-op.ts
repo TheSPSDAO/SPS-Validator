@@ -1,6 +1,6 @@
 import { ConfigType } from '../sps/convict-config';
 import { inject, singleton } from 'tsyringe';
-import { OperationFactory, TransactionStarter, Trx } from '@steem-monsters/splinterlands-validator';
+import { OperationFactory, payout, TransactionStarter, Trx } from '@steem-monsters/splinterlands-validator';
 import seedrandom from 'seedrandom';
 
 // TODO: Can be made an enum in the long run;
@@ -16,6 +16,7 @@ type OpOpts = {
     is_active: boolean;
     block_time: Date;
     is_virtual: boolean;
+    block_reward: payout;
     trx: Trx;
 };
 
@@ -27,7 +28,17 @@ export class OpsHelper {
         @inject(TransactionStarter) private readonly transactionStarter: TransactionStarter,
     ) {}
 
-    private async processOpHelper(op: any, block_num: number, block_id: string, prev_block_id: string, trx_id: string, block_time: Date, isVirtual: boolean, trx?: Trx) {
+    private async processOpHelper(
+        op: any,
+        block_num: number,
+        block_id: string,
+        prev_block_id: string,
+        trx_id: string,
+        block_time: Date,
+        isVirtual: boolean,
+        block_reward: payout,
+        trx?: Trx,
+    ) {
         const operation = this.factory.build(
             {
                 block_num,
@@ -36,7 +47,7 @@ export class OpsHelper {
                 block_id,
                 prng: seedrandom(`${block_id}${prev_block_id}`),
             },
-            0,
+            block_reward,
             op,
             trx_id,
             0,
@@ -55,7 +66,7 @@ export class OpsHelper {
         method: Method,
         username: string,
         payload: VirtualPayload,
-        { transaction = 'some-trx', block_num = 1, is_active = true, block_time = new Date(), is_virtual = true, trx }: Partial<OpOpts> = {},
+        { transaction = 'some-trx', block_num = 1, is_active = true, block_time = new Date(), is_virtual = true, block_reward = 0, trx }: Partial<OpOpts> = {},
     ) {
         const auth: Record<string, unknown> = {};
         auth[is_active ? 'required_auths' : 'required_posting_auths'] = [username];
@@ -75,6 +86,7 @@ export class OpsHelper {
             transaction,
             block_time,
             is_virtual,
+            block_reward,
             trx,
         );
     }

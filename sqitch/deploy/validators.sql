@@ -4,6 +4,7 @@ BEGIN;
 
 CREATE TABLE IF NOT EXISTS :APP_SCHEMA.validators (
     account_name character varying (20) NOT NULL,
+    reward_account character varying (20) DEFAULT NULL,
     is_active boolean NOT NULL,
     post_url character varying(1024) COLLATE pg_catalog."default",
     total_votes numeric(12, 3) NOT NULL DEFAULT 0,
@@ -12,6 +13,8 @@ CREATE TABLE IF NOT EXISTS :APP_SCHEMA.validators (
 );
 
 CREATE INDEX IF NOT EXISTS validators_total_votes_idx ON :APP_SCHEMA.validators USING btree (total_votes DESC);
+CREATE INDEX IF NOT EXISTS validators_reward_account ON :APP_SCHEMA.validators USING btree (reward_account);
+CREATE INDEX IF NOT EXISTS validators_active ON :APP_SCHEMA.validators USING btree (is_active);
 
 CREATE TABLE IF NOT EXISTS :APP_SCHEMA.validator_votes (
     voter character varying (20) NOT NULL,
@@ -32,29 +35,11 @@ CREATE TABLE IF NOT EXISTS :APP_SCHEMA.validator_vote_history (
     CONSTRAINT validator_vote_history_pkey PRIMARY KEY (transaction_id)
 );
 
-GRANT
-SELECT
-,
-INSERT
-,
-UPDATE
-    ON TABLE :APP_SCHEMA.validators TO :APP_USER;
+GRANT SELECT, INSERT, UPDATE ON TABLE :APP_SCHEMA.validators TO :APP_USER;
 
-GRANT
-SELECT
-,
-INSERT
-,
-UPDATE
-    ON TABLE :APP_SCHEMA.validator_votes TO :APP_USER;
+GRANT SELECT, INSERT , UPDATE ON TABLE :APP_SCHEMA.validator_votes TO :APP_USER;
 
-GRANT
-SELECT
-,
-INSERT
-,
-UPDATE
-    ON TABLE :APP_SCHEMA.validator_vote_history TO :APP_USER;
+GRANT SELECT , INSERT , UPDATE ON TABLE :APP_SCHEMA.validator_vote_history TO :APP_USER;
 
 ALTER TABLE
     :APP_SCHEMA.blocks

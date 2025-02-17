@@ -40,6 +40,7 @@ type _sps = type_check<TokenConfig, InferType<typeof token_schema>>;
 
 export const validator_schema = object({
     reward_start_block: number().integer().positive().required(),
+    paused_until_block: number().integer().required(),
     tokens_per_block: number().min(0).required(),
     reward_token: string().strict().required(),
     min_validators: number().min(0).required(),
