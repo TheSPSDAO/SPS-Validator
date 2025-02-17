@@ -45,8 +45,17 @@ export class StakeTokensMultiAction extends AdminAction<typeof stake_tokens_mult
             throw new ValidationError('Active key is required when staking to someone else.', this, ErrorType.ActiveKeyRequired);
         }
 
+        // group transfers by from account because we could have multiple transfers from the same account within the array
+        const groupedTransfers = this.params.multi.reduce((acc, cur) => {
+            if (!acc[cur.from]) {
+                acc[cur.from] = 0;
+            }
+            acc[cur.from] += cur.qty;
+            return acc;
+        }, {} as Record<string, number>);
+
         // check that the accounts have enough tokens
-        for (const { qty, from } of this.params.multi) {
+        for (const [from, qty] of Object.entries(groupedTransfers)) {
             const balance = await this.balanceRepository.getBalance(from, this.params.token, trx);
             if (balance < qty) {
                 throw new ValidationError('Cannot stake more than the currently available liquid token balance.', this, ErrorType.InsufficientBalance);
