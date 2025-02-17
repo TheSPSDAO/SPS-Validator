@@ -25,6 +25,7 @@ beforeEach(async () => {
     await fixture.testHelper.setHiveAccount('steemmonsters4');
     await fixture.testHelper.setHiveAccount('steemmonsters5');
     await fixture.testHelper.setHiveAccount('steemmonsters6');
+    await fixture.testHelper.setHiveAccount('steemmonsters7');
 
     await fixture.testHelper.insertDummyValidator('steemmonsters', true, 100);
     await fixture.testHelper.insertDummyValidator('steemmonsters2', true, 100, 'steemmonsters3');
@@ -49,24 +50,24 @@ test.dbOnly('Lots of emoji for update_validator does not crash.', () => {
 });
 
 test.dbOnly('Non-boolean is_active does not crash', async () => {
-    await fixture.opsHelper.processOp('update_validator', 'steemmonsters', {
+    await fixture.opsHelper.processOp('update_validator', 'steemmonsters7', {
         is_active: 'bagel',
     });
-    const { validators } = await fixture.Validator.getValidators();
-    expect(validators?.length).toBe(0);
+    const validator = await fixture.Validator.lookup('steemmonsters7');
+    expect(validator).toBeFalsy();
 });
 
 test.dbOnly('Non-string post_url does not crash', async () => {
-    await fixture.opsHelper.processOp('update_validator', 'steemmonsters', {
+    await fixture.opsHelper.processOp('update_validator', 'steemmonsters7', {
         is_active: true,
         post_url: 12,
     });
-    const { validators } = await fixture.Validator.getValidators();
-    expect(validators?.length).toBe(0);
+    const validator = await fixture.Validator.lookup('steemmonsters7');
+    expect(validator).toBeFalsy();
 });
 
 test.dbOnly('Inserting new validator works', async () => {
-    await fixture.opsHelper.processOp('update_validator', 'steemmonsters', {
+    await fixture.opsHelper.processOp('update_validator', 'steemmonsters7', {
         is_active: true,
     });
     const {
@@ -78,14 +79,14 @@ test.dbOnly('Inserting new validator works', async () => {
 test.dbOnly('Inserting new validator with posting auth does not work', async () => {
     await fixture.opsHelper.processOp(
         'update_validator',
-        'steemmonsters',
+        'steemmonsters7',
         {
             is_active: true,
         },
         { is_active: false },
     );
-    const { validators } = await fixture.Validator.getValidators();
-    expect(validators?.length).toBe(0);
+    const validator = await fixture.Validator.lookup('steemmonsters7');
+    expect(validator).toBeFalsy();
 });
 
 test.dbOnly('Upserting validator state works', async () => {
@@ -151,7 +152,7 @@ test.dbOnly('Changing reward account takes old one out of reward pool', async ()
 
 test.dbOnly('Setting node to inactive takes reward account out of reward pool', async () => {
     await fixture.testHelper.insertCheckIn({
-        account: 'steemmonsters',
+        account: 'steemmonsters4',
         status: 'active',
         last_check_in: new Date(),
         last_check_in_block_num: 1,

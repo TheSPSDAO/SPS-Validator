@@ -38,10 +38,10 @@ export class UpdateValidatorAction extends Action<typeof update_validator.action
         const validator = await this.validatorRepository.lookup(this.op.account, trx);
         if (validator && !this.params.is_active) {
             // setting to inactive
-            await this.removeFromLicenseRewardPool(validator, trx);
+            events.push(...(await this.removeFromLicenseRewardPool(validator, trx)));
         } else if (validator && this.params.reward_account !== validator.reward_account) {
             // updating the reward account
-            await this.removeFromLicenseRewardPool(validator, trx);
+            events.push(...(await this.removeFromLicenseRewardPool(validator, trx)));
         }
 
         events.push(

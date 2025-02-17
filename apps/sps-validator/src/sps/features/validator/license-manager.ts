@@ -249,8 +249,14 @@ export class SpsValidatorLicenseManager implements VirtualPayloadSource {
     }
 
     public async expireCheckIn(account: string, action: IAction, trx?: Trx) {
+        const checkIn = await this.checkInRepository.getByAccount(account, trx);
+        if (!checkIn) {
+            return [];
+        }
+
         const results: EventLog[] = [];
 
+        // set inactive
         results.push(await this.checkInRepository.setInactive(account, trx));
 
         // unstake from the pool

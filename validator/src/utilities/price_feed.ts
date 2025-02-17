@@ -205,7 +205,7 @@ export class TopPriceFeedWrapper implements PriceFeedProducer {
         if (!this.watcher.validator) {
             return false;
         } else if (this.watcher.validator.paused_until_block > 0) {
-            return this.watcher.validator.paused_until_block <= pe.block_num;
+            return this.watcher.validator.paused_until_block < pe.block_num;
         } else {
             return this.watcher.validator.reward_start_block <= pe.block_num;
         }

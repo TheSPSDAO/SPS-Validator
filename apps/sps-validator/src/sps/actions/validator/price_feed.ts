@@ -122,33 +122,17 @@ class AdminBuilder implements ActionFactory<LegacyAdminPriceFeedAction> {
     }
 }
 
-class LegacyTopPriceFeedAction extends Action<typeof legacy_price_feed.actionSchema> {
-    private readonly proxy: TopPriceFeedAction;
-    constructor(producer: PriceFeedProducer, op: OperationData, data: unknown, index: number) {
-        super(legacy_price_feed, op, data, index);
-        this.proxy = new TopPriceFeedAction(op, { action: this.id, params: normalizeLegacyPriceFeed(this.params) }, index, producer);
-    }
-
-    validate(trx?: Trx) {
-        return this.proxy.validate(trx);
-    }
-
-    protected process(trx?: Trx) {
-        return this.proxy.process(trx);
-    }
-}
-
 @injectable()
-class TopBuilder implements ActionFactory<LegacyTopPriceFeedAction> {
+class TopBuilder implements ActionFactory<TopPriceFeedAction> {
     constructor(@inject(TopPriceFeedWrapper) private readonly producer: TopPriceFeedWrapper) {}
     build(op: OperationData, data: unknown, index: number) {
-        return new LegacyTopPriceFeedAction(this.producer, op, data, index);
+        return new TopPriceFeedAction(op, data, index, this.producer);
     }
 }
 
 @injectable()
 @autoroute()
-export class Router extends ActionRouter<LegacyAdminPriceFeedAction | LegacyTopPriceFeedAction> {
+export class Router extends ActionRouter<LegacyAdminPriceFeedAction | TopPriceFeedAction> {
     static start_block(c: Compute) {
         if (c === undefined) {
             return Number.MAX_SAFE_INTEGER;
