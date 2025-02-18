@@ -1,7 +1,6 @@
 import {
     ActionFactory,
     ActionRouter,
-    autoroute,
     OperationData,
     PriceFeedProducer,
     Schema,
@@ -14,6 +13,7 @@ import {
     Action,
     AdminAction,
     EventLog,
+    addRoutesForClass,
 } from '@steem-monsters/splinterlands-validator';
 import { inject, injectable } from 'tsyringe';
 import { InferType, number, object } from 'yup';
@@ -130,8 +130,8 @@ class TopBuilder implements ActionFactory<TopPriceFeedAction> {
     }
 }
 
+// @autoroute() do not use this
 @injectable()
-@autoroute()
 export class Router extends ActionRouter<LegacyAdminPriceFeedAction | TopPriceFeedAction> {
     static start_block(c: Compute) {
         if (c === undefined) {
@@ -153,5 +153,6 @@ export class Router extends ActionRouter<LegacyAdminPriceFeedAction | TopPriceFe
         super();
         this.adminBuilder = adminBuilder;
         this.topBuilder = topBuilder;
+        addRoutesForClass(Router, this);
     }
 }
