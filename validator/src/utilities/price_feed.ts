@@ -204,11 +204,9 @@ export class TopPriceFeedWrapper implements PriceFeedProducer {
     private switchedOver(pe: PriceEntry) {
         if (!this.watcher.validator) {
             return false;
-        } else if (this.watcher.validator.paused_until_block > 0) {
-            return this.watcher.validator.paused_until_block < pe.block_num;
-        } else {
-            return this.watcher.validator.reward_start_block <= pe.block_num;
         }
+        const startBlock = Math.max(this.watcher.validator.reward_start_block, this.watcher.validator.paused_until_block);
+        return pe.block_num >= startBlock;
     }
 
     private async getTopValidators(trx?: Trx) {

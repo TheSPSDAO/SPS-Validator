@@ -59,6 +59,8 @@ export function route<V = any>(name: string, bro?: BlockRangeOpts<V>) {
 
 /**
  * Annotate a class that implements a Router. Ensures all @route annotations are hooked up at instance construction.
+ *
+ * note: this is broken and you should not use it. it wipes out all the previous decorator metadata which breaks injection.
  */
 export function autoroute() {
     return <T extends Constructor<IMutableRouter<any, any>>>(constructor: T) => {
@@ -73,4 +75,12 @@ export function autoroute() {
             }
         };
     };
+}
+
+export function addRoutesForClass<T extends Constructor<IMutableRouter<any, any>>>(constructor: T, instance: InstanceType<T>) {
+    const delayedRoutes = Meta.getRoutes(constructor);
+    const routes = delayedRoutes.map((delayedRoute) => delayedRoute(instance));
+    for (const route of routes) {
+        instance.addRoute(route);
+    }
 }

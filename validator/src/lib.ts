@@ -91,7 +91,7 @@ export { PoolManager, PoolSerializer } from './utilities/pool_manager';
 export { EntryPoint } from './entry-point';
 export { EventLog, EventTypes } from './entities/event_log';
 export type { ExtractParamsType } from './utilities/action_type';
-export { autoroute, route } from './libs/routing/decorators';
+export { autoroute, route, addRoutesForClass } from './libs/routing/decorators';
 export { BlockRangeConfig, Route } from './libs/routing';
 export type { BlockRangeOpts } from './libs/routing';
 export * as Schema from './actions/schema';

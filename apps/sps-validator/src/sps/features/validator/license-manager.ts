@@ -51,6 +51,11 @@ export class SpsValidatorLicenseManager implements VirtualPayloadSource {
     }
 
     async process(block: BlockRef, trx?: Trx): Promise<ProcessResult[]> {
+        if (this.#checkInConfig === undefined) {
+            log('Invalid check in config. Ignoring check in expiration.', LogLevel.Warning);
+            return [];
+        }
+
         const expiredBlockNum = this.getExpiredBlockNum(block.block_num);
         const expiredCheckIns = await this.checkInRepository.countExpired(expiredBlockNum, trx);
         if (expiredCheckIns === 0) {
@@ -299,6 +304,9 @@ export class SpsValidatorLicenseManager implements VirtualPayloadSource {
      * @param check_in_block_num check in block number
      */
     isCheckInBlockWithinWindow(current_block_num: number, check_in_block_num: number) {
+        if (!this.#checkInConfig) {
+            return false;
+        }
         return current_block_num - check_in_block_num <= this.#checkInConfig!.check_in_window_blocks;
     }
 

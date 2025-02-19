@@ -80,6 +80,7 @@ export class BlockProcessor<T extends SynchronisationConfig> {
                     if (!(BlockProcessor.isCustomJsonOperation(op) && (this.isValidatorOperation(op) || this.isSpecialCustomJsonOperation(op)))) {
                         continue;
                     }
+
                     const operation = this.operationFactory.build(block, reward, op, t.id, op_index);
                     operations.push(operation);
                     await operation.process(trx);
@@ -127,9 +128,11 @@ export class BlockProcessor<T extends SynchronisationConfig> {
 
     private isSpecialCustomJsonOperation(op: CustomJsonOperation): boolean {
         const special_id = this.special_ops.get(op[1].id);
-        op[1].id = special_id ?? op[1].id;
+        if (!special_id) return false;
 
-        return !!special_id;
+        op[1].id = `${this.prefix.custom_json_prefix}_${special_id}`;
+
+        return true;
     }
 
     private isValidatorOperation(op: CustomJsonOperation): boolean {
