@@ -65,7 +65,7 @@ export class DelegationPromiseHandler extends PromiseHandler {
     override async validateFulfillPromise(request: HandlerFulfillPromiseRequest, promise: PromiseEntity, action: IAction, trx?: Trx): Promise<Result<void, Error>> {
         const paramsValid = delegation_promise_params_schema.isValidSync(promise.params);
         if (!paramsValid) {
-            return Result.Err(new ValidationError('Invalid promise parameters.', action, ErrorType.InvalidPromiseParams));
+            return Result.Err(new ValidationError('Invalid fill delegation promise parameters.', action, ErrorType.InvalidPromiseParams));
         }
 
         // the params on the promise have already been validated, so we can trust the payload here.
@@ -112,7 +112,7 @@ export class DelegationPromiseHandler extends PromiseHandler {
         const promiseParams = promises.map((promise) => promise.params as DelegationPromiseParams);
         const allSameToken = promiseParams.every((params) => params.token === promiseParams[0].token);
         if (!allSameToken) {
-            return Result.Err(new ValidationError('All promises must be for the same token.', action, ErrorType.DelegationPromiseTokenMismatch));
+            return Result.Err(new ValidationError('All delegation bids must be for the same token.', action, ErrorType.DelegationPromiseTokenMismatch));
         }
 
         // TODO could support authority with the metadata parameter
@@ -201,5 +201,13 @@ export class DelegationPromiseHandler extends PromiseHandler {
             trx,
         );
         return [...undelegateLogs, ...delegateLogs];
+    }
+
+    override getPromisesNotFoundErrorMessage(ids: string[]): string {
+        return `Delegation bids with ids [${ids.join(', ')}] not found.`;
+    }
+
+    override getPromisesNotOpenErrorMessage(ids: string[]): string {
+        return `Delegation bids with ids [${ids.join(', ')}] are not open.`;
     }
 }
