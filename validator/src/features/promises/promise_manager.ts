@@ -140,9 +140,9 @@ export class PromiseManager implements VirtualPayloadSource {
         }
         const promise = await this.promiseRepository.getPromiseByTypeAndId(request.type, request.id, trx);
         if (!promise) {
-            return Result.Err(new ValidationError('Promise not found', action, ErrorType.InvalidPromise));
+            return Result.Err(new ValidationError(handler.getPromisesNotFoundErrorMessage([request.id]), action, ErrorType.InvalidPromise));
         } else if (promise.status !== 'open') {
-            return Result.Err(new ValidationError('Promise is not open', action, ErrorType.InvalidPromiseStatus));
+            return Result.Err(new ValidationError(handler.getPromisesNotOpenErrorMessage([request.id]), action, ErrorType.InvalidPromiseStatus));
         }
 
         const handlerResult = await handler.validateFulfillPromise(request, promise, action, trx);
@@ -190,10 +190,16 @@ export class PromiseManager implements VirtualPayloadSource {
         }
         const ids = [...new Set(request.ids)];
         const promises = await this.promiseRepository.getPromisesByTypeAndIds(request.type, ids, trx);
-        if (promises.length !== ids.length) {
-            return Result.Err(new ValidationError('Some promises not found', action, ErrorType.InvalidPromise));
-        } else if (promises.some((p) => p.status !== 'open')) {
-            return Result.Err(new ValidationError('Some promises are not open', action, ErrorType.InvalidPromiseStatus));
+
+        const notFound = ids.filter((id) => !promises.some((p) => p.ext_id === id));
+        if (notFound.length > 0) {
+            const errorMessage = handler.getPromisesNotFoundErrorMessage(notFound);
+            return Result.Err(new ValidationError(errorMessage, action, ErrorType.InvalidPromise));
+        }
+        const notOpen = promises.filter((p) => p.status !== 'open').map((p) => p.ext_id);
+        if (notOpen.length > 0) {
+            const errorMessage = handler.getPromisesNotOpenErrorMessage(notOpen);
+            return Result.Err(new ValidationError(errorMessage, action, ErrorType.InvalidPromiseStatus));
         }
 
         const handlerResult = await handler.validateFulfillPromises(request, promises, action, trx);

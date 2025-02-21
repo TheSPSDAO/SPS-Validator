@@ -17,19 +17,28 @@
                 "bundle": true
             },
             "configurations": {
+                "development": {
+                    "sourcemap": true,
+                    "optimization": false
+                },
                 "production": {
                     "optimization": true,
                     "extractLicenses": true,
-                    "sourceMap": true
+                    "sourcemap": true
                 }
             }
         },
         "serve": {
             "executor": "@nx/js:node",
             "options": {
-                "buildTarget": "sps-validator:build"
+                "buildTarget": "sps-validator:build",
+                "inspect": "inspect",
+                "port": 9229
             },
             "configurations": {
+                "development": {
+                    "buildTarget": "sps-validator:build:development"
+                },
                 "production": {
                     "buildTarget": "sps-validator:build:production"
                 }

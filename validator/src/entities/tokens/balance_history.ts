@@ -61,7 +61,7 @@ export class BalanceHistoryRepository extends BaseRepository {
         return {
             ...entry,
             balance_start: String(entry.balance_start),
-            balance_end: String(entry.balance_end),
+            balance_end: entry.balance_end.toFixed(3),
         };
     }
 

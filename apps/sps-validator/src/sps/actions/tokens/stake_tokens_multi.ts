@@ -68,7 +68,7 @@ export class StakeTokensMultiAction extends AdminAction<typeof stake_tokens_mult
     async process(trx?: Trx): Promise<EventLog[]> {
         const logs: EventLog[] = [];
         const totalQty = this.params.multi.reduce((acc, cur) => acc + cur.qty, 0);
-        logs.push(...(await this.stakingRewardsRepository.claimUnclaimedRewards(this, this.params.to_player!, this.params.token, totalQty, trx)));
+        logs.push(...(await this.stakingRewardsRepository.claimUnclaimedRewards(this, this.params.to_player!, this.stakedToken!, totalQty, trx)));
         for (const { qty, from } of this.params.multi) {
             logs.push(
                 ...(await this.stakingRewardsRepository.updatedBalancesAfterStaking(

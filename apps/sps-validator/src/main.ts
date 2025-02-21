@@ -3,12 +3,16 @@ import { EntryPoint } from '@steem-monsters/splinterlands-validator';
 import { CompositionRoot, container } from './sps/composition-root';
 
 async function start(): Promise<void> {
-    CompositionRoot.assertValidRegistry();
-    const ep = container.resolve(EntryPoint);
-    await ep.preflightCheck();
-    await ep.start();
+    try {
+        CompositionRoot.assertValidRegistry();
+        const ep = container.resolve(EntryPoint);
+        await ep.preflightCheck();
+        await ep.start();
+    } catch (e) {
+        console.error('Error while starting validator');
+        console.error(e);
+        process.exit(1);
+    }
 }
 
-if (require.main === module) {
-    start();
-}
+start();

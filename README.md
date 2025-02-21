@@ -26,7 +26,7 @@ You need to re-build the validator when getting started or when updating to a ne
 
 - Set the `VALIDATOR_ACCOUNT` and `VALIDATOR_KEY` (posting key) environment variables in your .env file
 - If you've already started your node, run `./run.sh rebuild_service validator` to apply the new environment variables
-- Go to the management ui, http://localhost:8888/validator-nodes/manage, and follow the registration steps. Post URL is NOT required.
+- Go to the management ui, http://localhost:8888/validator-nodes/manage, and follow the registration steps. Post URL is NOT required. If you want to direct your rewards to another account (block validation and license rewards), you can set the reward account for your node during registration.
 - _(Note)_ If you have just restored from a snapshot, you will have to wait until your node catches up before your UI will see you as registered. You can use the shared management UI here which will most likely be caught up: https://thespsdao.github.io/SPS-Validator/validator-nodes/manage.
 - _(Note)_ The first time you register, your node will be set to "inactive", and you will not be considered for block validation.
 - After you've registered and your local node is caught up, you can set your node to active on the Manage Validator Node page.

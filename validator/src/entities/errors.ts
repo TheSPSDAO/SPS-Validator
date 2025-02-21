@@ -34,6 +34,7 @@ export enum ErrorType {
     NoActiveDelegation = 151,
     CannotUndelegateMoreThanPending = 152,
     DelegationAuthorityNotAllowed = 153,
+    InvalidUnstakingQty = 154,
     UnknownValidator = 210,
     InactiveValidator = 211,
     DoubleValidatorVote = 212,

@@ -79,4 +79,12 @@ export abstract class PromiseHandler {
     cancelPromise(request: HandlerCompletePromiseRequest, promise: PromiseEntity, action: IAction, trx?: Trx): Promise<EventLog[]> {
         return Promise.resolve([]);
     }
+
+    getPromisesNotFoundErrorMessage(ids: string[]): string {
+        return `Some promises not found: ${ids.join(', ')}`;
+    }
+
+    getPromisesNotOpenErrorMessage(ids: string[]): string {
+        return `Some promises are not open: ${ids.join(', ')}`;
+    }
 }

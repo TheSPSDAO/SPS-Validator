@@ -30,6 +30,10 @@ export class UnstakeTokensAction extends Action<typeof unstake_tokens.actionSche
             throw new ValidationError('Unstaking is not supported for the specified token.', this, ErrorType.NoStakingToken);
         }
 
+        if (this.params.qty < 0.04) {
+            throw new ValidationError('Minimum unstake amount is 0.04.', this, ErrorType.InvalidUnstakingQty);
+        }
+
         // Check that the player has enough tokens staked in their account
         const balance = await this.balanceRepository.getBalance(this.op.account, staked, trx);
 
