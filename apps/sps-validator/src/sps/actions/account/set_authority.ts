@@ -20,15 +20,11 @@ export class SetAuthorityAction extends Action<typeof set_authority.actionSchema
     }
 
     async process(trx?: Trx) {
-        const event_log = await this.hiveAccountRepository.setAuthority(this.op.account, this.getAuthority(), trx);
+        const authority = {
+            delegation: this.params.delegation,
+        };
+        const event_log = await this.hiveAccountRepository.setAuthority(this.op.account, authority, trx);
         return [event_log];
-    }
-
-    /**
-     * Override this to customize the authority set in the db
-     */
-    protected getAuthority() {
-        return this.params;
     }
 }
 

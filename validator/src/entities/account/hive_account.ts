@@ -17,7 +17,7 @@ export class HiveAccountRepository extends BaseRepository {
     }
 
     public async setAuthority(account: string, authority: Authority, trx?: Trx) {
-        const result = this.query(HiveAccountEntity, trx).where('name', account).updateItemWithReturning({ authority });
+        const result = await this.query(HiveAccountEntity, trx).where('name', account).updateItemWithReturning({ authority });
         return new EventLog(EventTypes.UPDATE, HiveAccountEntity, result);
     }
 
