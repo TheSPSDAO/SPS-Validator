@@ -51,6 +51,7 @@ if ! command -v docker &> /dev/null; then
             echo "IMPORTANT: Please re-login (or close and re-connect SSH) for docker to function correctly"
         fi
         # reload the environment to pick up docker
+        # shellcheck source=/dev/null
         source ~/.bashrc
     else
         echo -e "${RED}Docker is not installed and cannot automatically be installed. Please install Docker first (https://docs.docker.com/get-docker/).${NC}"
