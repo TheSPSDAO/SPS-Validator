@@ -60,7 +60,7 @@ fi
 
 # Clone the repository
 echo "Cloning the SPS Validator repository into $TARGET_DIR..."
-git clone --branch $VERSION --single-branch https://github.com/TheSPSDAO/SPS-Validator.git "$TARGET_DIR"
+git clone --branch "$VERSION" --single-branch https://github.com/TheSPSDAO/SPS-Validator.git "$TARGET_DIR"
 cd $TARGET_DIR
 
 # Copy environment file
@@ -95,7 +95,7 @@ while [ -z "$account_name" ]; do
     echo -e "${RED}Account name cannot be empty.${NC}"
     read -p "Enter your the hive account name you will be using as your node account: " -n 1 -r account_name
 done
-replace_env "VALIDATOR_ACCOUNT" $account_name .env
+replace_env "VALIDATOR_ACCOUNT" "$account_name" .env
 
 # Ask for the posting key. If empty, keep asking
 read -p "Enter your the hive posting key for the account that your node will use to broadcast transactions: " -n 1 -r posting_key
@@ -103,7 +103,7 @@ while [ -z "$posting_key" ]; do
     echo -e "${RED}Posting key cannot be empty.${NC}"
     read -p "Enter your the hive posting key for the account that your node will use to broadcast transactions: " -n 1 -r posting_key
 done
-replace_env "VALIDATOR_KEY" $posting_key .env
+replace_env "VALIDATOR_KEY" "$posting_key" .env
 
 # Ensure validator is not running
 echo "Ensuring validator is not running..."
