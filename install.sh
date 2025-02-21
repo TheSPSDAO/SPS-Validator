@@ -9,8 +9,7 @@ replace_env() {
     sed -i "s/^$key=.*/$key=$value/g" "$file"
 }
 
-# parse version from package.json
-VERSION=release-$(sed 's/.*"version": "\(.*\)".*/\1/;t;d' ./package.json)
+VERSION=release-0.0.9
 TARGET_DIR="SPS-Validator"
 
 set -e  # Exit on any error
