@@ -120,7 +120,7 @@ fi
 
 # Ensure validator is not running
 echo "Ensuring validator is not running..."
-./run.sh stop
+./run.sh destroy
 
 # Build the validator
 echo "Building the validator..."
@@ -138,3 +138,12 @@ echo -e "${RED}Important:${NC} Don't forget to:"
 echo "1. View the logs to ensure your node is catching up (./run.sh logs)"
 echo "2. Register your node through the management UI after your node catches up (the logs will say \"blocks to head: 0\")"
 echo "3. Stake your licenses if needed (https://splinterlands.com/dashboard/licenses)"
+echo "4. Monitor your node through the management UI and the logs"
+echo "5. If you have any issues, please check the logs first and then create an issue on github (https://github.com/TheSPSDAO/SPS-Validator/issues)"
+
+# ask if the user wants to view logs
+read -p "Do you want to view the logs now? (y/n): " -n 1 -r choice
+echo
+if [[ $choice =~ ^[Yy]$ ]]; then
+    ./run.sh logs
+fi
