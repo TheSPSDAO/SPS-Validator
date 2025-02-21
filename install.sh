@@ -61,7 +61,7 @@ fi
 # Clone the repository
 echo "Cloning the SPS Validator repository into $TARGET_DIR..."
 git clone --branch "$VERSION" --single-branch https://github.com/TheSPSDAO/SPS-Validator.git "$TARGET_DIR"
-cd "$TARGET_DIR"
+cd $TARGET_DIR
 
 # Copy environment file
 echo "Creating environment file..."
