@@ -36,7 +36,7 @@ export class HiveService {
                 return reject(new Error(NO_HIVE_KEYCHAIN_EXTENSION_ERROR_MESSAGE));
             }
 
-            window.hive_keychain.requestSignBuffer(account, 'auth_check', 'Active', (result) => {
+            window.hive_keychain.requestSignBuffer(account, `auth_check${Date.now()}`, 'Active', (result) => {
                 resolve(result.success);
             });
         });
