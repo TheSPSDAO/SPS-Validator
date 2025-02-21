@@ -6,7 +6,7 @@ replace_env() {
     local value=$2
     local file=$3
     # ignore lines that start with # or empty lines
-    sed -i "s/^$key=.*/$key=$value/g" $file
+    sed -i "s/^$key=.*/$key=$value/g" "$file"
 }
 
 # parse version from package.json
@@ -60,7 +60,7 @@ fi
 
 # Clone the repository
 echo "Cloning the SPS Validator repository into $TARGET_DIR..."
-git clone --branch $VERSION --single-branch https://github.com/TheSPSDAO/SPS-Validator.git $TARGET_DIR
+git clone --branch $VERSION --single-branch https://github.com/TheSPSDAO/SPS-Validator.git "$TARGET_DIR"
 cd $TARGET_DIR
 
 # Copy environment file
@@ -71,7 +71,7 @@ cp .env-example .env
 echo "Do you want to use a production prefix or qa prefix?"
 echo "1. Production prefix (mainnet)"
 echo "2. QA prefix (testnet)"
-read -p "Enter your choice (1 or 2): " choice
+read -p "Enter your choice (1 or 2): " -n 1 -r choice
 case $choice in
     1)
         echo "Using production prefix..."
@@ -90,18 +90,18 @@ case $choice in
 esac
 
 # Ask for the account name. If empty, keep asking
-read -p "Enter your the hive account name you will be using as your node account: " account_name
+read -p "Enter your the hive account name you will be using as your node account: " -n 1 -r account_name
 while [ -z "$account_name" ]; do
     echo -e "${RED}Account name cannot be empty.${NC}"
-    read -p "Enter your the hive account name you will be using as your node account: " account_name
+    read -p "Enter your the hive account name you will be using as your node account: " -n 1 -r account_name
 done
 replace_env "VALIDATOR_ACCOUNT" $account_name .env
 
 # Ask for the posting key. If empty, keep asking
-read -p "Enter your the hive posting key for the account that your node will use to broadcast transactions: " posting_key
+read -p "Enter your the hive posting key for the account that your node will use to broadcast transactions: " -n 1 -r posting_key
 while [ -z "$posting_key" ]; do
     echo -e "${RED}Posting key cannot be empty.${NC}"
-    read -p "Enter your the hive posting key for the account that your node will use to broadcast transactions: " posting_key
+    read -p "Enter your the hive posting key for the account that your node will use to broadcast transactions: " -n 1 -r posting_key
 done
 replace_env "VALIDATOR_KEY" $posting_key .env
 
