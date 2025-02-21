@@ -1,6 +1,6 @@
 {
     "name": "validator-monorepo",
-    "version": "0.0.0",
+    "version": "0.0.9",
     "license": "MIT",
     "scripts": {
         "start": "nx serve",

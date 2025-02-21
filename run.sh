@@ -2,7 +2,8 @@
 # set -euo pipefail
 IFS=$'\n\t'
 
-GIT_COMMIT=$(git rev-parse --short HEAD)
+# try to match a tag, if not use the short commit hash
+GIT_COMMIT=$(git describe --exact-match --tags &>/dev/null || git rev-parse --short HEAD)
 SCRIPT_DIR=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" &>/dev/null && pwd)
 SQITCH_DIR="$SCRIPT_DIR/sqitch"
 COMPOSE_FILE="${SCRIPT_DIR}/docker-compose.yml"
@@ -56,7 +57,7 @@ snapshot() {
 
     echo "Dumping snapshot to file"
     docker_compose_wrapper exec -e PGPASSWORD="$POSTGRES_PASSWORD" pg pg_dump \
-        --no-owner --no-acl --disable-triggers \
+        --no-owner --no-acl \
         --no-comments --no-publications --no-security-labels \
         --schema snapshot \
         --no-subscriptions --no-tablespaces --data-only \
@@ -101,6 +102,8 @@ start() {
     elif [[ $1 == "all" ]]; then
         docker_compose_wrapper up -d
         logs
+    elif [[ $1 == "all-silent" ]]; then
+        docker_compose_wrapper up -d
     else
         docker_compose_wrapper up -d validator
         logs
@@ -233,16 +236,16 @@ help() {
     echo "Usage: $0 COMMAND"
     echo
     echo "Commands: "
-    echo "    start [db | all]          - starts docker. the default just starts the validator. db starts only the database. all starts everything"
-    echo "    rebuild_service [service] - rebuilds the service. service can be validator or ui"
-    echo "    stop                      - stops docker"
-    echo "    restart                   - runs stop + start"
-    echo "    destroy                   - runs stop and deletes local database"
-    echo "    replay                    - stops docker (if exists), deletes local database and runs build + start"
-    echo "    build                     - runs dl_snapshot + database migrations"
-    echo "    dl_snapshot               - downloads snapshot if it doesn't exists locally"
-    echo "    snapshot                  - creates a snapshot of the current database."
-    echo "    logs                      - trails the last 30 lines of logs"
+    echo "    start [db | all | all-silent] - starts docker. the default just starts the validator. db starts only the database. all starts everything"
+    echo "    rebuild_service [service]     - rebuilds the service. service can be validator or ui"
+    echo "    stop                          - stops docker"
+    echo "    restart                       - runs stop + start"
+    echo "    destroy                       - runs stop and deletes local database"
+    echo "    replay                        - stops docker (if exists), deletes local database and runs build + start"
+    echo "    build                         - runs dl_snapshot + database migrations"
+    echo "    dl_snapshot                   - downloads snapshot if it doesn't exists locally"
+    echo "    snapshot                      - creates a snapshot of the current database."
+    echo "    logs                          - trails the last 30 lines of logs"
     echo
     echo "Helpers:"
     echo "    install_docker - install docker"
