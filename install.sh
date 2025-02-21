@@ -23,7 +23,7 @@ echo -e "${GREEN}Starting SPS Validator installation...${NC}"
 
 # Check if the target directory doesnt exist or is empty
 if [ -d "$TARGET_DIR" ] && [ "$(ls -A $TARGET_DIR)" ]; then
-    echo -e "${RED}The target directory $TARGET_DIR already exists and is not empty. Please remove it and try again (rm -rf "$TARGET_DIR").${NC}"
+    echo -e "${RED}The target directory $TARGET_DIR already exists and is not empty. Please remove it and try again (rm -rf $TARGET_DIR).${NC}"
     exit 1
 fi
 
