@@ -16,7 +16,7 @@ sudo bash <(curl -s https://raw.githubusercontent.com/TheSPSDAO/SPS-Validator/re
 
 You should still look through the manual setup steps so you understand how to stop/start your node.
 
-### Getting started with Docker (manual setup)
+## Getting started with Docker (manual setup)
 
 ### Manual Setup Prerequisites:
 
