@@ -14,23 +14,23 @@ export function ValidatorVotesTable({ account, className }: { account: string; c
     const totalVotes = votes?.reduce((acc, vote) => acc + Number(vote.vote_weight), 0) ?? 0;
     return (
         <div>
-            <Table className={`border-2 border-gray-200 ${className}`}>
+            <Table className={`border-2 border-gray-200 dark:border-gray-300 ${className}`}>
                 <TableHead>
                     <TableRow>
-                        <TableColumn>Account</TableColumn>
-                        <TableColumn>Vote Weight (total: {totalVotes.toLocaleString()})</TableColumn>
+                        <TableColumn className="dark:bg-gray-300 dark:text-gray-800">Account</TableColumn>
+                        <TableColumn className="dark:bg-gray-300 dark:text-gray-800">Vote Weight (total: {totalVotes.toLocaleString()})</TableColumn>
                     </TableRow>
                 </TableHead>
                 <TableBody>
                     {votes?.length === 0 && (
-                        <TableRow>
+                        <TableRow className="dark:border-gray-300">
                             <TableCell colSpan={2} className="text-center">
                                 No votes
                             </TableCell>
                         </TableRow>
                     )}
                     {votes?.slice(page * limit, page * limit + limit).map((vote) => (
-                        <TableRow key={vote.voter}>
+                        <TableRow className="dark:border-gray-300" key={vote.voter}>
                             <TableCell>{vote.voter}</TableCell>
                             <TableCell>{vote.vote_weight}</TableCell>
                         </TableRow>
