@@ -42,7 +42,7 @@ export class ValidatorRepository extends BaseRepository {
                     .insert({
                         account_name: params.account,
                         is_active: params.is_active,
-                        post_url: params.post_url,
+                        post_url: params.post_url ?? null,
                         reward_account: params.reward_account ?? null,
                         api_url: params.api_url ?? null,
                     })
