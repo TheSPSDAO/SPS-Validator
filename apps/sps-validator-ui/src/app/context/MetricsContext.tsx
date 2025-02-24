@@ -1,7 +1,8 @@
-/* eslint-disable prettier/prettier */
 import React, { createContext, useContext, useEffect, useState } from 'react';
-import { DefaultService } from '../services/openapi/services/DefaultService'; // Adjust the import path
-import { usePromiseRefresh, usePromise } from '../hooks/Promise'; // Adjust the import path
+import { DefaultService } from '../services/openapi/services/DefaultService';
+import { usePromiseRefresh, usePromise } from '../hooks/Promise';
+import { useMediaQuery } from "react-responsive";
+import { useLocation } from "react-router-dom";
 
 // Define the data type for context
 interface MetricsContextType {
@@ -11,13 +12,21 @@ interface MetricsContextType {
 }
 
 // Create the context
-const MetricsContext = createContext<MetricsContextType | undefined>(undefined);
+const MetricsContext = createContext<MetricsContextType | null>(null);
 
 // Context provider component
 export const MetricsProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-    const [spsPriceData] = usePromiseRefresh(() => DefaultService.getPriceForToken('SPS'), 5000, []);
-    const [validatorsData] = usePromise(() => DefaultService.getValidators(0, 0));
-    const [statusData] = usePromiseRefresh(() => DefaultService.getStatus(), 5000, []);
+    const location = useLocation();
+    const isDesktop = useMediaQuery({ minWidth: 720 });
+    const shouldFetch = isDesktop || location.pathname === "/";
+    
+    const fetchSPSPrice = shouldFetch ? () => DefaultService.getPriceForToken("SPS") : () => Promise.resolve(undefined);
+    const fetchValidators = shouldFetch ? () => DefaultService.getValidators(0, 0) : () => Promise.resolve(undefined);
+    const fetchStatus = shouldFetch ? () => DefaultService.getStatus() : () => Promise.resolve(undefined);
+
+    const [spsPriceData] = usePromiseRefresh(fetchSPSPrice, 5000, []);
+    const [validatorsData] = usePromise(fetchValidators);
+    const [statusData] = usePromiseRefresh(fetchStatus, 5000, []);
 
     // Store shared data
     const [metrics, setMetrics] = useState<MetricsContextType>({});
@@ -30,7 +39,7 @@ export const MetricsProvider: React.FC<{ children: React.ReactNode }> = ({ child
         });
     }, [spsPriceData, validatorsData, statusData]);
 
-    return <MetricsContext.Provider value={metrics}>{children}</MetricsContext.Provider>;
+    return <MetricsContext.Provider value={metrics ?? null}>{children}</MetricsContext.Provider>;
 };
 
 // Hook to use the shared context
