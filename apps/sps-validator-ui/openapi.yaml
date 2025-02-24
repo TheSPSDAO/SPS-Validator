@@ -404,14 +404,22 @@ components:
                 - total_votes
                 - missed_blocks
                 - reward_account
+                - api_url
+                - last_version
             properties:
                 account_name:
                     type: string
                 reward_account:
                     type: string
+                last_version:
+                    type: string
                 is_active:
                     type: boolean
                 post_url:
+                    type: string
+                    format: uri
+                    nullable: true
+                api_url:
                     type: string
                     format: uri
                     nullable: true

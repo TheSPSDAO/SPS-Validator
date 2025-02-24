@@ -38,6 +38,7 @@ test.dbOnly('Inexistent block does not crash', async () => {
     await fixture.opsHelper.processOp('validate_block', 'steemmonsters', {
         block_num: 50,
         hash: 'some-hash',
+        version: 'abc',
     });
     expect(true);
 });
@@ -50,6 +51,7 @@ test.dbOnly('Existing block works', async () => {
         {
             block_num: 11,
             hash: 'my-hash',
+            version: 'abc',
         },
         { transaction: 'proper_validate_block' },
     );
@@ -65,6 +67,7 @@ test.dbOnly('Existing block pays out', async () => {
         {
             block_num: 11,
             hash: 'my-hash',
+            version: 'abc',
         },
         { transaction: 'proper_validate_block', block_reward: [10, 'SPS'] },
     );
@@ -83,6 +86,7 @@ test.dbOnly('Existing block works with reward_account', async () => {
         {
             block_num: 11,
             hash: 'my-hash',
+            version: 'abc',
         },
         { transaction: 'proper_validate_block' },
     );
@@ -98,6 +102,7 @@ test.dbOnly('Existing block pays out with with reward_account', async () => {
         {
             block_num: 11,
             hash: 'my-hash',
+            version: 'abc',
         },
         { transaction: 'proper_validate_block', block_reward: [10, 'SPS'] },
     );
@@ -116,6 +121,7 @@ test.dbOnly('Existing old block does not work', async () => {
         {
             block_num: 11,
             hash: 'my-hash',
+            version: 'abc',
         },
         {
             transaction: 'old_validate_block',
@@ -131,6 +137,7 @@ test.dbOnly('Paused block does not work', async () => {
     await fixture.opsHelper.processOp('validate_block', 'steemmonsters', {
         block_num: 5,
         hash: 'my-hash',
+        version: 'abc',
     });
     const result = await fixture.testHelper.blockForBlockNumber(5);
     expect(result?.validation_tx).toBeNull();
@@ -141,6 +148,7 @@ test.dbOnly('Existing block with existing auth', async () => {
     await fixture.opsHelper.processOp('validate_block', 'steemmonsters', {
         block_num: 11,
         hash: 'my-hash',
+        version: 'abc',
     });
     const result = await fixture.testHelper.blockForBlockNumber(11);
     expect(result?.validation_tx).toEqual('existing-validation-trx');
@@ -151,6 +159,7 @@ test.dbOnly('Existing block with wrong hash', async () => {
     await fixture.opsHelper.processOp('validate_block', 'steemmonsters', {
         block_num: 11,
         hash: 'not-my-hash',
+        version: 'abc',
     });
     const result = await fixture.testHelper.blockForBlockNumber(11);
     expect(result?.validation_tx).toBeNull();
@@ -161,6 +170,7 @@ test.dbOnly('Existing block with wrong validator', async () => {
     await fixture.opsHelper.processOp('validate_block', 'steemmonsters', {
         block_num: 11,
         hash: 'not-my-hash',
+        version: 'abc',
     });
     const result = await fixture.testHelper.blockForBlockNumber(11);
     expect(result?.validation_tx).toBeNull();

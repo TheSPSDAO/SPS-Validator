@@ -8,9 +8,11 @@ export type ValidatorEntry = {
     account_name: string;
     is_active: boolean;
     post_url: string | null;
+    api_url: string | null;
     total_votes: number;
     missed_blocks: number;
     reward_account: string | null;
+    last_version: string | null;
 };
 
 export type GetValidatorsParams = {
@@ -33,7 +35,7 @@ export class ValidatorRepository extends BaseRepository {
         return { ...row, total_votes: parseFloat(row.total_votes) };
     }
 
-    public async register(params: { account: string; is_active: boolean; post_url?: string; reward_account?: string }, trx?: Trx) {
+    public async register(params: { account: string; is_active: boolean; post_url?: string; reward_account?: string; api_url?: string }, trx?: Trx) {
         const record = await this.query(Validator_, trx)
             .useKnexQueryBuilder((query) =>
                 query
@@ -42,6 +44,7 @@ export class ValidatorRepository extends BaseRepository {
                         is_active: params.is_active,
                         post_url: params.post_url,
                         reward_account: params.reward_account ?? null,
+                        api_url: params.api_url ?? null,
                     })
                     .onConflict('account_name')
                     .merge()
@@ -55,7 +58,14 @@ export class ValidatorRepository extends BaseRepository {
         const record = await this.query(Validator_, trx)
             .where('account_name', account)
             .useKnexQueryBuilder((query) => query.increment('missed_blocks', increment))
-            .updateItemWithReturning({}, ['account_name', 'missed_blocks', 'is_active', 'post_url', 'total_votes', 'reward_account']);
+            .updateItemWithReturning({}, ['account_name', 'missed_blocks', 'is_active', 'post_url', 'total_votes', 'reward_account', 'api_url', 'last_version']);
+        return [new EventLog(EventTypes.UPDATE, this, ValidatorRepository.into(record))];
+    }
+
+    public async updateVersion(account: string, version: string, trx?: Trx) {
+        const record = await this.query(Validator_, trx).where('account_name', account).updateItemWithReturning({
+            last_version: version,
+        });
         return [new EventLog(EventTypes.UPDATE, this, ValidatorRepository.into(record))];
     }
 

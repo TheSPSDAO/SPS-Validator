@@ -57,7 +57,7 @@ export class CoinGeckoExternalPriceFeed implements ExternalPriceFeed {
     constructor(@inject(CoinGeckoExternalPriceFeedOpts) private readonly opts: CoinGeckoExternalPriceFeedOpts) {
         const apiUrl = opts.demo ? opts.demo_api_url : opts.api_url;
         this.apiUrl = apiUrl?.endsWith('/') ? apiUrl.slice(0, -1) : apiUrl;
-        this.header = opts.demo ? 'x_cg_demo_api_key' : 'x_cg_pro_api_key';
+        this.header = opts.demo ? 'x-cg-demo-api-key' : 'x-cg-pro-api-key';
     }
 
     async getTokenPriceInUSD(token: string): Promise<number | null> {

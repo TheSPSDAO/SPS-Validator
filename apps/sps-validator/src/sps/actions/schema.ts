@@ -139,7 +139,8 @@ const update_validator = new Schema.Schema(
     'update_validator',
     object({
         is_active: boolean().strict().required(),
-        post_url: string().strict(),
+        post_url: string().strict().optional().nullable(),
+        api_url: string().strict().optional().nullable(),
         reward_account: Schema.hiveAccount.optional().nullable(),
     }),
 );
@@ -178,6 +179,7 @@ const validate_block = new Schema.Schema(
     object({
         block_num: number().integer().required(),
         hash: string().strict().required(),
+        version: string().strict().required(),
     }),
 );
 
@@ -393,6 +395,7 @@ const check_in_validator = new Schema.Schema(
     object({
         block_num: number().integer().positive().required(),
         hash: string().strict().required(),
+        version: string().strict().required(),
     }),
 );
 

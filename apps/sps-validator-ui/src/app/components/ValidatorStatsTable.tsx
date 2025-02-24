@@ -21,12 +21,40 @@ export function ValidatorStatsTable({ validator, className }: { validator: Valid
                     <TableCell>{actualValidator!.account_name}</TableCell>
                 </TableRow>
                 <TableRow>
+                    <TableCell>Last Version</TableCell>
+                    <TableCell>{actualValidator!.last_version ?? 'unknown'}</TableCell>
+                </TableRow>
+                <TableRow>
+                    <TableCell>Reward Account</TableCell>
+                    <TableCell>{actualValidator!.reward_account ? actualValidator!.reward_account : 'Not Set'}</TableCell>
+                </TableRow>
+                <TableRow>
                     <TableCell>Active</TableCell>
                     <TableCell>{actualValidator!.is_active ? 'Yes' : 'No'}</TableCell>
                 </TableRow>
                 <TableRow>
                     <TableCell>Post URL</TableCell>
-                    <TableCell>{actualValidator!.post_url ? actualValidator!.post_url : 'Not Set'}</TableCell>
+                    <TableCell>
+                        {actualValidator!.post_url ? (
+                            <a href={actualValidator.post_url} target="_blank" rel="noreferrer" className="text-blue-600 underline">
+                                {actualValidator.post_url}
+                            </a>
+                        ) : (
+                            'Not Set'
+                        )}
+                    </TableCell>
+                </TableRow>
+                <TableRow>
+                    <TableCell>API URL</TableCell>
+                    <TableCell>
+                        {actualValidator!.api_url ? (
+                            <a href={actualValidator.api_url} target="_blank" rel="noreferrer" className="text-blue-600 underline">
+                                {actualValidator.api_url}
+                            </a>
+                        ) : (
+                            'Not Set'
+                        )}
+                    </TableCell>
                 </TableRow>
                 <TableRow>
                     <TableCell>Missed Blocks</TableCell>

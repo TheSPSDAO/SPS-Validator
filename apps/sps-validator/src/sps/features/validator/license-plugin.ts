@@ -16,6 +16,7 @@ export class ValidatorCheckInPlugin implements Plugin, Prime {
     private primed = false;
     private lastCheckInBlock: number | undefined;
     private nextCheckInBlock: number | undefined;
+    private lastCheckInAccount: string | undefined;
 
     constructor(
         @inject(SpsValidatorCheckInRepository)
@@ -85,18 +86,19 @@ export class ValidatorCheckInPlugin implements Plugin, Prime {
         // if we _can_ check in, but we're not at the next check in block, we should check that something didnt change
         // like the validator becoming inactive, or the check in window changing.
         // checking if we're within the check in window should be enough
-        const blocksToCheckIn = this.nextCheckInBlock ? blockNumber - this.nextCheckInBlock : 0;
-        if (blocksToCheckIn < this.checkInWatcher.validator_check_in!.check_in_window_blocks) {
+        const blocksToCheckIn = this.nextCheckInBlock ? this.nextCheckInBlock - blockNumber : 0;
+        if (this.lastCheckInAccount === rewardAccount && blocksToCheckIn > this.checkInWatcher.validator_check_in!.check_in_window_blocks) {
             return;
         }
 
         // plugins are run asynchronously, so we need to set nextCheckInBlock before calling into async code
         this.nextCheckInBlock = this.getNextCheckInBlock(blockNumber);
+        this.lastCheckInAccount = rewardAccount;
 
         // Check in
-        const hash = this.licenseManager.getCheckInHash(blockHash, this.validatorAccount);
+        const hash = this.licenseManager.getCheckInHash(blockHash, rewardAccount);
         try {
-            const confirmation = await this.hive.submitCheckIn(blockNumber, hash);
+            const confirmation = await this.hive.submitCheckIn(blockNumber, hash, config.version);
             this.lastCheckInBlock = blockNumber;
             log(`Checked in at block ${blockNumber}. trx_id: ${confirmation.id}`, LogLevel.Info);
         } catch (err) {
