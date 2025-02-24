@@ -240,7 +240,9 @@ export class ValidatorEntity {
     @Column({ primary: true }) public account_name!: string;
     @Column() public is_active!: boolean;
     @Column() public post_url!: string | null;
+    @Column() public api_url!: string | null;
     @Column() public total_votes = '0'; // numeric(12, 3)
     @Column() public missed_blocks = 0;
     @Column() public reward_account!: string | null;
+    @Column() public last_version!: string | null;
 }

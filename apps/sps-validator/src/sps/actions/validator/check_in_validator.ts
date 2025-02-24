@@ -1,4 +1,4 @@
-import { OperationData, Action, EventLog, Trx, ValidationError, ErrorType, HiveAccountRepository, ValidatorRepository } from '@steem-monsters/splinterlands-validator';
+import { OperationData, Action, EventLog, Trx, ValidationError, ErrorType, ValidatorRepository } from '@steem-monsters/splinterlands-validator';
 import { check_in_validator } from '../schema';
 import { MakeActionFactory, MakeRouter } from '../utils';
 import { SpsValidatorLicenseManager } from '../../features/validator';
@@ -43,9 +43,15 @@ export class CheckInValidatorAction extends Action<typeof check_in_validator.act
     }
 
     async process(trx?: Trx): Promise<EventLog[]> {
+        const results: EventLog[] = [];
         const validator = await this.validatorRepository.lookup(this.op.account, trx);
         const rewardAccount = validator!.reward_account ?? this.op.account;
-        return [...(await this.licenseManager.checkIn(this, rewardAccount, trx))];
+        results.push(...(await this.licenseManager.checkIn(this, rewardAccount, trx)));
+        // update the validators version if needed
+        if (validator!.last_version !== this.params.version) {
+            results.push(...(await this.validatorRepository.updateVersion(this.op.account, this.params.version, trx)));
+        }
+        return results;
     }
 }
 

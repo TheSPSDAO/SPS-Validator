@@ -61,7 +61,7 @@ const MetricsCard = () => {
             </CardBody>
         </Card>
     );
-}
+};
 
 export type TopValidatorsTableProps = {
     limit?: number;
@@ -121,12 +121,19 @@ export function TopValidatorsTable(props: TopValidatorsTableProps) {
                                         {validator.account_name}
                                     </Link>{' '}
                                     (
-                                    {validator.post_url && (
-                                        <a href={validator.post_url} target="_blank" rel="noreferrer">
-                                            {validator.account_name}
+                                    {validator.api_url && (
+                                        <a href={validator.api_url} target="_blank" rel="noreferrer" className="text-blue-600 underline">
+                                            api
                                         </a>
                                     )}
-                                    {!validator.post_url && 'no post url set'})
+                                    {' | '}
+                                    {!validator.api_url && <span className="text-red-600">no api</span>}
+                                    {validator.post_url && (
+                                        <a href={validator.post_url} target="_blank" rel="noreferrer" className="text-blue-600 underline">
+                                            peakd post
+                                        </a>
+                                    )}
+                                    {!validator.post_url && <span className="text-red-600">no peakd post</span>})
                                 </span>
                             </TableCell>
                             <TableCell>{validator.is_active ? 'Yes' : 'No'}</TableCell>

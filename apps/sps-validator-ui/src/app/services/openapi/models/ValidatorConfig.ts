@@ -4,6 +4,7 @@
 /* eslint-disable */
 export type ValidatorConfig = {
     reward_start_block: number;
+    paused_until_block: number;
     tokens_per_block: number;
     reward_token: string;
     min_validators: number;

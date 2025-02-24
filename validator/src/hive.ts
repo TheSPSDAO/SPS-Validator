@@ -34,7 +34,7 @@ export class HiveClient extends Client {
         });
     }
 
-    public submitCheckIn(block_num: number, hash: string): Promise<TransactionConfirmation> {
+    public submitCheckIn(block_num: number, hash: string, version: string): Promise<TransactionConfirmation> {
         if (!this.validatorConfig.validator_account || !this.validatorConfig.validator_key) {
             throw new Error(`Attempting to submit check in without setting up a validator account/key.`);
         }
@@ -44,7 +44,7 @@ export class HiveClient extends Client {
                 id: this.prefixOpts.custom_json_id,
                 json: {
                     action: 'check_in_validator',
-                    params: { block_num, hash },
+                    params: { block_num, hash, version },
                 },
                 account: this.validatorConfig.validator_account,
                 role: 'posting',

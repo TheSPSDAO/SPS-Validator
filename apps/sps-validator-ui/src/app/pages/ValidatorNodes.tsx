@@ -50,6 +50,11 @@ function ValidatorNodesCard({ className, onNodeSelected }: { className?: string;
                             </TableColumn>
                             <TableColumn>
                                 <Typography color="blue-gray" className="font-normal text-left">
+                                    Last Version
+                                </Typography>
+                            </TableColumn>
+                            <TableColumn>
+                                <Typography color="blue-gray" className="font-normal text-left">
                                     Active
                                 </Typography>
                             </TableColumn>
@@ -84,14 +89,22 @@ function ValidatorNodesCard({ className, onNodeSelected }: { className?: string;
                                 <TableCell>
                                     <span>
                                         {validator.account_name} (
-                                        {validator.post_url && (
-                                            <a href={validator.post_url} target="_blank" rel="noreferrer">
-                                                {validator.account_name}
+                                        {validator.api_url && (
+                                            <a href={validator.api_url} target="_blank" rel="noreferrer" className="text-blue-600 underline">
+                                                api
                                             </a>
                                         )}
-                                        {!validator.post_url && 'no post url set'})
+                                        {' | '}
+                                        {!validator.api_url && <span className="text-red-600">no api</span>}
+                                        {validator.post_url && (
+                                            <a href={validator.post_url} target="_blank" rel="noreferrer" className="text-blue-600 underline">
+                                                peakd post
+                                            </a>
+                                        )}
+                                        {!validator.post_url && <span className="text-red-600">no peakd post</span>})
                                     </span>
                                 </TableCell>
+                                <TableCell>{validator.last_version ?? 'unknown'}</TableCell>
                                 <TableCell>{validator.is_active ? 'Yes' : 'No'}</TableCell>
                                 <TableCell>{validator.missed_blocks.toLocaleString()}</TableCell>
                                 <TableCell>{validator.total_votes.toLocaleString()}</TableCell>
@@ -114,8 +127,8 @@ export function ValidatorNodes() {
     const [searchParams, setSearchParams] = useSearchParams({
         node: '',
     });
-    const selectedNode = searchParams.get('node');
-    const hasSelectedNode = selectedNode !== '';
+    const selectedNode = searchParams.get('node')?.trim() ?? '';
+    const hasSelectedNode = selectedNode !== '' && selectedNode !== null;
     const selectNode = (node: string) => {
         setSearchParams({ node });
     };

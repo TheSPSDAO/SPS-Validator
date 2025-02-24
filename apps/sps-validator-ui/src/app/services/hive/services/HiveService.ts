@@ -13,6 +13,7 @@ type DisapproveValidatorPayload = {
 type RegisterPayload = {
     is_active: boolean;
     post_url: string | null;
+    api_url: string | null;
     reward_account: string | null;
 };
 
