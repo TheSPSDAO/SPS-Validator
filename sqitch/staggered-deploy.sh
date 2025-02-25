@@ -39,7 +39,15 @@ fi
 silent_expected_error='Cannot deploy to an earlier change; use "revert" instead'
 silent_expected_logspam='Nothing to deploy (up-to-date)'
 
+# get the change this snapshot was created with
+to_change=$(grep --max-count=1 --only-matching --perl-regexp '^-- to_change:(\S+)$' "$SNAPSHOT" | cut --delimiter=: --fields=2 || true)
+# if the snapshot was created without a change, use the pre-snapshot change
+if [ -z "$to_change" ]; then
+  to_change='pre-snapshot'
+fi
+echo "Deploying changes up to $to_change"
+
 pushd "$SCRIPT_DIR" > /dev/null
-PGUSER=$APP_USER PGPASSWORD=$APP_PASSWORD PGDATABASE=$APP_DATABASE sqitch deploy --to-change pre-snapshot@HEAD --set APP_USER="$APP_USER" --set "APP_SCHEMA=$APP_SCHEMA" --verbose |& grep --invert-match "$silent_expected_error" || echo "Initial part of the migration was already run, skipping..."
+PGUSER=$APP_USER PGPASSWORD=$APP_PASSWORD PGDATABASE=$APP_DATABASE sqitch deploy --to-change $to_change@HEAD --set APP_USER="$APP_USER" --set "APP_SCHEMA=$APP_SCHEMA" --verbose |& grep --invert-match "$silent_expected_error" || echo "Initial part of the migration was already run, skipping..."
 PGUSER=$APP_USER PGPASSWORD=$APP_PASSWORD PGDATABASE=$APP_DATABASE sqitch deploy -t sqitch-data --set snapshot_file="$SNAPSHOT" --set APP_USER="$APP_USER" --set "APP_SCHEMA=$APP_SCHEMA" --verbose | { grep --invert-match "$silent_expected_logspam" || true; }
 PGUSER=$APP_USER PGPASSWORD=$APP_PASSWORD PGDATABASE=$APP_DATABASE sqitch deploy --set APP_USER="$APP_USER" --set "APP_SCHEMA=$APP_SCHEMA" --verbose
