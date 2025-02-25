@@ -201,6 +201,9 @@ export class TransactionPlayerEntity {
     @Column() public transaction_id!: string;
     @Column() public player!: string;
     @Column() public block_num!: number;
+    @Column() public is_owner!: boolean;
+    @Column() public type!: string;
+    @Column() public success!: boolean | null;
 }
 
 @Table('validator_transactions')

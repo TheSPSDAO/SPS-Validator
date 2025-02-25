@@ -39,8 +39,8 @@ export class TransactionRepository extends BaseRepository {
             log(`Recording empty action in block`, LogLevel.Warning);
         }
 
-        const players: TransactionPlayerEntity[] = action.players.map((p) => {
-            return { transaction_id: action.unique_trx_id, player: p, block_num: blockRef.block_num };
+        const players: TransactionPlayerEntity[] = action.players.map((p, i) => {
+            return { transaction_id: action.unique_trx_id, player: p, block_num: blockRef.block_num, is_owner: i === 0, type: action.id, success: action.success ?? null };
         });
         const transaction: TransactionEntity = {
             id: action.unique_trx_id,

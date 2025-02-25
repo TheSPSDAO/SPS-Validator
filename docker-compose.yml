@@ -83,6 +83,7 @@ services:
       APP_USER: ${APP_USER:-validator}
       APP_DATABASE: ${APP_DATABASE:-validator}
       APP_SCHEMA: ${APP_SCHEMA:-public}
+      DB_BLOCK_RETENTION: ${DB_BLOCK_RETENTION}
 
   ui:
     build:

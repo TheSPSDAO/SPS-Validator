@@ -5,9 +5,12 @@ BEGIN;
 SELECT
     transaction_id,
     player,
-    block_num
+    block_num,
+    is_owner,
+    success,
+    type
 FROM
-    :APP_SCHEMA.transaction_players
+    :APP_SCHEMA.validator_transaction_players
 WHERE FALSE;
 
 ROLLBACK;

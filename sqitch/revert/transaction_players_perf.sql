@@ -2,6 +2,9 @@
 
 BEGIN;
 
-ALTER TABLE :APP_SCHEMA.transaction_players DROP COLUMN IF EXISTS block_num;
+ALTER TABLE :APP_SCHEMA.validator_transaction_players DROP COLUMN IF EXISTS block_num;
+ALTER TABLE :APP_SCHEMA.validator_transaction_players DROP COLUMN IF EXISTS is_owner;
+ALTER TABLE :APP_SCHEMA.validator_transaction_players DROP COLUMN IF EXISTS success;
+ALTER TABLE :APP_SCHEMA.validator_transaction_players DROP COLUMN IF EXISTS type;
 
 COMMIT;
