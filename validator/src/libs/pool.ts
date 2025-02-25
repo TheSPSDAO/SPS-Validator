@@ -52,6 +52,10 @@ export class AutonomousPoolsWrapper {
         return undefined;
     }
 
+    public anyPools() {
+        return this.#pools.size > 0;
+    }
+
     public getPool(name: PoolKey): AutonomousPoolConfiguration | undefined {
         if (!this.#pools.has(name)) {
             return undefined;
