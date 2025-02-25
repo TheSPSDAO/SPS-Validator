@@ -37,7 +37,7 @@ export class ValidatorCheckInPlugin implements Plugin, Prime {
     }
 
     async prime(trx?: Trx | undefined): Promise<void> {
-        if (this.primed) {
+        if (this.primed || !config.block_processing) {
             return;
         }
         this.primed = true;

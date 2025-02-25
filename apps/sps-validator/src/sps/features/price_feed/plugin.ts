@@ -33,7 +33,7 @@ export class PriceFeedPlugin implements Plugin, Prime {
 
     async prime(trx?: Trx | undefined): Promise<void> {
         // the api will prime on every request but we are a singleton so we only need to prime once
-        if (this.primed) {
+        if (this.primed || !config.block_processing) {
             return;
         }
         this.primed = true;
