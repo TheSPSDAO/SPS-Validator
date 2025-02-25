@@ -50,8 +50,7 @@ convict.addFormat({
     coerce: function (val: unknown) {
         switch (typeof val) {
             case 'string': {
-                const escaped = val.replace(/\\"/g, '"');
-                return JSON.parse(escaped);
+                return JSON.parse(val);
             }
             case 'object':
                 return val;
