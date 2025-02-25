@@ -200,6 +200,7 @@ export class PromiseHistoryEntity {
 export class TransactionPlayerEntity {
     @Column() public transaction_id!: string;
     @Column() public player!: string;
+    @Column() public block_num!: number;
 }
 
 @Table('validator_transactions')

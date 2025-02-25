@@ -40,7 +40,7 @@ export class TransactionRepository extends BaseRepository {
         }
 
         const players: TransactionPlayerEntity[] = action.players.map((p) => {
-            return { transaction_id: action.unique_trx_id, player: p };
+            return { transaction_id: action.unique_trx_id, player: p, block_num: blockRef.block_num };
         });
         const transaction: TransactionEntity = {
             id: action.unique_trx_id,
