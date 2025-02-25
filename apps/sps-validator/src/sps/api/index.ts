@@ -53,19 +53,40 @@ export class SnapshotMiddleware implements Middleware {
  */
 @injectable()
 export class UnmanagedCacheMiddleware implements Middleware {
+    private static readonly PRIME_INTERVAL = 1000 * 3; // 3 seconds
+
+    private currentPrime: Promise<void> | null = null;
+    private lastPrimed: number | null = null;
+
     constructor(
         @inject(TransactionStarter) private readonly transactionStarter: TransactionStarter,
         @inject(Primer) private readonly primer: Primer,
         @inject(UnmanagedSnapshot) private readonly snapshot: UnmanagedSnapshot<DependencyContainer>,
     ) {}
 
+    private async ensurePrimed() {
+        if (this.currentPrime === null) {
+            this.currentPrime = this.prime();
+        }
+        await this.currentPrime;
+        if (this.lastPrimed && Date.now() - this.lastPrimed > UnmanagedCacheMiddleware.PRIME_INTERVAL) {
+            this.currentPrime = this.prime();
+            await this.currentPrime;
+        }
+    }
+
+    private async prime() {
+        await this.transactionStarter.withTransaction(TransactionMode.Reporting, async (trx) => {
+            await this.primer.prime(trx);
+        });
+        this.lastPrimed = Date.now();
+    }
+
     attachResolver(c: DependencyContainer) {
         return async (req: Request, res: Response, next: NextFunction) => {
             // TODO: there is still a small window of time where database changes can happen, between this and any future transactions in the api call
-            await this.transactionStarter.withTransaction(TransactionMode.Reporting, async (trx) => {
-                // TODO: This only needs to be done once per block
-                await this.primer.prime(trx);
-            });
+            // note: this isn't a problem for our snapshots because we clone them for each request
+            await this.ensurePrimed();
             const container = c.createChildContainer();
             res.on('finish', () => container.dispose());
             this.snapshot.injectAll(container);
