@@ -2,12 +2,16 @@ import { BlockRef } from './block';
 import { Trx } from '../db/tables';
 import { ProcessResult, VirtualPayloadSource } from '../actions/virtual';
 import { PrefixOpts } from './operation';
+import { PoolManager } from '../utilities/pool_manager';
 
 export class PoolClaimPayloads implements VirtualPayloadSource {
     private static pool_payload_account = '$MINTING';
 
-    constructor(private readonly cfg: PrefixOpts) {}
+    constructor(private readonly cfg: PrefixOpts, private readonly poolManager: PoolManager) {}
     async process(block: BlockRef, _?: Trx): Promise<ProcessResult[]> {
+        if (!this.poolManager.anyPools()) {
+            return [];
+        }
         const now = block.block_time;
         return [
             [
