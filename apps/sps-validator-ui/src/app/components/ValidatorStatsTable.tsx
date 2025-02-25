@@ -1,5 +1,6 @@
 import { usePromise } from '../hooks/Promise';
 import { DefaultService, Validator } from '../services/openapi';
+import { localeNumber } from './LocaleNumber';
 import { Table, TableBody, TableCell, TableColumn, TableHead, TableRow } from './Table';
 
 export function ValidatorStatsTable({ validator, className }: { validator: Validator | string; className?: string }) {
@@ -18,24 +19,24 @@ export function ValidatorStatsTable({ validator, className }: { validator: Valid
             <TableBody>
                 <TableRow>
                     <TableCell>Account</TableCell>
-                    <TableCell>{actualValidator!.account_name}</TableCell>
+                    <TableCell>{actualValidator.account_name}</TableCell>
                 </TableRow>
                 <TableRow>
                     <TableCell>Last Version</TableCell>
-                    <TableCell>{actualValidator!.last_version ?? 'unknown'}</TableCell>
+                    <TableCell>{actualValidator.last_version ?? 'unknown'}</TableCell>
                 </TableRow>
                 <TableRow>
                     <TableCell>Reward Account</TableCell>
-                    <TableCell>{actualValidator!.reward_account ? actualValidator!.reward_account : 'Not Set'}</TableCell>
+                    <TableCell>{actualValidator.reward_account ? actualValidator.reward_account : 'Not Set'}</TableCell>
                 </TableRow>
                 <TableRow>
                     <TableCell>Active</TableCell>
-                    <TableCell>{actualValidator!.is_active ? 'Yes' : 'No'}</TableCell>
+                    <TableCell>{actualValidator.is_active ? 'Yes' : 'No'}</TableCell>
                 </TableRow>
                 <TableRow>
                     <TableCell>Post URL</TableCell>
                     <TableCell>
-                        {actualValidator!.post_url ? (
+                        {actualValidator.post_url ? (
                             <a href={actualValidator.post_url} target="_blank" rel="noreferrer" className="text-blue-600 underline">
                                 {actualValidator.post_url}
                             </a>
@@ -47,7 +48,7 @@ export function ValidatorStatsTable({ validator, className }: { validator: Valid
                 <TableRow>
                     <TableCell>API URL</TableCell>
                     <TableCell>
-                        {actualValidator!.api_url ? (
+                        {actualValidator.api_url ? (
                             <a href={actualValidator.api_url} target="_blank" rel="noreferrer" className="text-blue-600 underline">
                                 {actualValidator.api_url}
                             </a>
@@ -58,11 +59,11 @@ export function ValidatorStatsTable({ validator, className }: { validator: Valid
                 </TableRow>
                 <TableRow>
                     <TableCell>Missed Blocks</TableCell>
-                    <TableCell>{actualValidator!.missed_blocks}</TableCell>
+                    <TableCell>{localeNumber(actualValidator.missed_blocks, 0)}</TableCell>
                 </TableRow>
                 <TableRow>
                     <TableCell>Total Votes</TableCell>
-                    <TableCell>{actualValidator!.total_votes}</TableCell>
+                    <TableCell>{localeNumber(actualValidator.total_votes)}</TableCell>
                 </TableRow>
             </TableBody>
         </Table>

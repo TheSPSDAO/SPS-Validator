@@ -6,6 +6,8 @@ import { DefaultService } from '../services/openapi';
 import { Link, useSearchParams } from 'react-router-dom';
 import { ValidatorVotesTable } from '../components/ValidatorVotesTable';
 import { ValidatorStatsTable } from '../components/ValidatorStatsTable';
+import { ValidatorName } from '../components/ValidatorName';
+import { localeNumber } from '../components/LocaleNumber';
 
 function ValidatorNodesCard({ className, onNodeSelected }: { className?: string; onNodeSelected?: (node: string) => void }) {
     const [page, setPage] = useState(0);
@@ -87,27 +89,12 @@ function ValidatorNodesCard({ className, onNodeSelected }: { className?: string;
                         {result?.validators?.map((validator) => (
                             <TableRow key={validator.account_name}>
                                 <TableCell>
-                                    <span>
-                                        {validator.account_name} (
-                                        {validator.api_url && (
-                                            <a href={validator.api_url} target="_blank" rel="noreferrer" className="text-blue-600 underline">
-                                                api
-                                            </a>
-                                        )}
-                                        {' | '}
-                                        {!validator.api_url && <span className="text-red-600">no api</span>}
-                                        {validator.post_url && (
-                                            <a href={validator.post_url} target="_blank" rel="noreferrer" className="text-blue-600 underline">
-                                                peakd post
-                                            </a>
-                                        )}
-                                        {!validator.post_url && <span className="text-red-600">no peakd post</span>})
-                                    </span>
+                                    <ValidatorName {...validator} link_to_validator={false} />
                                 </TableCell>
                                 <TableCell>{validator.last_version ?? 'unknown'}</TableCell>
                                 <TableCell>{validator.is_active ? 'Yes' : 'No'}</TableCell>
-                                <TableCell>{validator.missed_blocks.toLocaleString()}</TableCell>
-                                <TableCell>{validator.total_votes.toLocaleString()}</TableCell>
+                                <TableCell>{localeNumber(validator.missed_blocks, 0)}</TableCell>
+                                <TableCell>{localeNumber(validator.total_votes)}</TableCell>
                                 <TableCell>
                                     <Button onClick={() => onNodeSelected?.(validator.account_name)} size="sm">
                                         View

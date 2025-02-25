@@ -3,6 +3,7 @@ import { usePromise } from '../hooks/Promise';
 import { DefaultService } from '../services/openapi';
 import { Table, TableBody, TableCell, TableColumn, TableHead, TablePager, TableRow } from './Table';
 import { useState } from 'react';
+import { localeNumber } from './LocaleNumber';
 
 export function ValidatorVotesTable({ account, className }: { account: string; className?: string }) {
     const [page, setPage] = useState(0);
@@ -18,7 +19,7 @@ export function ValidatorVotesTable({ account, className }: { account: string; c
                 <TableHead>
                     <TableRow>
                         <TableColumn>Account</TableColumn>
-                        <TableColumn>Vote Weight (total: {totalVotes.toLocaleString()})</TableColumn>
+                        <TableColumn>Vote Weight (total: {localeNumber(totalVotes)})</TableColumn>
                     </TableRow>
                 </TableHead>
                 <TableBody>
@@ -32,7 +33,7 @@ export function ValidatorVotesTable({ account, className }: { account: string; c
                     {votes?.slice(page * limit, page * limit + limit).map((vote) => (
                         <TableRow key={vote.voter}>
                             <TableCell>{vote.voter}</TableCell>
-                            <TableCell>{vote.vote_weight}</TableCell>
+                            <TableCell>{localeNumber(vote.vote_weight)}</TableCell>
                         </TableRow>
                     ))}
                 </TableBody>

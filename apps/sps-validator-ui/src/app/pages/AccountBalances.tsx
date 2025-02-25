@@ -5,6 +5,7 @@ import { FormEvent, useState } from 'react';
 import { usePromise } from '../hooks/Promise';
 import { DefaultService } from '../services/openapi';
 import { Table, TableBody, TableCell, TableColumn, TableHead, TableRow } from '../components/Table';
+import { localeNumber } from '../components/LocaleNumber';
 
 export function AccountBalancesCard({ account }: { account: string }) {
     const [balances, loading] = usePromise(() => DefaultService.getBalances(account), [account]);
@@ -27,7 +28,7 @@ export function AccountBalancesCard({ account }: { account: string }) {
                             {balances.map((balance) => (
                                 <TableRow key={balance.token}>
                                     <TableCell>{balance.token}</TableCell>
-                                    <TableCell>{balance.balance.toLocaleString()}</TableCell>
+                                    <TableCell>{localeNumber(balance.balance)}</TableCell>
                                 </TableRow>
                             ))}
                         </TableBody>

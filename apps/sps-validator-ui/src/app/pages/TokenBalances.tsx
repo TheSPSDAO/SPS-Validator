@@ -3,6 +3,7 @@ import { useState } from 'react';
 import { DefaultService } from '../services/openapi';
 import { usePromise } from '../hooks/Promise';
 import { Table, TableBody, TableCell, TableColumn, TableHead, TablePager, TableRow } from '../components/Table';
+import { localeNumber } from '../components/LocaleNumber';
 
 const tokens = ['SPS', 'SPSP', 'LICENSE'];
 
@@ -44,7 +45,7 @@ function TokenBalancesTab({ token }: { token: string }) {
                         <TableRow key={balance.player}>
                             <TableCell>{token}</TableCell>
                             <TableCell>{balance.player}</TableCell>
-                            <TableCell>{balance.balance.toLocaleString()}</TableCell>
+                            <TableCell>{localeNumber(balance.balance)}</TableCell>
                         </TableRow>
                     ))}
                 </TableBody>

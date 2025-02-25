@@ -5,6 +5,7 @@ import { DefaultService } from '../services/openapi';
 import { Button, Card, CardBody, Input, Spinner, Typography } from '@material-tailwind/react';
 import { TableHead, TableRow, TableColumn, TableBody, TableCell, Table } from '../components/Table';
 import { useSearchParams } from 'react-router-dom';
+import { localeNumber } from '../components/LocaleNumber';
 
 function AccountVotesCard({ account }: { account: string }) {
     const [votes, isLoading] = usePromise(() => DefaultService.getVotesByAccount(account), [account]);
@@ -48,7 +49,7 @@ function AccountVotesCard({ account }: { account: string }) {
                         {votes?.map((vote) => (
                             <TableRow key={vote.validator}>
                                 <TableCell>{vote.validator}</TableCell>
-                                <TableCell>{vote.vote_weight.toLocaleString()}</TableCell>
+                                <TableCell>{localeNumber(vote.vote_weight)}</TableCell>
                             </TableRow>
                         ))}
                     </TableBody>

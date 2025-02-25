@@ -9,6 +9,8 @@ import { TxLookupService } from '../services/TxLookupService';
 import { Link, useSearchParams } from 'react-router-dom';
 import { ValidatorStatsTable } from '../components/ValidatorStatsTable';
 import { ValidatorVotesTable } from '../components/ValidatorVotesTable';
+import { ValidatorName } from '../components/ValidatorName';
+import { localeNumber } from '../components/LocaleNumber';
 
 function VoteCard({
     account,
@@ -158,27 +160,12 @@ function VoteCard({
                         {result?.validators?.map((validator) => (
                             <TableRow key={validator.account_name}>
                                 <TableCell>
-                                    <span>
-                                        {validator.account_name} (
-                                        {validator.api_url && (
-                                            <a href={validator.api_url} target="_blank" rel="noreferrer" className="text-blue-600 underline">
-                                                api
-                                            </a>
-                                        )}
-                                        {' | '}
-                                        {!validator.api_url && <span className="text-red-600">no api</span>}
-                                        {validator.post_url && (
-                                            <a href={validator.post_url} target="_blank" rel="noreferrer" className="text-blue-600 underline">
-                                                peakd post
-                                            </a>
-                                        )}
-                                        {!validator.post_url && <span className="text-red-600">no peakd post</span>})
-                                    </span>
+                                    <ValidatorName {...validator} link_to_validator={true} />
                                 </TableCell>
                                 <TableCell>{validator.last_version ?? 'unknown'}</TableCell>
                                 <TableCell>{validator.is_active ? 'Yes' : 'No'}</TableCell>
-                                <TableCell>{validator.missed_blocks.toLocaleString()}</TableCell>
-                                <TableCell>{validator.total_votes.toLocaleString()}</TableCell>
+                                <TableCell>{localeNumber(validator.missed_blocks, 0)}</TableCell>
+                                <TableCell>{localeNumber(validator.total_votes)}</TableCell>
                                 <TableCell>
                                     <Button disabled={progress} onClick={() => onNodeSelected(validator.account_name)} size="sm" className="me-2">
                                         View
@@ -265,7 +252,7 @@ function MyVotesCard({
                         {votes.map((vote) => (
                             <TableRow key={vote.validator}>
                                 <TableCell>{vote.validator}</TableCell>
-                                <TableCell>{vote.vote_weight}</TableCell>
+                                <TableCell>{localeNumber(vote.vote_weight)}</TableCell>
                                 <TableCell>
                                     <Button disabled={progress} onClick={() => onNodeSelected(vote.validator)} size="sm" className="me-2">
                                         View
