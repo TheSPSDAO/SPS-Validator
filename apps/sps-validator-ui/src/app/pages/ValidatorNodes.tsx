@@ -6,6 +6,8 @@ import { DefaultService } from '../services/openapi';
 import { Link, useSearchParams } from 'react-router-dom';
 import { ValidatorVotesTable } from '../components/ValidatorVotesTable';
 import { ValidatorStatsTable } from '../components/ValidatorStatsTable';
+import { ValidatorName } from '../components/ValidatorName';
+import { localeNumber } from '../components/LocaleNumber';
 import useSpinnerColor from '../hooks/SpinnerColor'
 import { MagnifyingGlassIcon } from '@heroicons/react/24/solid';
 import { CardHeader } from '@material-tailwind/react';
@@ -65,6 +67,11 @@ function ValidatorNodesCard({ className, onNodeSelected }: { className?: string;
                                             Validator
                                         </Typography>
                                     </TableColumn>
+                                    <TableColumn>
+                                        <Typography color="blue-gray" className="font-normal text-left dark:text-gray-800">
+                                            Last Version
+                                        </Typography>
+                                    </TableColumn>
                                     <TableColumn className="dark:bg-gray-300">
                                         <Typography color="blue-gray" className="font-normal text-left dark:text-gray-800">
                                             Active
@@ -99,16 +106,9 @@ function ValidatorNodesCard({ className, onNodeSelected }: { className?: string;
                                 {result?.validators?.map((validator) => (
                                     <TableRow key={validator.account_name}  className="dark:border-gray-300">
                                         <TableCell>
-                                            <span>
-                                                {validator.account_name} (
-                                                {validator.post_url && (
-                                                    <a href={validator.post_url} target="_blank" rel="noreferrer">
-                                                        {validator.account_name}
-                                                    </a>
-                                                )}
-                                                {!validator.post_url && 'no post url set'})
-                                            </span>
+                                            <ValidatorName {...validator} link_to_validator={false} />
                                         </TableCell>
+                                        <TableCell>{validator.last_version ?? 'unknown'}</TableCell>
                                         <TableCell>{validator.is_active ? 'Yes' : 'No'}</TableCell>
                                         <TableCell>{validator.missed_blocks.toLocaleString()}</TableCell>
                                         <TableCell>{validator.total_votes.toLocaleString()}</TableCell>
@@ -134,8 +134,8 @@ export function ValidatorNodes() {
     const [searchParams, setSearchParams] = useSearchParams({
         node: '',
     });
-    const selectedNode = searchParams.get('node');
-    const hasSelectedNode = selectedNode !== '';
+    const selectedNode = searchParams.get('node')?.trim() ?? '';
+    const hasSelectedNode = selectedNode !== '' && selectedNode !== null;
     const selectNode = (node: string) => {
         setSearchParams({ node });
     };

@@ -55,6 +55,7 @@ snapshot() {
     # connect to the database and run the freshsnapshot() function
     docker_compose_wrapper exec pg psql -U postgres -h 127.0.0.1 -d "$APP_DATABASE" -c "SELECT snapshot.freshsnapshot(TRUE);"
 
+    # dump the snapshot to a file
     echo "Dumping snapshot to file"
     docker_compose_wrapper exec -e PGPASSWORD="$POSTGRES_PASSWORD" pg pg_dump \
         --no-owner --no-acl \
@@ -64,6 +65,14 @@ snapshot() {
         --host "127.0.0.1" \
         --username "${POSTGRES_USER:-postgres}" \
         "${APP_DATABASE}" > snapshot.sql
+
+    # get the latest change from the sqitch.changes table with psql
+    CHANGE=$(docker_compose_wrapper exec pg psql -U postgres -h 127.0.0.1 -d "$APP_DATABASE" -t -c "SELECT change FROM sqitch.changes WHERE project = 'splinterlands-validator' ORDER BY committed_at DESC LIMIT 1")
+    # trim whitespace from the change
+    CHANGE=$(echo "$CHANGE" | xargs echo -n)
+    echo "Latest change: $CHANGE"
+    # add to the beginning of the snapshot.sql file like -- to_change:$CHANGE
+    sed -i "1s/^/-- to_change:$CHANGE\n/" snapshot.sql
 
     echo "Snapshot created. You can find it in snapshot.sql"
 

@@ -4,7 +4,6 @@ import {
     BlockRepository,
     ErrorType,
     EventLog,
-    HiveAccountRepository,
     OperationData,
     Trx,
     ValidationError,
@@ -73,12 +72,16 @@ export class ValidateBlockAction extends Action<typeof validate_block.actionSche
 
         // Award SPS tokens to the validator who validated this block
         const reward = this.op.block_reward;
-
         if (reward !== 0) {
             const [amount, token] = reward;
             if (amount > 0) {
                 results.push(...(await this.balanceRepository.updateBalance(this, '$VALIDATOR_REWARDS', reward_account, token, amount, this.action_name, trx)));
             }
+        }
+
+        // update the validators version if needed
+        if (validator!.last_version !== this.params.version) {
+            results.push(...(await this.validatorRepository.updateVersion(this.op.account, this.params.version, trx)));
         }
 
         return results;

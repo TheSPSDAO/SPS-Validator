@@ -49,8 +49,9 @@ convict.addFormat({
     },
     coerce: function (val: unknown) {
         switch (typeof val) {
-            case 'string':
+            case 'string': {
                 return JSON.parse(val);
+            }
             case 'object':
                 return val;
             default:

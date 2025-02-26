@@ -49,7 +49,8 @@ export class UpdateValidatorAction extends Action<typeof update_validator.action
                 {
                     account: this.op.account,
                     is_active: this.params.is_active,
-                    post_url: this.params.post_url,
+                    post_url: this.params.post_url ?? undefined,
+                    api_url: this.params.api_url ?? undefined,
                     reward_account: this.params.reward_account ?? undefined,
                 },
                 trx,

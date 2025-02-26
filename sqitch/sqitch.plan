@@ -12,3 +12,4 @@ running-validator-reward-pool 2024-09-04T16:36:39Z stephen <stephen@LAPTOP-N4OOE
 snapshot-tables [appschema validators] 2022-03-11T21:43:24Z Jelle Licht (wordempire) <jelle@splinterlands.com> # Schema and tables for snapshot creation
 snapshot-function [snapshot-tables] 2022-03-11T22:11:12Z Jelle Licht (wordempire) <jelle@splinterlands.com> # Add a function to fill the snapshot schema with a fresh snapshot.
 pre-snapshot [validators appschema] 2022-03-02T16:03:54Z Jelle Licht (wordempire) <jelle@splinterlands.com> # Dynamic snapshot restore synchronization point
+validator_api_url 2025-02-24T20:07:55Z stephen <stephen@LAPTOP-N4OOE985> # Add api url and version to validator table

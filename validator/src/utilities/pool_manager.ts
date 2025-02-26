@@ -29,6 +29,10 @@ export class PoolManager {
         return this.serializer.store(s, trx);
     }
 
+    anyPools() {
+        return this.wrapper?.anyPools() ?? false;
+    }
+
     add(pool: AutonomousPoolConfiguration, aid: ActionIdentifier, trx?: Trx): Promise<EventLog> {
         if (this.wrapper === undefined) {
             throw new AutonomousPoolError(`Trying to add an autonomous pool while pool wrapper is not configured correctly.`, aid, ErrorType.AutonomousPoolInvalid);

@@ -1,17 +1,33 @@
 import React, {FormEvent, useEffect, useRef, useState } from 'react';
 import { Hive, HiveService } from '../services/hive';
-import { Button, Card, CardBody, CardFooter, Input, Spinner, Typography } from '@material-tailwind/react';
+import { Button, Card, CardBody, CardFooter, Dialog, DialogBody, DialogHeader, Input, Spinner, Typography } from '@material-tailwind/react';
 import { AuthorizedAccountWrapper } from '../components/AuthorizedAccountWrapper';
 import { usePromise } from '../hooks/Promise';
 import { DefaultService, ValidatorConfig, ValidatorVote } from '../services/openapi';
 import { Table, TableBody, TableCell, TableColumn, TableHead, TablePager, TableRow } from '../components/Table';
 import { TxLookupService } from '../services/TxLookupService';
-import { Link } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import useSpinnerColor from '../hooks/SpinnerColor'
 import { MagnifyingGlassIcon, TrashIcon } from '@heroicons/react/24/solid';
 import { GradientOverflow } from '../components/GradientOverflow';
+import { ValidatorStatsTable } from '../components/ValidatorStatsTable';
+import { ValidatorVotesTable } from '../components/ValidatorVotesTable';
+import { ValidatorName } from '../components/ValidatorName';
+import { localeNumber } from '../components/LocaleNumber';
 
-function VoteCard({ account, votes, config, reloadVotes }: { account: string; votes: ValidatorVote[]; config: ValidatorConfig; reloadVotes: () => void }) {
+function VoteCard({
+    account,
+    votes,
+    config,
+    reloadVotes,
+    onNodeSelected,
+}: {
+    account: string;
+    votes: ValidatorVote[];
+    config: ValidatorConfig;
+    reloadVotes: () => void;
+    onNodeSelected: (node: string) => void;
+}) {
     const [progress, setProgress] = useState<boolean>(false);
     const [error, setError] = useState<string>('');
     const [page, setPage] = useState(0);
@@ -61,7 +77,7 @@ function VoteCard({ account, votes, config, reloadVotes }: { account: string; vo
         <Card className="dark:bg-gray-800 dark:text-gray-300 dark:shadow-none">
             <CardBody>
                 <Typography variant="h5" color="blue-gray" className="mb-6 dark:text-gray-200">
-                    Vote for Validator - {account}
+                    Vote for Validator
                 </Typography>
 
                 {error && (
@@ -69,6 +85,31 @@ function VoteCard({ account, votes, config, reloadVotes }: { account: string; vo
                         {error}
                     </Typography>
                 )}
+
+                <div className="mt-2">
+                    <Typography variant="paragraph" color="blue-gray" className="text-sm">
+                        You have used {votes.length} out of {config.max_votes} votes
+                    </Typography>
+                </div>
+
+                <div className="mt-2">
+                    <Typography variant="h6" color="blue-gray">
+                        Criteria to keep in mind when voting
+                    </Typography>
+                    <Typography variant="paragraph" color="blue-gray" className="text-md">
+                        <ul className="list-disc list-inside">
+                            <li>Validators are responsible for validating blocks that are based off sps transactions on the Hive blockchain.</li>
+                            <li>Validators with the most votes have a higher chance to be selected to validate blocks, so vote for validators you trust.</li>
+                            <li>Validators with a PeakD post describing their node setup are more likely to be a quality node.</li>
+                            <li>
+                                Validators with an API URL set are making their node available to everybody else. Validators without one are not contributing as much to the SPS
+                                chain.
+                            </li>
+                            <li>Validators with a high missed block count indicates their node is not reliable. Validators with a low missed block count are more reliable.</li>
+                            <li>Validators on the most recent version of the validator software should be chosen over validators on an older version.</li>
+                        </ul>
+                    </Typography>
+                </div>
 
                 <form className="mt-4 w-full sm:max-w-[400px] flex justify-self-end gap-4" onSubmit={updateSearch}>
                     <Input 
@@ -93,6 +134,11 @@ function VoteCard({ account, votes, config, reloadVotes }: { account: string; vo
                                     <TableColumn className="dark:bg-gray-300">
                                         <Typography color="blue-gray" className="font-normal text-left dark:text-gray-800">
                                             Validator
+                                        </Typography>
+                                    </TableColumn>
+                                    <TableColumn>
+                                        <Typography color="blue-gray" className="font-normal text-left dark:text-gray-800">
+                                            Last Version
                                         </Typography>
                                     </TableColumn>
                                     <TableColumn className="dark:bg-gray-300">
@@ -129,15 +175,22 @@ function VoteCard({ account, votes, config, reloadVotes }: { account: string; vo
                                 {result?.validators?.map((validator) => (
                                     <TableRow key={validator.account_name} className="dark:border-gray-300">
                                         <TableCell>
-                                            <a href={validator.post_url ?? undefined} target="_blank" rel="noreferrer">
-                                                {validator.account_name}
-                                            </a>
+                                            <ValidatorName {...validator} link_to_validator={true} />
                                         </TableCell>
+                                        <TableCell>{validator.last_version ?? 'unknown'}</TableCell>
                                         <TableCell>{validator.is_active ? 'Yes' : 'No'}</TableCell>
                                         <TableCell>{validator.missed_blocks.toLocaleString()}</TableCell>
                                         <TableCell>{validator.total_votes.toLocaleString()}</TableCell>
                                         <TableCell>
                                             <div className="flex justify-center">
+                                                <Button 
+                                                    disabled={progress} 
+                                                    onClick={() => onNodeSelected(validator.account_name)} 
+                                                    size="sm" 
+                                                    className="me-2 dark:bg-blue-800 dark:hover:bg-blue-600 dark:border-gray-300 dark:border dark:text-gray-300 dark:hover:text-gray-100 dark:shadow-none"
+                                                >
+                                                    View
+                                                </Button>
                                                 <Button
                                                     disabled={votes.some((v) => v.validator === validator.account_name) || progress}
                                                     onClick={() => voteFor(validator.account_name)}
@@ -161,7 +214,19 @@ function VoteCard({ account, votes, config, reloadVotes }: { account: string; vo
     );
 }
 
-function MyVotesCard({ account, votes, config, reloadVotes }: { account: string; votes: ValidatorVote[]; config: ValidatorConfig; reloadVotes: () => void }) {
+function MyVotesCard({
+    account,
+    votes,
+    config,
+    reloadVotes,
+    onNodeSelected,
+}: {
+    account: string;
+    votes: ValidatorVote[];
+    config: ValidatorConfig;
+    reloadVotes: () => void;
+    onNodeSelected: (node: string) => void;
+}) {
     const [progress, setProgress] = useState<boolean>(false);
     const [error, setError] = useState<string>('');
     const spinnerColor = useSpinnerColor("teal");
@@ -191,7 +256,7 @@ function MyVotesCard({ account, votes, config, reloadVotes }: { account: string;
         <Card className="dark:bg-gray-800 dark:text-gray-300 dark:shadow-none">
             <CardBody>
                 <Typography variant="h5" color="blue-gray" className="mb-6 dark:text-gray-200">
-                    My Votes - {account}
+                    My Votes
                 </Typography>
                 <div>
                     <Typography variant="paragraph" color="blue-gray" className="text-sm dark:text-gray-300">
@@ -217,13 +282,18 @@ function MyVotesCard({ account, votes, config, reloadVotes }: { account: string;
                                 {votes.map((vote) => (
                                     <TableRow key={vote.validator}  className="dark:border-gray-300">
                                         <TableCell>{vote.validator}</TableCell>
-                                        <TableCell>{vote.vote_weight}</TableCell>
+                                        <TableCell>{localeNumber(vote.vote_weight)}</TableCell>
                                         <TableCell>
                                             <div className="flex justify-center">
-                                                <Button className="flex flex-row items-center p-2 sm:py-3 sm:px-6 dark:bg-blue-800 dark:hover:bg-blue-600 dark:border-gray-300 dark:border dark:text-gray-300 dark:hover:text-gray-100 dark:shadow-none" disabled={progress} onClick={() => removeVote(vote.validator)}>
-                                                    {progress && <Spinner className="me-3 text-sm" color={spinnerColor} />}
-                                                    <TrashIcon className="sm:hidden size-6"/>
-                                                    <p className="sr-only sm:not-sr-only">Remove</p>
+                                                <Button disabled={progress} onClick={() => onNodeSelected(vote.validator)} size="sm" className="me-2">
+                                                    View
+                                                </Button>
+                                                <Button className="p-2 sm:py-3 sm:px-6 dark:bg-blue-800 dark:hover:bg-blue-600 dark:border-gray-300 dark:border dark:text-gray-300 dark:hover:text-gray-100 dark:shadow-none" disabled={progress} onClick={() => removeVote(vote.validator)}>
+                                                    <div className="flex flex-row items-center">
+                                                        {progress && <Spinner className="me-3" width={16} height={16} color={spinnerColor} />}
+                                                        <TrashIcon className="sm:hidden size-6"/>
+                                                        <p className="sr-only sm:not-sr-only">Remove</p> Vote
+                                                    </div>
                                                 </Button>
                                             </div>
                                         </TableCell>
@@ -250,6 +320,14 @@ export function ManageVotes() {
         reloadVotes();
         reloadConfig();
     };
+    const [searchParams, setSearchParams] = useSearchParams({
+        node: '',
+    });
+    const selectedNode = searchParams.get('node')?.trim() ?? '';
+    const hasSelectedNode = selectedNode !== '' && selectedNode !== null;
+    const selectNode = (node: string) => {
+        setSearchParams({ node });
+    };
     return (
         <AuthorizedAccountWrapper title="Manage Votes" onAuthorized={setAccount} onAuthorizing={() => setAccount(undefined)}>
             <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
@@ -273,8 +351,31 @@ export function ManageVotes() {
                         </CardFooter>
                     </Card>
                 )}
-                {loaded && <MyVotesCard votes={votes} config={validatorConfig} reloadVotes={reloadVotes} account={account} />}
-                {loaded && <VoteCard votes={votes} config={validatorConfig} reloadVotes={reloadVotes} account={account} />}
+                {loaded && <MyVotesCard votes={votes} config={validatorConfig} reloadVotes={reloadVotes} account={account} onNodeSelected={selectNode} />}
+                {loaded && <VoteCard votes={votes} config={validatorConfig} reloadVotes={reloadVotes} account={account} onNodeSelected={selectNode} />}
+                <Dialog className="dialog" open={hasSelectedNode} handler={() => setSearchParams({ node: '' })}>
+                    <DialogHeader>
+                        <Typography variant="h5" color="blue-gray">
+                            Validator Node - {selectedNode}
+                        </Typography>
+                    </DialogHeader>
+                    <DialogBody>
+                        <div className="grid grid-cols-1 gap-4">
+                            <div>
+                                <Typography variant="h6" color="blue-gray">
+                                    Stats
+                                </Typography>
+                                <ValidatorStatsTable validator={selectedNode!} className="w-full mt-3" />
+                            </div>
+                            <div>
+                                <Typography variant="h6" color="blue-gray">
+                                    Votes
+                                </Typography>
+                                <ValidatorVotesTable account={selectedNode!} className="w-full mt-3" />
+                            </div>
+                        </div>
+                    </DialogBody>
+                </Dialog>
             </div>
         </AuthorizedAccountWrapper>
     );

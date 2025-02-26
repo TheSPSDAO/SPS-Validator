@@ -5,6 +5,7 @@ import { FormEvent, useRef, useState } from 'react';
 import { usePromise } from '../hooks/Promise';
 import { DefaultService } from '../services/openapi';
 import { Table, TableBody, TableCell, TableColumn, TableHead, TableRow } from '../components/Table';
+import { localeNumber } from '../components/LocaleNumber';
 import { MagnifyingGlassIcon } from '@heroicons/react/24/solid';
 import { GradientOverflow } from '../components/GradientOverflow';
 
@@ -32,7 +33,7 @@ export function AccountBalancesCard({ account }: { account: string }) {
                                     {balances.map((balance) => (
                                         <TableRow key={balance.token} className="dark:border-gray-300">
                                             <TableCell>{balance.token}</TableCell>
-                                            <TableCell>{balance.balance.toLocaleString()}</TableCell>
+                                            <TableCell>{localeNumber(balance.balance)}</TableCell>
                                         </TableRow>
                                     ))}
                                 </TableBody>

@@ -5,6 +5,7 @@ import { DefaultService } from '../services/openapi';
 import { Button, Card, CardBody, Input, Spinner, Typography } from '@material-tailwind/react';
 import { TableHead, TableRow, TableColumn, TableBody, TableCell, Table } from '../components/Table';
 import { useSearchParams } from 'react-router-dom';
+import { localeNumber } from '../components/LocaleNumber';
 import useSpinnerColor from '../hooks/SpinnerColor'
 import { MagnifyingGlassIcon } from '@heroicons/react/24/solid';
 import { GradientOverflow} from '../components/GradientOverflow'
@@ -55,7 +56,7 @@ function AccountVotesCard({ account }: { account: string }) {
                                 {votes?.map((vote) => (
                                     <TableRow key={vote.validator} className="dark:border-gray-300">
                                         <TableCell>{vote.validator}</TableCell>
-                                        <TableCell>{vote.vote_weight.toLocaleString()}</TableCell>
+                                        <TableCell>{localeNumber(vote.vote_weight)}</TableCell>
                                     </TableRow>
                                 ))}
                             </TableBody>

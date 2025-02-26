@@ -5,6 +5,8 @@ import { DefaultService } from '../services/openapi';
 import React, { useRef } from 'react';
 import { Table, TableHead, TableRow, TableColumn, TableBody, TableCell } from '../components/Table';
 import { useMetrics } from '../context/MetricsContext';
+import { ValidatorName } from '../components/ValidatorName';
+import { localeNumber } from '../components/LocaleNumber';
 import useSpinnerColor from '../hooks/SpinnerColor'
 import { GradientOverflow} from '../components/GradientOverflow'
 
@@ -37,7 +39,7 @@ function useMetricsCard() {
 
     return [
         { label: 'SPS Price', value: `$${spsPrice?.toFixed(5) ?? '...'}` },
-        { label: 'Validator Nodes', value: validators?.toString() ?? '...' },
+        { label: 'Validator Nodes', value: validators ? localeNumber(validators) : '...' },
         { label: 'Block Num', value: lastBlock?.toString() ?? '...' },
     ];
 }
@@ -63,7 +65,7 @@ const MetricsCard = () => {
             </CardBody>
         </Card>
     );
-}
+};
 
 export type TopValidatorsTableProps = {
     limit?: number;
@@ -123,22 +125,11 @@ export function TopValidatorsTable(props: TopValidatorsTableProps) {
                             result?.validators?.map((validator) => (
                                 <TableRow key={validator.account_name} className="dark:border-gray-300">
                                     <TableCell>
-                                        <span>
-                                            <Link to={`/validator-nodes?node=${encodeURIComponent(validator.account_name)}`} className="text-blue-600 underline">
-                                                {validator.account_name}
-                                            </Link>{' '}
-                                            (
-                                            {validator.post_url && (
-                                                <a href={validator.post_url} target="_blank" rel="noreferrer">
-                                                    {validator.account_name}
-                                                </a>
-                                            )}
-                                            {!validator.post_url && 'no post url set'})
-                                        </span>
+                                        <ValidatorName {...validator} link_to_validator={true} />
                                     </TableCell>
                                     <TableCell>{validator.is_active ? 'Yes' : 'No'}</TableCell>
-                                    <TableCell>{validator.missed_blocks.toLocaleString()}</TableCell>
-                                    <TableCell>{validator.total_votes.toLocaleString()}</TableCell>
+                                    <TableCell>{localeNumber(validator.missed_blocks, 0)}</TableCell>
+                                    <TableCell>{localeNumber(validator.total_votes)}</TableCell>
                                 </TableRow>
                             ))}
                     </TableBody>
@@ -183,7 +174,7 @@ export function TopSpsHoldersTable(props: TopSpsHoldersTableProps) {
                         {balances?.balances?.map((balance, index) => (
                             <TableRow key={index} className="dark:border-gray-300">
                                 <TableCell>{balance.player}</TableCell>
-                                <TableCell>{balance.balance.toLocaleString()}</TableCell>
+                                <TableCell>{localeNumber(balance.balance)}</TableCell>
                             </TableRow>
                         ))}
                     </TableBody>

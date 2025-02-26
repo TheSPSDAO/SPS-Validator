@@ -73,6 +73,7 @@ test.dbOnly('check_in_validator succeeds', async () => {
             {
                 block_num: block_num - 1,
                 hash: check_in_hash,
+                version: 'abc',
             },
             { block_num },
         ),
@@ -102,6 +103,7 @@ test.dbOnly('check_in_validator fails for non-validator', async () => {
             {
                 block_num: block_num - 1,
                 hash: check_in_hash,
+                version: 'abc',
             },
             { block_num },
         ),
@@ -129,6 +131,7 @@ test.dbOnly('check_in_validator for reward_account succeeds', async () => {
             {
                 block_num: block_num - 1,
                 hash: check_in_hash,
+                version: 'abc',
             },
             { block_num },
         ),
@@ -158,6 +161,7 @@ test.dbOnly('check_in_validator for reward_account with no licenses fails', asyn
             {
                 block_num: block_num - 1,
                 hash: check_in_hash,
+                version: 'abc',
             },
             { block_num },
         ),
@@ -185,6 +189,7 @@ test.dbOnly('check_in_validator fails without a license', async () => {
             {
                 block_num: block_num - 1,
                 hash: check_in_hash,
+                version: 'abc',
             },
             { block_num },
         ),
@@ -212,6 +217,7 @@ test.dbOnly('check_in_validator fails with invalid check in hash', async () => {
             {
                 block_num: block_num - 1,
                 hash: check_in_hash,
+                version: 'abc',
             },
             { block_num },
         ),
@@ -238,6 +244,7 @@ test.dbOnly('check_in_validator fails when reward pool is paused', async () => {
             {
                 block_num: block_num - 1,
                 hash: check_in_hash,
+                version: 'abc',
             },
             { block_num },
         ),
@@ -266,6 +273,7 @@ test.dbOnly('check_in_validator fails when checking in too soon', async () => {
             {
                 block_num: block_num - 1,
                 hash: check_in_hash,
+                version: 'abc',
             },
             { block_num },
         ),
@@ -282,6 +290,7 @@ test.dbOnly('check_in_validator fails when checking in too soon', async () => {
             {
                 hash: next_check_in_hash,
                 block_num: next_block_num - 1,
+                version: 'abc',
             },
             { block_num: next_block_num },
         ),
@@ -311,6 +320,7 @@ test.dbOnly('check_in_validator succeeds twice without adding to the reward pool
             {
                 block_num: block_num - 1,
                 hash: check_in_hash,
+                version: 'abc',
             },
             { block_num },
         ),
@@ -327,6 +337,7 @@ test.dbOnly('check_in_validator succeeds twice without adding to the reward pool
             {
                 block_num: next_block_num - 1,
                 hash: next_check_in_hash,
+                version: 'abc',
             },
             { block_num: next_block_num },
         ),

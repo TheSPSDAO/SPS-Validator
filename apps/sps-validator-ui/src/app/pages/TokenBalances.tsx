@@ -3,6 +3,7 @@ import { useRef, useState } from 'react';
 import { DefaultService } from '../services/openapi';
 import { usePromise } from '../hooks/Promise';
 import { Table, TableBody, TableCell, TableColumn, TableHead, TablePager, TableRow } from '../components/Table';
+import { localeNumber } from '../components/LocaleNumber';
 import useSpinnerColor from '../hooks/SpinnerColor'
 import { GradientOverflow } from '../components/GradientOverflow';
 
@@ -50,7 +51,7 @@ function TokenBalancesTab({ token }: { token: string }) {
                             <TableRow key={balance.player} className="dark:border-gray-300">
                                 <TableCell>{token}</TableCell>
                                 <TableCell>{balance.player}</TableCell>
-                                <TableCell>{balance.balance.toLocaleString()}</TableCell>
+                                <TableCell>{localeNumber(balance.balance)}</TableCell>
                             </TableRow>
                         ))}
                     </TableBody>

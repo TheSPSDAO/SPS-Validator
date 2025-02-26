@@ -52,6 +52,7 @@ function ErrorCard({ error, retry }: { error: Error; retry: () => void }) {
 
 function RegisterCard({ account, registered }: { account: string; registered: () => void }) {
     const [postUrl, setPostUrl] = useState('');
+    const [apiUrl, setApiUrl] = useState('');
     const [rewardAccount, setRewardAccount] = useState('');
     const [error, setError] = useState('');
     const [progress, setProgress] = useState(false);
@@ -64,7 +65,8 @@ function RegisterCard({ account, registered }: { account: string; registered: ()
             const posted = await HiveService.updateValidator(
                 {
                     is_active: false,
-                    post_url: postUrl,
+                    post_url: postUrl === '' ? null : postUrl,
+                    api_url: apiUrl === '' ? null : apiUrl,
                     reward_account: rewardAccount === '' ? null : rewardAccount,
                 },
                 account,
@@ -102,8 +104,18 @@ function RegisterCard({ account, registered }: { account: string; registered: ()
                         <div>
                             <Input
                                 size="lg"
-                                label="Node URL"
-                                placeholder="URL that your node will be accessible from (not required)"
+                                label="API URL"
+                                placeholder="URL that your node will be accessible from (not required). Not setting this can discourage users from voting for your node."
+                                value={apiUrl}
+                                disabled={progress}
+                                onChange={(e) => setApiUrl(e.target.value.trim())}
+                            />
+                        </div>
+                        <div>
+                            <Input
+                                size="lg"
+                                label="Post URL"
+                                placeholder="PeakD post describing why users should vote for your node (not required). Not setting this can discourage users from voting for your node."
                                 value={postUrl}
                                 disabled={progress}
                                 onChange={(e) => setPostUrl(e.target.value.trim())}
@@ -146,6 +158,7 @@ function RegisterCard({ account, registered }: { account: string; registered: ()
 function ManageCard({ account, validator, reloadValidator }: { account: string; validator: Validator; reloadValidator: () => void }) {
     const [isActive, setIsActive] = useState<boolean>(validator.is_active);
     const [postUrl, setPostUrl] = useState<string>(validator.post_url ?? '');
+    const [apiUrl, setApiUrl] = useState<string>(validator.api_url ?? '');
     const [rewardAccount, setRewardAccount] = useState<string>(validator.reward_account ?? '');
     const [error, setError] = useState('');
     const [progress, setProgress] = useState(false);
@@ -158,7 +171,8 @@ function ManageCard({ account, validator, reloadValidator }: { account: string; 
             const broadcastResult = await HiveService.updateValidator(
                 {
                     is_active: isActive,
-                    post_url: postUrl,
+                    post_url: postUrl === '' ? null : postUrl,
+                    api_url: apiUrl === '' ? null : apiUrl,
                     reward_account: rewardAccount === '' ? null : rewardAccount,
                 },
                 account,
@@ -212,8 +226,18 @@ function ManageCard({ account, validator, reloadValidator }: { account: string; 
                             <div>
                                 <Input
                                     size="lg"
+                                    label="API URL"
+                                    placeholder="URL that your node will be accessible from (not required). Not setting this can discourage users from voting for your node."
+                                    value={apiUrl}
+                                    disabled={progress}
+                                    onChange={(e) => setApiUrl(e.target.value.trim())}
+                                />
+                            </div>
+                            <div>
+                                <Input
+                                    size="lg"
                                     label="Post URL"
-                                    placeholder="URL that your node will be accessible from (not required)"
+                                    placeholder="PeakD post describing why users should vote for your node (not required). Not setting this can discourage users from voting for your node."
                                     value={postUrl}
                                     disabled={progress}
                                     onChange={(e) => setPostUrl(e.target.value.trim())}
