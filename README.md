@@ -102,10 +102,10 @@ Once those are set, you can run `./run.sh rebuild_service validator` to apply th
 
 You can update an existing node to a new release without replaying from a snapshot.
 
-- Set `KILL_BLOCK` in your .env file to the scheduled updates block number and restart your node (`./run.sh restart`).
+- Set `KILL_BLOCK` in your .env file to the scheduled updates block number and rebuild your node (`./run.sh rebuild_service validator`).
 - As the kill block gets closer, you should set your node to inactive.
 - When the `KILL_BLOCK` hits, your node will stop.
-- `./run.sh stop` so it stops restarting itself.
+- `./run.sh stop` so your node stops restarting itself.
 - _(Note)_ You can run `./run.sh snapshot` to take a backup of your database before updating to be safe. If you need to restore this snapshot, see [snapshots](#snapshots).
 - You can now pull the latest version with `git fetch && git checkout release-<version>`.
 - `./run.sh build` to apply the latest database updates. When it asks if you want to download a new snapshot, you can enter "n".
