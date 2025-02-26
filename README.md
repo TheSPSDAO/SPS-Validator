@@ -1,6 +1,6 @@
 # SPS Validator
 
-To update an existing node to a new release, see [updating](#updating).
+To update an existing node to a new release, see [updating](#updating-an-existing-node).
 
 ## Easy Install (mac or linux only):
 Easy install will run through the setup steps for you, but requires the following to be installed on your machine:
@@ -15,6 +15,29 @@ sudo bash <(curl -s https://raw.githubusercontent.com/TheSPSDAO/SPS-Validator/re
 ```
 
 You should still look through the manual setup steps so you understand how to stop/start your node and configure it.
+
+## Table of Contents
+
+- [Getting started with Docker (manual setup)](#getting-started-with-docker-manual-setup)
+    - [Manual Setup Prerequisites](#manual-setup-prerequisites)
+    - [Manual Setup Instructions](#manual-setup-instructions)
+    - [Registering your node](#registering-your-node)
+    - [Staking your licenses for LICENSE rewards](#staking-your-licenses-for-license-rewards)
+    - [Price Feed](#price-feed)
+    - [Known Bugs](#known-bugs)
+    - [Additional Commands](#additional-commands)
+    - [Updating an existing node](#updating-an-existing-node)
+    - [Starting over from a fresh snapshot](#starting-over-from-a-fresh-snapshot)
+    - [Snapshots](#snapshots)
+- [Local development](#local-development)
+    - [Plugins](#plugins)
+    - [Testing](#testing)
+- [Deployment](#deployment)
+- [Common problems](#common-problems)
+- [Useful links](#useful-links)
+- [About the repository](#about-the-repository)
+    - [Libraries](#libraries)
+    - [Apps](#apps)
 
 ## Getting started with Docker (manual setup)
 
