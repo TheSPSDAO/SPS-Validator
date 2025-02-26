@@ -37,7 +37,6 @@ export function registerApiRoutes(app: Router, opts: ApiOptions): void {
     app.get('/status', async (req, res, next) => {
         try {
             const lastBlockCache = req.resolver.resolve<LastBlockCache>(LastBlockCache);
-            console.log(opts.db_block_retention);
             res.json({
                 status: 'running',
                 last_block: lastBlockCache.value?.block_num || 0,
