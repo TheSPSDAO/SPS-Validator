@@ -1,6 +1,6 @@
 # SPS Validator
 
-You need to re-build the validator when getting started or when updating to a newer release.
+To update an existing node to a new release, see [updating](#updating).
 
 ## Easy Install (mac or linux only):
 Easy install will run through the setup steps for you, but requires the following to be installed on your machine:
@@ -14,7 +14,7 @@ Run the following in a bash shell in your home directory once the above are inst
 sudo bash <(curl -s https://raw.githubusercontent.com/TheSPSDAO/SPS-Validator/refs/tags/latest/install.sh)
 ```
 
-You should still look through the manual setup steps so you understand how to stop/start your node.
+You should still look through the manual setup steps so you understand how to stop/start your node and configure it.
 
 ## Getting started with Docker (manual setup)
 
@@ -80,10 +80,38 @@ Once those are set, you can run `./run.sh rebuild_service validator` to apply th
 - `./run.sh restart`: helpful wrapper around `./run.sh stop` and `./run.sh start`
 - `./run.sh logs`: trails the last 30 lines of logs
 - `./run.sh snapshot`: stops the validator and creates a snapshot of the database. this snapshot can be uploaded and used to restore another validator.
+- `./run.sh rebuild_service {validator | pg | ui}`: force rebuilds a service to apply new environment variables.
+
+### Updating an existing node
+
+You can update an existing node to a new release without replaying from a snapshot.
+
+- Set `KILL_BLOCK` in your .env file to the scheduled updates block number and restart your node (`./run.sh restart`).
+- As the kill block gets closer, you should set your node to inactive.
+- When the `KILL_BLOCK` hits, your node will stop.
+- Run `./run.sh stop` so it stops restarting itself.
+- _(Note)_ You can run `./run.sh snapshot` to take a backup of your database before updating to be safe. If you need to restore this snapshot, see [snapshots](#snapshots).
+- You can now pull the latest version with `git fetch && git checkout release-<version>`.
+- Run `./run.sh build` to apply the latest database updates. When it asks if you want to download a new snapshot, you can enter "n".
+- Remove the `KILL_BLOCK` from your .env file
+- Run `./run.sh rebuild_service validator` to rebuild the validator with the latest updates. This will also start the validator.
+- Run `./run.sh rebuild_service ui` if you want to rebuild the UI.
 
 ### Starting over from a fresh snapshot
 
+- Make sure you set your node to inactive before replaying.
+- Set the new `SNAPSHOT_URL` in your .env file.
 - `./run.sh replay`:  :warning: **This will irrevocably destroy all local data, including blocks that have already been locally validated**: Be very careful here!
+
+### Snapshots
+
+You can take snapshots locally to take backups, and restore them without uploading them to the internet.
+
+- Run `./run.sh snapshot`. This will bring down your node while the snapshot runs.
+- You will get a `snapshot.zip` file in the git repositories root directory.
+- You can either upload this zip to a publicly accessible URL and share it, or just restore it locally.
+- To restore it locally, copy the `snapshot.zip` file into `./sqitch/validator-data-latest.zip`. (`cp ./snapshot.zip ./sqitch/validator-data-latest`)
+- You can now run `./run.sh replay` and enter "n" when it asks if you want to download a fresh snapshot.
 
 ## Local development
 
@@ -109,7 +137,10 @@ See the `SimpleLogPlugin` as an example of how to implement the `Plugin` interfa
 
 
 ### Testing
-Run tests with `npm test <project>`.
+
+- `./run.sh build`: Make sure you database is setup
+- `POSTGRES_DB={APP_DATABASE env var} npm run dump-structure`: Dumps the schema for tests. You will need pg_dump v16 installed.
+- `npm test <project>`: run tests in the project
 
 ## Deployment
 The created Docker images should be configurable via environment variables. 

@@ -91,6 +91,11 @@ export class BlockRepository extends BaseRepository {
         return record.block_num;
     }
 
+    public async getEarliestBlockNum(trx?: Trx) {
+        const record: Record<'block_num', number | null> = await this.query(BlockEntity, trx).min('block_num', 'block_num').getFirst();
+        return record.block_num;
+    }
+
     public async getLastBlockNumBefore(date: Date, trx?: Trx) {
         const record: Record<'block_num', number | null> = await this.query(BlockEntity, trx).where('block_time', '<', date).max('block_num', 'block_num').getFirst();
         return record.block_num;

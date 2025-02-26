@@ -7,4 +7,7 @@ ALTER TABLE :APP_SCHEMA.validator_transaction_players DROP COLUMN IF EXISTS is_o
 ALTER TABLE :APP_SCHEMA.validator_transaction_players DROP COLUMN IF EXISTS success;
 ALTER TABLE :APP_SCHEMA.validator_transaction_players DROP COLUMN IF EXISTS type;
 
+DROP TABLE snapshot.validator_transaction_players;
+CREATE TABLE snapshot.validator_transaction_players AS TABLE :APP_SCHEMA.validator_transaction_players WITH NO DATA;
+
 COMMIT;

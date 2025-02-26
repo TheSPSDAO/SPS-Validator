@@ -79,6 +79,24 @@ convict.addFormat({
     },
 });
 
+convict.addFormat({
+    name: 'maybe-number',
+    validate: function (val: any) {
+        if (val !== null && typeof val !== 'number') {
+            throw Error('value does not seem to be a number. Please use a different format');
+        }
+    },
+    coerce: function (val: unknown) {
+        if (val === null || val === undefined) {
+            return null;
+        } else if (typeof val === 'string' && val.trim() === '') {
+            return null;
+        }
+        const parsed = Number(val);
+        return isNaN(parsed) ? null : parsed;
+    },
+});
+
 const schema = {
     env: {
         doc: 'The application environment',
@@ -380,6 +398,13 @@ const schema = {
         format: String,
         default: 'development',
         env: 'VERSION',
+    },
+    db_block_retention: {
+        doc: 'The amount of blocks to keep in the database',
+        format: 'maybe-number',
+        nullable: true,
+        default: null as null | number,
+        env: 'DB_BLOCK_RETENTION',
     },
 };
 

@@ -20,4 +20,7 @@ ALTER TABLE :APP_SCHEMA.validator_transaction_players ALTER COLUMN block_num SET
 ALTER TABLE :APP_SCHEMA.validator_transaction_players ALTER COLUMN is_owner SET NOT NULL;
 ALTER TABLE :APP_SCHEMA.validator_transaction_players ALTER COLUMN type SET NOT NULL;
 
+DROP TABLE snapshot.validator_transaction_players;
+CREATE TABLE snapshot.validator_transaction_players AS TABLE :APP_SCHEMA.validator_transaction_players WITH NO DATA;
+
 COMMIT;
