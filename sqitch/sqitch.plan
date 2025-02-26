@@ -11,6 +11,8 @@ promises 2024-06-03T18:41:31Z stephen <stephen@LAPTOP-N4OOE985> # Add promises s
 running-validator-reward-pool 2024-09-04T16:36:39Z stephen <stephen@LAPTOP-N4OOE985> # Add running validator reward pool settings
 snapshot-tables [appschema validators] 2022-03-11T21:43:24Z Jelle Licht (wordempire) <jelle@splinterlands.com> # Schema and tables for snapshot creation
 snapshot-function [snapshot-tables] 2022-03-11T22:11:12Z Jelle Licht (wordempire) <jelle@splinterlands.com> # Add a function to fill the snapshot schema with a fresh snapshot.
+pre-snapshot-restore-function 2025-02-26T19:58:12Z stephen <stephen@LAPTOP-N4OOE985> # Add presnapshot restore function
+post-snapshot-restore-function 2025-02-26T20:02:10Z stephen <stephen@LAPTOP-N4OOE985> # Add post restore snapshot function
 pre-snapshot [validators appschema] 2022-03-02T16:03:54Z Jelle Licht (wordempire) <jelle@splinterlands.com> # Dynamic snapshot restore synchronization point
 validator_api_url 2025-02-24T20:07:55Z stephen <stephen@LAPTOP-N4OOE985> # Add api url and version to validator table
 transaction_players_perf 2025-02-25T20:07:13Z stephen <stephen@LAPTOP-N4OOE985> # Update transaction players schema for better performance
