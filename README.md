@@ -25,10 +25,10 @@ You should still look through the manual setup steps so you understand how to st
     - [Staking your licenses for LICENSE rewards](#staking-your-licenses-for-license-rewards)
     - [Price Feed](#price-feed)
     - [Known Bugs](#known-bugs)
-    - [Additional Commands](#additional-commands)
     - [Updating an existing node](#updating-an-existing-node)
     - [Starting over from a fresh snapshot](#starting-over-from-a-fresh-snapshot)
     - [Snapshots](#snapshots)
+    - [Commands Reference](#commands-reference)
 - [Local development](#local-development)
     - [Plugins](#plugins)
     - [Testing](#testing)
@@ -98,13 +98,6 @@ Once those are set, you can run `./run.sh rebuild_service validator` to apply th
 
 - If your node is running and licenses are then staked for its `VALIDATOR_ACCOUNT` or reward account, it is not picking up the change and starting the check in process. You can resolve this by restarting your node after you've staked your licenses.
 
-### Additional Commands
-
-- `./run.sh restart`: helpful wrapper around `./run.sh stop` and `./run.sh start`
-- `./run.sh logs`: trails the last 30 lines of logs
-- `./run.sh snapshot`: stops the validator and creates a snapshot of the database. this snapshot can be uploaded and used to restore another validator.
-- `./run.sh rebuild_service {validator | pg | ui}`: force rebuilds a service to apply new environment variables.
-
 ### Updating an existing node
 
 You can update an existing node to a new release without replaying from a snapshot.
@@ -112,13 +105,13 @@ You can update an existing node to a new release without replaying from a snapsh
 - Set `KILL_BLOCK` in your .env file to the scheduled updates block number and restart your node (`./run.sh restart`).
 - As the kill block gets closer, you should set your node to inactive.
 - When the `KILL_BLOCK` hits, your node will stop.
-- Run `./run.sh stop` so it stops restarting itself.
+- `./run.sh stop` so it stops restarting itself.
 - _(Note)_ You can run `./run.sh snapshot` to take a backup of your database before updating to be safe. If you need to restore this snapshot, see [snapshots](#snapshots).
 - You can now pull the latest version with `git fetch && git checkout release-<version>`.
-- Run `./run.sh build` to apply the latest database updates. When it asks if you want to download a new snapshot, you can enter "n".
+- `./run.sh build` to apply the latest database updates. When it asks if you want to download a new snapshot, you can enter "n".
 - Remove the `KILL_BLOCK` from your .env file
-- Run `./run.sh rebuild_service validator` to rebuild the validator with the latest updates. This will also start the validator.
-- Run `./run.sh rebuild_service ui` if you want to rebuild the UI.
+- `./run.sh rebuild_service validator` to rebuild the validator with the latest updates. This will also start the validator.
+- `./run.sh rebuild_service ui` if you want to rebuild the UI.
 
 ### Starting over from a fresh snapshot
 
@@ -130,11 +123,24 @@ You can update an existing node to a new release without replaying from a snapsh
 
 You can take snapshots locally to take backups, and restore them without uploading them to the internet.
 
-- Run `./run.sh snapshot`. This will bring down your node while the snapshot runs.
+- `./run.sh snapshot`: This will bring down your node while the snapshot runs.
 - You will get a `snapshot.zip` file in the git repositories root directory.
 - You can either upload this zip to a publicly accessible URL and share it, or just restore it locally.
 - To restore it locally, copy the `snapshot.zip` file into `./sqitch/validator-data-latest.zip`. (`cp ./snapshot.zip ./sqitch/validator-data-latest`)
-- You can now run `./run.sh replay` and enter "n" when it asks if you want to download a fresh snapshot.
+- `./run.sh replay`: enter "n" when it asks if you want to download a fresh snapshot.
+
+### Commands Reference
+
+- `./run.sh stop`: stops the database, validator, and ui if running
+- `./run.sh <pg | validator | ui>`: stops the specific service
+- `./run.sh start`: starts the database and validator
+- `./run.sh start all`: starts either the database, validator, and ui
+- `./run.sh restart`: helpful wrapper around `./run.sh stop` and `./run.sh start`
+- `./run.sh logs`: trails the last 30 lines of logs
+- `./run.sh snapshot`: stops the validator and creates a snapshot of the database. this snapshot can be uploaded and used to restore another validator.
+- `./run.sh rebuild_service <validator | pg | ui>`: force rebuilds a service to apply new environment variables.
+- `./run.sh replay`: rebuilds your node from the snapshot. warning: **This will irrevocably destroy all local data, including blocks that have already been locally validated**: Be very careful here!
+- `./run.sh destroy`: completely removes the database, validator, and ui. warning: **This will irrevocably destroy all local data, including blocks that have already been locally validated**: Be very careful here!
 
 ## Local development
 
