@@ -139,8 +139,8 @@ You can take snapshots locally to take backups, and restore them without uploadi
 - `./run.sh logs`: trails the last 30 lines of logs
 - `./run.sh snapshot`: stops the validator and creates a snapshot of the database. this snapshot can be uploaded and used to restore another validator.
 - `./run.sh rebuild_service <validator | pg | ui>`: force rebuilds a service to apply new environment variables.
-- `./run.sh replay`: rebuilds your node from the snapshot. warning: **This will irrevocably destroy all local data, including blocks that have already been locally validated**: Be very careful here!
-- `./run.sh destroy`: completely removes the database, validator, and ui. warning: **This will irrevocably destroy all local data, including blocks that have already been locally validated**: Be very careful here!
+- `./run.sh replay`: rebuilds your node from the snapshot. :warning: **This will irrevocably destroy all local data, including blocks that have already been locally validated**: Be very careful here!
+- `./run.sh destroy`: completely removes the database, validator, and ui. :warning: **This will irrevocably destroy all local data, including blocks that have already been locally validated**: Be very careful here!
 
 ## Local development
 
