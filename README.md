@@ -127,7 +127,7 @@ You can take snapshots locally to take backups, and restore them without uploadi
 - `./run.sh snapshot`: This will bring down your node while the snapshot runs.
 - You will get a `snapshot.zip` file in the git repositories root directory.
 - You can either upload this zip to a publicly accessible URL and share it, or just restore it locally.
-- To restore it locally, copy the `snapshot.zip` file into `./sqitch/validator-data-latest.zip`. (`cp ./snapshot.zip ./sqitch/validator-data-latest`)
+- To restore it locally, copy the `snapshot.zip` file into `./sqitch/validator-data-latest.zip`. (`cp ./snapshot.zip ./sqitch/validator-data-latest.zip`)
 - `./run.sh replay`: enter "n" when it asks if you want to download a fresh snapshot.
 
 ### Commands Reference
