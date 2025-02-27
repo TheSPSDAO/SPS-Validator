@@ -10,8 +10,12 @@ Easy install will run through the setup steps for you, but requires the followin
 - [docker](https://docs.docker.com/desktop/setup/install/mac-install/) installed if you are on mac.
 
 Run the following in a bash shell in your home directory once the above are installed. It will run through an interactive setup where you can define your validator account / key and then start the validator.
+
+### Non-Root User
+
+If you already have docker installed, make sure your user has access to the docker group (`sudo usermod -aG docker "$(whoami)"`). Otherwise you'll have to run this command as root.
 ```
-sudo bash <(curl -s https://raw.githubusercontent.com/TheSPSDAO/SPS-Validator/refs/tags/vlatest/install.sh)
+bash -c "$(curl -s https://raw.githubusercontent.com/TheSPSDAO/SPS-Validator/refs/tags/vlatest/install.sh)"
 ```
 
 You should still look through the manual setup steps so you understand how to stop/start your node and configure it.
