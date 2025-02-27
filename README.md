@@ -11,7 +11,7 @@ Easy install will run through the setup steps for you, but requires the followin
 
 Run the following in a bash shell in your home directory once the above are installed. It will run through an interactive setup where you can define your validator account / key and then start the validator.
 ```
-sudo bash <(curl -s https://raw.githubusercontent.com/TheSPSDAO/SPS-Validator/refs/tags/latest/install.sh)
+sudo bash <(curl -s https://raw.githubusercontent.com/TheSPSDAO/SPS-Validator/refs/tags/vlatest/install.sh)
 ```
 
 You should still look through the manual setup steps so you understand how to stop/start your node and configure it.
@@ -51,7 +51,7 @@ You should still look through the manual setup steps so you understand how to st
 
 ### Manual Setup Instructions
 
-- `git clone https://github.com/TheSPSDAO/SPS-Validator.git` : Clone the repository
+- `git clone --branch release-latest --single-branch https://github.com/TheSPSDAO/SPS-Validator.git` : Clone the repository
 - `cd SPS-Validator`  : Change directory to the validator repository
 - `./run.sh stop`     : Ensure the validator is not currently running.
 - `cp .env-example .env`: If you haven't already run this. This will copy the default settings. You should update the new `.env` file with your `VALIDATOR_ACCOUNT` and `VALIDATOR_KEY` (posting). If you are JUST looking to earn license rewards, you should also set the `DB_BLOCK_RETENTION` variable to a minimum of `432000` to keep your database size small.
