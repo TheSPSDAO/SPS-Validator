@@ -54,6 +54,7 @@ You should still look through the manual setup steps so you understand how to st
 - `git clone https://github.com/TheSPSDAO/SPS-Validator.git` : Clone the repository
 - `cd SPS-Validator`  : Change directory to the validator repository
 - `./run.sh stop`     : Ensure the validator is not currently running.
+- `cp .env-example .env`: If you haven't already run this. This will copy the default settings. You should update the new `.env` file with your `VALIDATOR_ACCOUNT` and `VALIDATOR_KEY` (posting). If you are JUST looking to earn license rewards, you should also set the `DB_BLOCK_RETENTION` variable to a minimum of `432000` to keep your database size small.
 - `./run.sh build`    : Build the validator.  This will deploy the database, run migrations and also download/deploy the snapshot.
 - _(Note)_: If you receive an error like `Got permission denied while trying to connect to the Docker daemon socket`, follow the steps [here](https://docs.docker.com/engine/install/linux-postinstall/#manage-docker-as-a-non-root-user).
 - `./run.sh start` or `./run.sh start all` : Start the validator. `all` will start the management UI as well.
@@ -62,8 +63,8 @@ You should still look through the manual setup steps so you understand how to st
 
 ### Registering your node
 
-- Set the `VALIDATOR_ACCOUNT` and `VALIDATOR_KEY` (posting key) environment variables in your .env file
-- If you've already started your node, run `./run.sh rebuild_service validator` to apply the new environment variables
+- Set the `VALIDATOR_ACCOUNT` and `VALIDATOR_KEY` (posting key) environment variables in your .env file if you haven't.
+- If you've already started your node, run `./run.sh rebuild_service validator` to apply the new environment variables if you changed them.
 - Go to the management ui, http://localhost:8888/validator-nodes/manage, and follow the registration steps. Post URL is NOT required. If you want to direct your rewards to another account (block validation and license rewards), you can set the reward account for your node during registration.
 - _(Note)_ If you have just restored from a snapshot, you will have to wait until your node catches up before your UI will see you as registered. You can use the shared management UI here which will most likely be caught up: https://thespsdao.github.io/SPS-Validator/validator-nodes/manage.
 - _(Note)_ The first time you register, your node will be set to "inactive", and you will not be considered for block validation.
@@ -74,10 +75,10 @@ You should still look through the manual setup steps so you understand how to st
 
 ### Staking your licenses for LICENSE rewards
 
-- Set the `VALIDATOR_ACCOUNT` and `VALIDATOR_KEY` (posting key) environment variables in your .env file
+- Set the `VALIDATOR_ACCOUNT` and `VALIDATOR_KEY` (posting key) environment variables in your .env file if you haven't.
 - Register your node using the instructions in the README.
 - _(Optional)_ If you set a reward account when registering your node, that account must have staked licenses.
-- If you've already started your node, run `./run.sh rebuild_service validator` to apply the new environment variables
+- If you've already started your node, run `./run.sh rebuild_service validator` to apply the new environment variables if you changed them.
 - Go to the splinterlands license management page here, https://splinterlands.com/dashboard/licenses, and click `STAKE LICENSES`.
 - Once you've staked your licenses, and you have the environment variables set, your node will start sending check ins to prove you are running the software so you can receive rewards.
 
