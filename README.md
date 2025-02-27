@@ -51,7 +51,7 @@ You should still look through the manual setup steps so you understand how to st
 
 ### Manual Setup Instructions
 
-- `git clone --branch release-latest --single-branch https://github.com/TheSPSDAO/SPS-Validator.git` : Clone the repository
+- `git clone --branch vlatest --single-branch https://github.com/TheSPSDAO/SPS-Validator.git` : Clone the repository
 - `cd SPS-Validator`  : Change directory to the validator repository
 - `./run.sh stop`     : Ensure the validator is not currently running.
 - `cp .env-example .env`: If you haven't already run this. This will copy the default settings. You should update the new `.env` file with your `VALIDATOR_ACCOUNT` and `VALIDATOR_KEY` (posting). If you are JUST looking to earn license rewards, you should also set the `DB_BLOCK_RETENTION` variable to a minimum of `432000` to keep your database size small.
