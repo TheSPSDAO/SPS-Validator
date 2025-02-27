@@ -50,7 +50,8 @@ if ! command -v docker &> /dev/null; then
         if [ "$EUID" -ne 0 ]; then
             echo "Adding user $(whoami) to docker group"
             sudo usermod -aG docker "$(whoami)"
-            echo "IMPORTANT: Please re-login (or close and re-connect SSH) for docker to function correctly"
+            echo "IMPORTANT: Please re-login (or close and re-connect SSH) for docker to function correctly. Please re-run this script after re-login."
+            exit 0
         fi
         # reload the environment to pick up docker
         # shellcheck source=/dev/null
