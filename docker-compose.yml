@@ -2,7 +2,9 @@ name: "${DOCKER_NAME}"
 
 services:
   pg:
-    image: postgres:16.6-alpine
+    build:
+      context: ./postgres
+      dockerfile: ./Dockerfile
     ports:
       - "${PUBLISH_ADDRESS:-127.0.0.1}:${POSTGRES_PORT:-5432}:5432"
     volumes:
@@ -20,6 +22,7 @@ services:
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
       POSTGRES_USER: ${POSTGRES_USER:-postgres}
       POSTGRES_DB: ${POSTGRES_DB:-postgres}
+      VALIDATOR_DB: ${APP_DATABASE:-validator}
 
   validator:
     build:
@@ -55,6 +58,8 @@ services:
       PRICE_FEED_COIN_GECKO_API_KEY: ${PRICE_FEED_COIN_GECKO_API_KEY:-}
       PRICE_FEED_COIN_GECKO_DEMO: ${PRICE_FEED_COIN_GECKO_DEMO:-false}
       PRICE_FEED_COIN_MARKET_CAP_API_KEY: ${PRICE_FEED_COIN_MARKET_CAP_API_KEY:-}
+      DB_BLOCK_RETENTION: ${DB_BLOCK_RETENTION:-}
+      KILL_BLOCK: ${KILL_BLOCK:-}
     depends_on:
       - pg
 
@@ -80,6 +85,7 @@ services:
       APP_USER: ${APP_USER:-validator}
       APP_DATABASE: ${APP_DATABASE:-validator}
       APP_SCHEMA: ${APP_SCHEMA:-public}
+      DB_BLOCK_RETENTION: ${DB_BLOCK_RETENTION}
 
   ui:
     build:

@@ -120,6 +120,7 @@ export class EnabledApiActivator implements ConditionalApiActivator {
             health_checker: this.cfg.health_checker,
             resolver: this.resolver,
             injection_middleware: this.middleware,
+            db_block_retention: this.cfg.db_block_retention,
         });
 
         // must come after registerApiRoutes so we have the resolver

@@ -34,7 +34,7 @@ ensure_migrations() {
     -e PGHOST="pg" \
     -e PGPORT="5432" \
     --mount "type=bind,src=${SQITCH_DIR},dst=/repo" \
-    sqitch/sqitch deploy --set "APP_USER=${POSTGRES_USER:-postgres}" --set "APP_SCHEMA=${POSTGRES_SCHEMA:-public}"
+    sqitch/sqitch deploy --set "APP_USER=${POSTGRES_USER:-postgres}" --set "APP_SCHEMA=${POSTGRES_SCHEMA:-public}" --set "DB_BLOCK_RETENTION="
 }
 
 dump_structure() {

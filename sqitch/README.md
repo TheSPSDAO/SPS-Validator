@@ -1,11 +1,5 @@
 # Instructions for release.
-See `staggered-deploy.sh` for a runnable description of how to deploy the migrations contained in this directory.
 
-The short of it that there will always be a (moving) `pre-snapshot` migration, which is intended to be the point at which a recently-dumped validator snapshot could be restored without any SQL errors.
-During a development cycle, new structural changes can be added on top of the latest pre-snapshot migration, and the staggered-deploy script will ensure that things happen in the supported order.
-Just before a release, the `pre-snapshot` migration should be reworked.
+Add your changes using `./sqitch add` like normal. Snapshots contain the latest sqitch change they were taken with. When restoring a snapshot, we deploy up until the change from the snapshot, restore our snapshot, then apply any changes after the snapshot's change. This allows us to use older snapshots on newer versions of the validator without any issues.
 
-The steps for this include:
-- `sqitch tag my-release-tag`
-- `sqitch rework pre-snapshot`
-- edit `sqitch/deploy/pre-snapshot.sql` in _any_ way so the file hash is distinct (there should be a counter in the comment that can just be incremented).
+The snapshot restoration will call a pre and post restore function that are responsible for clearing out the snapshot tables before restore, and moving the snapshot table data into the main tables. If a database change added a new table or a new column, those functions must be updated to handle the new table/column. If an older snapshot is restored on a newer version, the pre/post snapshot functions will always be at a version that works with that snapshot.

@@ -7,6 +7,7 @@ export const ConditionalApiActivator: unique symbol = Symbol('ConditionalApiActi
 
 export type ApiOptions = {
     api_port: number | null;
+    db_block_retention: number | null;
     health_checker: boolean;
     helmetjs: boolean;
 };

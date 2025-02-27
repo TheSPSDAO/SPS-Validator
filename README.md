@@ -1,6 +1,6 @@
 # SPS Validator
 
-You need to re-build the validator when getting started or when updating to a newer release.
+To update an existing node to a new release, see [updating](#updating-an-existing-node).
 
 ## Easy Install (mac or linux only):
 Easy install will run through the setup steps for you, but requires the following to be installed on your machine:
@@ -11,10 +11,33 @@ Easy install will run through the setup steps for you, but requires the followin
 
 Run the following in a bash shell in your home directory once the above are installed. It will run through an interactive setup where you can define your validator account / key and then start the validator.
 ```
-sudo bash <(curl -s https://raw.githubusercontent.com/TheSPSDAO/SPS-Validator/refs/tags/latest/install.sh)
+sudo bash <(curl -s https://raw.githubusercontent.com/TheSPSDAO/SPS-Validator/refs/tags/vlatest/install.sh)
 ```
 
-You should still look through the manual setup steps so you understand how to stop/start your node.
+You should still look through the manual setup steps so you understand how to stop/start your node and configure it.
+
+## Table of Contents
+
+- [Getting started with Docker (manual setup)](#getting-started-with-docker-manual-setup)
+    - [Manual Setup Prerequisites](#manual-setup-prerequisites)
+    - [Manual Setup Instructions](#manual-setup-instructions)
+    - [Registering your node](#registering-your-node)
+    - [Staking your licenses for LICENSE rewards](#staking-your-licenses-for-license-rewards)
+    - [Price Feed](#price-feed)
+    - [Known Bugs](#known-bugs)
+    - [Updating an existing node](#updating-an-existing-node)
+    - [Starting over from a fresh snapshot](#starting-over-from-a-fresh-snapshot)
+    - [Snapshots](#snapshots)
+    - [Commands Reference](#commands-reference)
+- [Local development](#local-development)
+    - [Plugins](#plugins)
+    - [Testing](#testing)
+- [Deployment](#deployment)
+- [Common problems](#common-problems)
+- [Useful links](#useful-links)
+- [About the repository](#about-the-repository)
+    - [Libraries](#libraries)
+    - [Apps](#apps)
 
 ## Getting started with Docker (manual setup)
 
@@ -22,15 +45,16 @@ You should still look through the manual setup steps so you understand how to st
 
 - [git](https://git-scm.com/book/en/v2/Getting-Started-Installing-Git) installed
 - Make sure you have `docker`, `docker-compose` and either wget or curl installed. (`./run.sh install_docker` and `./run.sh preinstall` on Linux)
+- If you're on Windows, WSL + Docker Desktop is recommended. See [installing WSL](https://learn.microsoft.com/en-us/windows/wsl/install) and [installing Docker Desktop](https://docs.docker.com/desktop/features/wsl/)
 - Copy .env-example to .env (`cp .env-example .env`) and change it accordingly
-- _(Optional)_ Either add `validator-data-latest.zip` into the `sqitch` folder or have it downloaded in the build step.
+- _(Optional)_ Either add `validator-data-latest.zip` into the `sqitch` folder or have it downloaded in the build step
 
 ### Manual Setup Instructions
 
-- `git clone https://github.com/TheSPSDAO/SPS-Validator.git` : Clone the repository
+- `git clone --branch release-latest --single-branch https://github.com/TheSPSDAO/SPS-Validator.git` : Clone the repository
 - `cd SPS-Validator`  : Change directory to the validator repository
-- _(Note)_            : If you're on Windows, use PowerShell and replace `./run.sh` with `./run.ps1` in all the commands. You may need to set your execution policy (`set-executionpolicy remotesigned` from an Administrator instance of powershell). Windows is not officially supported yet and it is recommended to use WSL instead.
 - `./run.sh stop`     : Ensure the validator is not currently running.
+- `cp .env-example .env`: If you haven't already run this. This will copy the default settings. You should update the new `.env` file with your `VALIDATOR_ACCOUNT` and `VALIDATOR_KEY` (posting). If you are JUST looking to earn license rewards, you should also set the `DB_BLOCK_RETENTION` variable to a minimum of `432000` to keep your database size small.
 - `./run.sh build`    : Build the validator.  This will deploy the database, run migrations and also download/deploy the snapshot.
 - _(Note)_: If you receive an error like `Got permission denied while trying to connect to the Docker daemon socket`, follow the steps [here](https://docs.docker.com/engine/install/linux-postinstall/#manage-docker-as-a-non-root-user).
 - `./run.sh start` or `./run.sh start all` : Start the validator. `all` will start the management UI as well.
@@ -39,8 +63,8 @@ You should still look through the manual setup steps so you understand how to st
 
 ### Registering your node
 
-- Set the `VALIDATOR_ACCOUNT` and `VALIDATOR_KEY` (posting key) environment variables in your .env file
-- If you've already started your node, run `./run.sh rebuild_service validator` to apply the new environment variables
+- Set the `VALIDATOR_ACCOUNT` and `VALIDATOR_KEY` (posting key) environment variables in your .env file if you haven't.
+- If you've already started your node, run `./run.sh rebuild_service validator` to apply the new environment variables if you changed them.
 - Go to the management ui, http://localhost:8888/validator-nodes/manage, and follow the registration steps. Post URL is NOT required. If you want to direct your rewards to another account (block validation and license rewards), you can set the reward account for your node during registration.
 - _(Note)_ If you have just restored from a snapshot, you will have to wait until your node catches up before your UI will see you as registered. You can use the shared management UI here which will most likely be caught up: https://thespsdao.github.io/SPS-Validator/validator-nodes/manage.
 - _(Note)_ The first time you register, your node will be set to "inactive", and you will not be considered for block validation.
@@ -51,11 +75,11 @@ You should still look through the manual setup steps so you understand how to st
 
 ### Staking your licenses for LICENSE rewards
 
-- Set the `VALIDATOR_ACCOUNT` and `VALIDATOR_KEY` (posting key) environment variables in your .env file
+- Set the `VALIDATOR_ACCOUNT` and `VALIDATOR_KEY` (posting key) environment variables in your .env file if you haven't.
 - Register your node using the instructions in the README.
 - _(Optional)_ If you set a reward account when registering your node, that account must have staked licenses.
-- If you've already started your node, run `./run.sh rebuild_service validator` to apply the new environment variables
-- Go to the splinterlands license management page here, https://validator.qa.splinterlands.com/dashboard/licenses, and click `STAKE LICENSES`.
+- If you've already started your node, run `./run.sh rebuild_service validator` to apply the new environment variables if you changed them.
+- Go to the splinterlands license management page here, https://splinterlands.com/dashboard/licenses, and click `STAKE LICENSES`.
 - Once you've staked your licenses, and you have the environment variables set, your node will start sending check ins to prove you are running the software so you can receive rewards.
 
 ### Price Feed
@@ -75,15 +99,49 @@ Once those are set, you can run `./run.sh rebuild_service validator` to apply th
 
 - If your node is running and licenses are then staked for its `VALIDATOR_ACCOUNT` or reward account, it is not picking up the change and starting the check in process. You can resolve this by restarting your node after you've staked your licenses.
 
-### Additional Commands
+### Updating an existing node
 
-- `./run.sh restart`: helpful wrapper around `./run.sh stop` and `./run.sh start`
-- `./run.sh logs`: trails the last 30 lines of logs
-- `./run.sh snapshot`: stops the validator and creates a snapshot of the database. this snapshot can be uploaded and used to restore another validator.
+You can update an existing node to a new release without replaying from a snapshot.
+
+- Set `KILL_BLOCK` in your .env file to the scheduled updates block number and rebuild your node (`./run.sh rebuild_service validator`).
+- As the kill block gets closer, you should set your node to inactive.
+- When the `KILL_BLOCK` hits, your node will stop.
+- `./run.sh stop` so your node stops restarting itself.
+- _(Note)_ You can run `./run.sh snapshot` to take a backup of your database before updating to be safe. If you need to restore this snapshot, see [snapshots](#snapshots).
+- You can now pull the latest version with `git fetch && git checkout v<version>`.
+- `./run.sh build` to apply the latest database updates. When it asks if you want to download a new snapshot, you can enter "n".
+- Remove the `KILL_BLOCK` from your .env file
+- `./run.sh rebuild_service validator` to rebuild the validator with the latest updates. This will also start the validator.
+- `./run.sh rebuild_service ui` if you want to rebuild the UI.
 
 ### Starting over from a fresh snapshot
 
+- Make sure you set your node to inactive before replaying.
+- Set the new `SNAPSHOT_URL` in your .env file.
 - `./run.sh replay`:  :warning: **This will irrevocably destroy all local data, including blocks that have already been locally validated**: Be very careful here!
+
+### Snapshots
+
+You can take snapshots locally to take backups, and restore them without uploading them to the internet.
+
+- `./run.sh snapshot`: This will bring down your node while the snapshot runs.
+- You will get a `snapshot.zip` file in the git repositories root directory.
+- You can either upload this zip to a publicly accessible URL and share it, or just restore it locally.
+- To restore it locally, copy the `snapshot.zip` file into `./sqitch/validator-data-latest.zip`. (`cp ./snapshot.zip ./sqitch/validator-data-latest`)
+- `./run.sh replay`: enter "n" when it asks if you want to download a fresh snapshot.
+
+### Commands Reference
+
+- `./run.sh stop`: stops the database, validator, and ui if running
+- `./run.sh <pg | validator | ui>`: stops the specific service
+- `./run.sh start`: starts the database and validator
+- `./run.sh start all`: starts either the database, validator, and ui
+- `./run.sh restart`: helpful wrapper around `./run.sh stop` and `./run.sh start`
+- `./run.sh logs`: trails the last 30 lines of logs
+- `./run.sh snapshot`: stops the validator and creates a snapshot of the database. this snapshot can be uploaded and used to restore another validator.
+- `./run.sh rebuild_service <validator | pg | ui>`: force rebuilds a service to apply new environment variables.
+- `./run.sh replay`: rebuilds your node from the snapshot. :warning: **This will irrevocably destroy all local data, including blocks that have already been locally validated**: Be very careful here!
+- `./run.sh destroy`: completely removes the database, validator, and ui. :warning: **This will irrevocably destroy all local data, including blocks that have already been locally validated**: Be very careful here!
 
 ## Local development
 
@@ -109,7 +167,10 @@ See the `SimpleLogPlugin` as an example of how to implement the `Plugin` interfa
 
 
 ### Testing
-Run tests with `npm test <project>`.
+
+- `./run.sh build`: Make sure you database is setup
+- `POSTGRES_DB={APP_DATABASE env var} npm run dump-structure`: Dumps the schema for tests. You will need pg_dump v16 installed.
+- `npm test <project>`: run tests in the project
 
 ## Deployment
 The created Docker images should be configurable via environment variables. 

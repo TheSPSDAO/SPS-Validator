@@ -68,15 +68,15 @@ test.dbOnly('Nonexisting validator approval', async () => {
 });
 
 test.dbOnly('Approve inactive validator', async () => {
+    // we still want to allow this.
     await fixture.testHelper.insertDummyValidator('steemmonsters', false);
-    // TODO: check validator_votes for steemmonsters is empty;
     await expect(
         fixture.opsHelper.processOp('approve_validator', 'steemmonsters', {
             account_name: 'steemmonsters',
         }),
     ).resolves.toBeUndefined();
     const votes = await fixture.testHelper.votesForValidator('steemmonsters');
-    expect(votes!.length).toBe(0);
+    expect(votes!.length).toBe(1);
 });
 
 test.dbOnly('Double vote on validator', async () => {

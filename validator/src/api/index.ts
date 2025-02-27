@@ -19,6 +19,7 @@ type ApiOptions = {
     health_checker: boolean;
     injection_middleware: Middleware;
     resolver: Resolver;
+    db_block_retention: number | null;
 };
 
 // @ts-expect-error
@@ -39,6 +40,8 @@ export function registerApiRoutes(app: Router, opts: ApiOptions): void {
             res.json({
                 status: 'running',
                 last_block: lastBlockCache.value?.block_num || 0,
+                archive_node: opts.db_block_retention === null,
+                block_retention: opts.db_block_retention,
             });
         } catch (err) {
             next(err);
@@ -299,7 +302,6 @@ export function registerApiRoutes(app: Router, opts: ApiOptions): void {
             const TransactionRepository = req.resolver.resolve(TransactionRepository_);
             await trxStarter.withTransaction(TransactionMode.Reporting, async (trx?: Trx) => {
                 const data = await TransactionRepository.lookupTokenTransferByBlockNum(blockNum, trx);
-
                 if (data.length === 0 && lastBlockCache.value !== null && lastBlockCache.value.block_num < blockNum) {
                     res.status(404).end();
                     return;
