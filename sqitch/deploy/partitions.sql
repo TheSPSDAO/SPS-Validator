@@ -6,6 +6,9 @@ BEGIN;
 CREATE SCHEMA IF NOT EXISTS partman;
 CREATE EXTENSION IF NOT EXISTS pg_partman SCHEMA partman;
 
+-- set the search path so we can use the :APP_SCHEMA variable in DO blocks
+SELECT set_config('search_path', regexp_replace(:'APP_SCHEMA' ||', public', '[^\w ,]', '', 'g'), true);
+
 -- BLOCKS --
 
 -- copy the blocks table into a temp table
@@ -51,7 +54,12 @@ CREATE INDEX IF NOT EXISTS blocks_validator_idx ON :APP_SCHEMA.blocks USING btre
 DO
 $$
     BEGIN
-        RAISE NOTICE 'blocks table partitioned - blocks_temp still exists and must be dropped manually.';
+        -- just drop it if theres no data (newer snapshot), else print warning
+        IF (SELECT COUNT(*) FROM blocks_temp) = 0 THEN
+            DROP TABLE blocks_temp;
+        ELSE
+            RAISE NOTICE 'blocks table partitioned - blocks_temp still exists and must be dropped manually.';
+        END IF;
     END
 $$;
 
@@ -110,7 +118,12 @@ CREATE INDEX IF NOT EXISTS validator_transactions_type_player_idx ON :APP_SCHEMA
 DO
 $$
     BEGIN
-        RAISE NOTICE 'transactions table partitioned - validator_transactions_temp still exists and must be dropped manually.';
+        -- just drop it if theres no data (newer snapshot), else print warning
+        IF (SELECT COUNT(*) FROM validator_transactions_temp) = 0 THEN
+            DROP TABLE validator_transactions_temp;
+        ELSE
+            RAISE NOTICE 'transactions table partitioned - validator_transactions_temp still exists and must be dropped manually.';
+        END IF;
     END
 $$;
 
@@ -164,7 +177,12 @@ CREATE INDEX IF NOT EXISTS validator_transaction_players_block_type_idx ON :APP_
 DO
 $$
     BEGIN
-        RAISE NOTICE 'transaction players table partitioned - validator_transaction_players_temp still exists and must be dropped manually.';
+        -- just drop it if theres no data (newer snapshot), else print warning
+        IF (SELECT COUNT(*) FROM validator_transaction_players_temp) = 0 THEN
+            DROP TABLE validator_transaction_players_temp;
+        ELSE
+            RAISE NOTICE 'transaction players table partitioned - validator_transaction_players_temp still exists and must be dropped manually.';
+        END IF;
     END
 $$;
 

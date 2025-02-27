@@ -78,7 +78,7 @@ You should still look through the manual setup steps so you understand how to st
 - Register your node using the instructions in the README.
 - _(Optional)_ If you set a reward account when registering your node, that account must have staked licenses.
 - If you've already started your node, run `./run.sh rebuild_service validator` to apply the new environment variables
-- Go to the splinterlands license management page here, https://validator.qa.splinterlands.com/dashboard/licenses, and click `STAKE LICENSES`.
+- Go to the splinterlands license management page here, https://splinterlands.com/dashboard/licenses, and click `STAKE LICENSES`.
 - Once you've staked your licenses, and you have the environment variables set, your node will start sending check ins to prove you are running the software so you can receive rewards.
 
 ### Price Feed
