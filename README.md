@@ -9,11 +9,8 @@ Easy install will run through the setup steps for you, but requires the followin
 - [git](https://git-scm.com/book/en/v2/Getting-Started-Installing-Git) installed.
 - [docker](https://docs.docker.com/desktop/setup/install/mac-install/) installed if you are on mac.
 
-Run the following in a bash shell in your home directory once the above are installed. It will run through an interactive setup where you can define your validator account / key and then start the validator.
+Run the following in a bash shell in your home directory once the above are installed. It will run through an interactive setup where you can define your validator account / key and then start the validator. If you already have docker installed, make sure your user has access to the docker group (`sudo usermod -aG docker "$(whoami)"`). Otherwise you'll have to run this command as root.
 
-### Non-Root User
-
-If you already have docker installed, make sure your user has access to the docker group (`sudo usermod -aG docker "$(whoami)"`). Otherwise you'll have to run this command as root.
 ```
 bash -c "$(curl -s https://raw.githubusercontent.com/TheSPSDAO/SPS-Validator/refs/tags/vlatest/install.sh)"
 ```
