@@ -45,14 +45,14 @@ You should still look through the manual setup steps so you understand how to st
 
 - [git](https://git-scm.com/book/en/v2/Getting-Started-Installing-Git) installed
 - Make sure you have `docker`, `docker-compose` and either wget or curl installed. (`./run.sh install_docker` and `./run.sh preinstall` on Linux)
+- If you're on Windows, WSL + Docker Desktop is recommended. See [installing WSL](https://learn.microsoft.com/en-us/windows/wsl/install) and [installing Docker Desktop](https://docs.docker.com/desktop/features/wsl/)
 - Copy .env-example to .env (`cp .env-example .env`) and change it accordingly
-- _(Optional)_ Either add `validator-data-latest.zip` into the `sqitch` folder or have it downloaded in the build step.
+- _(Optional)_ Either add `validator-data-latest.zip` into the `sqitch` folder or have it downloaded in the build step
 
 ### Manual Setup Instructions
 
 - `git clone https://github.com/TheSPSDAO/SPS-Validator.git` : Clone the repository
 - `cd SPS-Validator`  : Change directory to the validator repository
-- _(Note)_            : If you're on Windows, use PowerShell and replace `./run.sh` with `./run.ps1` in all the commands. You may need to set your execution policy (`set-executionpolicy remotesigned` from an Administrator instance of powershell). Windows is not officially supported yet and it is recommended to use WSL instead.
 - `./run.sh stop`     : Ensure the validator is not currently running.
 - `./run.sh build`    : Build the validator.  This will deploy the database, run migrations and also download/deploy the snapshot.
 - _(Note)_: If you receive an error like `Got permission denied while trying to connect to the Docker daemon socket`, follow the steps [here](https://docs.docker.com/engine/install/linux-postinstall/#manage-docker-as-a-non-root-user).
