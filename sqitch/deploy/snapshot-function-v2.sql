@@ -132,8 +132,8 @@ BEGIN
 	FROM
 	    validator_transactions;
 
-	INSERT INTO snapshot.validator_transaction_players (transaction_id, player, block_num, is_owner, success)
-	SELECT transaction_id, player, block_num, is_owner, success
+	INSERT INTO snapshot.validator_transaction_players (transaction_id, player, block_num, is_owner, success, type)
+	SELECT transaction_id, player, block_num, is_owner, success, type
 	FROM validator_transaction_players;
 
 	INSERT INTO snapshot.price_history (validator, token, block_num, block_time, token_price)
