@@ -1,0 +1,52 @@
+# Description: Dockerfile for PostgreSQL 16.6 with pg_cron and pg_partman extensions installed
+# can't get pg cron building on alpine so we switched to bullseye
+FROM postgres:16.8-alpine AS build
+
+RUN apk add --no-cache --update \
+        build-base \
+        curl \
+        expat \
+        expat-dev \
+        git \
+        gnupg \
+        llvm \
+        llvm-dev \
+        make \
+        perl \
+        perl-app-cpanminus \
+        perl-dev \
+        perl-dbd-pg \
+        perl-dbi \
+        perl-xml-libxml \
+        perl-xml-parser \
+        perl-xml-simple \
+        postgresql16-dev
+
+WORKDIR /var/lib/postgresql
+WORKDIR /usr/local/lib/postgresql
+
+RUN echo $(which pg_config)
+RUN chown -R $(whoami) /usr/local/lib/postgresql
+
+RUN git clone --depth 1 --branch "v1.6.4" https://github.com/citusdata/pg_cron.git \
+    && cd pg_cron \
+    && export PATH=/usr/local/bin/:$PATH \
+    && make && PATH=$PATH make install
+
+RUN git clone --depth 1 --branch "v5.2.4" https://github.com/pgpartman/pg_partman.git \
+    && cd pg_partman \
+    && export PATH=/usr/local/bin/:$PATH \
+    && make && PATH=$PATH make install
+
+FROM postgres:16.8-alpine
+
+ENV POSTGRES_DB ""
+ENV POSTGRES_USER ""
+ENV POSTGRES_PASSWORD ""
+ENV VALIDATOR_DB ""
+
+COPY --from=build /usr/lib/postgresql16/pg_cron.so /usr/local/lib/postgresql/
+COPY --from=build /usr/lib/postgresql16/pg_partman_bgw.so /usr/local/lib/postgresql/
+COPY --from=build /usr/share/postgresql16/extension/* /usr/local/share/postgresql/extension/
+
+COPY ./setup-preload.sh /docker-entrypoint-initdb.d/

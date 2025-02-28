@@ -2,7 +2,7 @@
 -- PostgreSQL database dump
 --
 
--- Dumped from database version 16.6
+-- Dumped from database version 16.8 (Debian 16.8-1.pgdg110+1)
 -- Dumped by pg_dump version 16.6 (Ubuntu 16.6-1.pgdg20.04+1)
 
 SET statement_timeout = 0;
@@ -17,10 +17,9 @@ SET client_min_messages = warning;
 SET row_security = off;
 
 --
--- Name: public; Type: SCHEMA; Schema: -; Owner: -
+-- Name: pg_partman; Type: EXTENSION; Schema: -; Owner: -
 --
 
--- *not* creating schema, since initdb creates it
 
 
 --
@@ -98,6 +97,22 @@ WITH (fillfactor='80');
 --
 
 CREATE TABLE public.blocks (
+    block_num integer NOT NULL,
+    block_id character varying(1024) NOT NULL,
+    prev_block_id character varying(1024) NOT NULL,
+    l2_block_id character varying(1024) NOT NULL,
+    block_time timestamp without time zone NOT NULL,
+    validator character varying(50),
+    validation_tx character varying(100)
+)
+PARTITION BY RANGE (block_num);
+
+
+--
+-- Name: blocks_default; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.blocks_default (
     block_num integer NOT NULL,
     block_id character varying(1024) NOT NULL,
     prev_block_id character varying(1024) NOT NULL,
@@ -283,7 +298,26 @@ CREATE TABLE public.validator_check_in (
 
 CREATE TABLE public.validator_transaction_players (
     transaction_id character varying(100) NOT NULL,
-    player character varying(50) NOT NULL
+    player character varying(50) NOT NULL,
+    block_num integer NOT NULL,
+    is_owner boolean NOT NULL,
+    success boolean,
+    type character varying(100) NOT NULL
+)
+PARTITION BY RANGE (block_num);
+
+
+--
+-- Name: validator_transaction_players_default; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.validator_transaction_players_default (
+    transaction_id character varying(100) NOT NULL,
+    player character varying(50) NOT NULL,
+    block_num integer NOT NULL,
+    is_owner boolean NOT NULL,
+    success boolean,
+    type character varying(100) NOT NULL
 );
 
 
@@ -300,13 +334,36 @@ CREATE TABLE public.validator_transactions (
     data text,
     success boolean,
     error text,
-    block_num integer,
+    block_num integer NOT NULL,
+    index smallint NOT NULL,
+    created_date timestamp without time zone,
+    result text
+)
+PARTITION BY RANGE (block_num);
+ALTER TABLE ONLY public.validator_transactions ALTER COLUMN data SET COMPRESSION lz4;
+ALTER TABLE ONLY public.validator_transactions ALTER COLUMN result SET COMPRESSION lz4;
+
+
+--
+-- Name: validator_transactions_default; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.validator_transactions_default (
+    id character varying(1024) NOT NULL,
+    block_id character varying(1024) NOT NULL,
+    prev_block_id character varying(1024) NOT NULL,
+    type character varying(100) NOT NULL,
+    player character varying(50) NOT NULL,
+    data text,
+    success boolean,
+    error text,
+    block_num integer NOT NULL,
     index smallint NOT NULL,
     created_date timestamp without time zone,
     result text
 );
-ALTER TABLE ONLY public.validator_transactions ALTER COLUMN data SET COMPRESSION lz4;
-ALTER TABLE ONLY public.validator_transactions ALTER COLUMN result SET COMPRESSION lz4;
+ALTER TABLE ONLY public.validator_transactions_default ALTER COLUMN data SET COMPRESSION lz4;
+ALTER TABLE ONLY public.validator_transactions_default ALTER COLUMN result SET COMPRESSION lz4;
 
 
 --
@@ -344,8 +401,31 @@ CREATE TABLE public.validators (
     is_active boolean NOT NULL,
     post_url character varying(1024),
     total_votes numeric(12,3) DEFAULT 0 NOT NULL,
-    missed_blocks integer DEFAULT 0 NOT NULL
+    missed_blocks integer DEFAULT 0 NOT NULL,
+    api_url text,
+    last_version text
 );
+
+
+--
+-- Name: blocks_default; Type: TABLE ATTACH; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.blocks ATTACH PARTITION public.blocks_default DEFAULT;
+
+
+--
+-- Name: validator_transaction_players_default; Type: TABLE ATTACH; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.validator_transaction_players ATTACH PARTITION public.validator_transaction_players_default DEFAULT;
+
+
+--
+-- Name: validator_transactions_default; Type: TABLE ATTACH; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.validator_transactions ATTACH PARTITION public.validator_transactions_default DEFAULT;
 
 
 --
@@ -384,6 +464,14 @@ ALTER TABLE ONLY public.balances
 
 ALTER TABLE ONLY public.blocks
     ADD CONSTRAINT blocks_pkey PRIMARY KEY (block_num);
+
+
+--
+-- Name: blocks_default blocks_default_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.blocks_default
+    ADD CONSTRAINT blocks_default_pkey PRIMARY KEY (block_num);
 
 
 --
@@ -451,19 +539,19 @@ ALTER TABLE ONLY public.validator_check_in
 
 
 --
--- Name: validator_transaction_players validator_transaction_players_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: validator_transaction_players_default validator_transaction_players_default_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
-ALTER TABLE ONLY public.validator_transaction_players
-    ADD CONSTRAINT validator_transaction_players_pkey PRIMARY KEY (transaction_id, player);
+ALTER TABLE ONLY public.validator_transaction_players_default
+    ADD CONSTRAINT validator_transaction_players_default_pkey PRIMARY KEY (transaction_id, player);
 
 
 --
--- Name: validator_transactions validator_transactions_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: validator_transactions_default validator_transactions_default_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
-ALTER TABLE ONLY public.validator_transactions
-    ADD CONSTRAINT validator_transactions_pkey PRIMARY KEY (id);
+ALTER TABLE ONLY public.validator_transactions_default
+    ADD CONSTRAINT validator_transactions_default_pkey PRIMARY KEY (id);
 
 
 --
@@ -505,6 +593,20 @@ CREATE INDEX balance_history_token_player_type_idx ON public.balance_history USI
 
 
 --
+-- Name: blocks_validator_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX blocks_validator_idx ON ONLY public.blocks USING btree (validator);
+
+
+--
+-- Name: blocks_default_validator_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX blocks_default_validator_idx ON public.blocks_default USING btree (validator);
+
+
+--
 -- Name: idx_balance_history_created_date; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -540,31 +642,87 @@ CREATE INDEX promise_type_ext_id_idx ON public.promise USING btree (type, ext_id
 
 
 --
+-- Name: validator_transaction_players_block_type_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX validator_transaction_players_block_type_idx ON ONLY public.validator_transaction_players USING btree (block_num, type) WHERE (success AND (is_owner IS TRUE));
+
+
+--
+-- Name: validator_transaction_players_default_block_num_type_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX validator_transaction_players_default_block_num_type_idx ON public.validator_transaction_players_default USING btree (block_num, type) WHERE (success AND (is_owner IS TRUE));
+
+
+--
+-- Name: validator_transaction_players_player_block_type_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX validator_transaction_players_player_block_type_idx ON ONLY public.validator_transaction_players USING btree (player, block_num, type);
+
+
+--
+-- Name: validator_transaction_players_default_player_block_num_type_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX validator_transaction_players_default_player_block_num_type_idx ON public.validator_transaction_players_default USING btree (player, block_num, type);
+
+
+--
 -- Name: validator_transaction_players_player_idx; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE INDEX validator_transaction_players_player_idx ON public.validator_transaction_players USING btree (player);
+CREATE INDEX validator_transaction_players_player_idx ON ONLY public.validator_transaction_players USING btree (player);
+
+
+--
+-- Name: validator_transaction_players_default_player_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX validator_transaction_players_default_player_idx ON public.validator_transaction_players_default USING btree (player);
 
 
 --
 -- Name: validator_transactions_block_num_idx; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE INDEX validator_transactions_block_num_idx ON public.validator_transactions USING btree (block_num, index);
+CREATE INDEX validator_transactions_block_num_idx ON ONLY public.validator_transactions USING btree (block_num, index);
 
 
 --
 -- Name: validator_transactions_created_date_idx; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE INDEX validator_transactions_created_date_idx ON public.validator_transactions USING btree (created_date);
+CREATE INDEX validator_transactions_created_date_idx ON ONLY public.validator_transactions USING btree (created_date);
+
+
+--
+-- Name: validator_transactions_default_block_num_index_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX validator_transactions_default_block_num_index_idx ON public.validator_transactions_default USING btree (block_num, index);
+
+
+--
+-- Name: validator_transactions_default_created_date_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX validator_transactions_default_created_date_idx ON public.validator_transactions_default USING btree (created_date);
 
 
 --
 -- Name: validator_transactions_type_player_idx; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE INDEX validator_transactions_type_player_idx ON public.validator_transactions USING btree (player, type);
+CREATE INDEX validator_transactions_type_player_idx ON ONLY public.validator_transactions USING btree (player, type);
+
+
+--
+-- Name: validator_transactions_default_player_type_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX validator_transactions_default_player_type_idx ON public.validator_transactions_default USING btree (player, type);
 
 
 --
@@ -593,6 +751,62 @@ CREATE INDEX validators_reward_account ON public.validators USING btree (reward_
 --
 
 CREATE INDEX validators_total_votes_idx ON public.validators USING btree (total_votes DESC);
+
+
+--
+-- Name: blocks_default_pkey; Type: INDEX ATTACH; Schema: public; Owner: -
+--
+
+ALTER INDEX public.blocks_pkey ATTACH PARTITION public.blocks_default_pkey;
+
+
+--
+-- Name: blocks_default_validator_idx; Type: INDEX ATTACH; Schema: public; Owner: -
+--
+
+ALTER INDEX public.blocks_validator_idx ATTACH PARTITION public.blocks_default_validator_idx;
+
+
+--
+-- Name: validator_transaction_players_default_block_num_type_idx; Type: INDEX ATTACH; Schema: public; Owner: -
+--
+
+ALTER INDEX public.validator_transaction_players_block_type_idx ATTACH PARTITION public.validator_transaction_players_default_block_num_type_idx;
+
+
+--
+-- Name: validator_transaction_players_default_player_block_num_type_idx; Type: INDEX ATTACH; Schema: public; Owner: -
+--
+
+ALTER INDEX public.validator_transaction_players_player_block_type_idx ATTACH PARTITION public.validator_transaction_players_default_player_block_num_type_idx;
+
+
+--
+-- Name: validator_transaction_players_default_player_idx; Type: INDEX ATTACH; Schema: public; Owner: -
+--
+
+ALTER INDEX public.validator_transaction_players_player_idx ATTACH PARTITION public.validator_transaction_players_default_player_idx;
+
+
+--
+-- Name: validator_transactions_default_block_num_index_idx; Type: INDEX ATTACH; Schema: public; Owner: -
+--
+
+ALTER INDEX public.validator_transactions_block_num_idx ATTACH PARTITION public.validator_transactions_default_block_num_index_idx;
+
+
+--
+-- Name: validator_transactions_default_created_date_idx; Type: INDEX ATTACH; Schema: public; Owner: -
+--
+
+ALTER INDEX public.validator_transactions_created_date_idx ATTACH PARTITION public.validator_transactions_default_created_date_idx;
+
+
+--
+-- Name: validator_transactions_default_player_type_idx; Type: INDEX ATTACH; Schema: public; Owner: -
+--
+
+ALTER INDEX public.validator_transactions_type_player_idx ATTACH PARTITION public.validator_transactions_default_player_type_idx;
 
 
 --

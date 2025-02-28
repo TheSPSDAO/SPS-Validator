@@ -6,7 +6,7 @@ POSTGRES_DB=${POSTGRES_DB:-postgres}
 
 # ask for the password if PGPASSWORD is not set
 if [ -z "$PGPASSWORD" ]; then
-  read -s -p "Password for $POSTGRES_USER@$POSTGRES_HOST/$POSTGRES_DB: " PGPASSWORD
+  read -s -r -p "Password for $POSTGRES_USER@$POSTGRES_HOST/$POSTGRES_DB: " PGPASSWORD
 fi
 
 PGPASSWORD=$PGPASSWORD pg_dump --no-owner --no-acl \
@@ -18,9 +18,9 @@ PGPASSWORD=$PGPASSWORD pg_dump --no-owner --no-acl \
   "${POSTGRES_DB}" > snapshot.sql
 
 # get the latest change from the sqitch.changes table with psql
-CHANGE=$(PGPASSWORD=$PGPASSWORD psql -h $POSTGRES_HOST -U $POSTGRES_USER -d $POSTGRES_DB -t -c "SELECT change FROM sqitch.changes WHERE project = 'splinterlands-validator' ORDER BY committed_at DESC LIMIT 1")
+CHANGE=$(PGPASSWORD=$PGPASSWORD psql -h "$POSTGRES_HOST" -U "$POSTGRES_USER" -d "$POSTGRES_DB" -t -c "SELECT change FROM sqitch.changes WHERE project = 'splinterlands-validator' ORDER BY committed_at DESC LIMIT 1")
 # trim whitespace from the change
-CHANGE=$(echo $CHANGE | xargs echo -n)
+CHANGE=$(echo "$CHANGE" | xargs echo -n)
 echo "Latest change: $CHANGE"
 # add to the beginning of the snapshot.sql file like -- to_change:$CHANGE
 sed -i "1s/^/-- to_change:$CHANGE\n/" snapshot.sql
