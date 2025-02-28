@@ -31,12 +31,7 @@ export class ApproveValidatorAction extends Action<typeof approve_validator.acti
             throw new ValidationError('Specified validator not found.', this, ErrorType.UnknownValidator);
         }
 
-        if (!validator.is_active) {
-            throw new ValidationError('Specified validator is not currently active.', this, ErrorType.InactiveValidator);
-        }
-
         const votes = await this.validatorVoteRepository.lookupByVoter(this.op.account, trx);
-
         if (votes && votes.find((v) => v.validator === this.params.account_name)) {
             throw new ValidationError('This account has already voted for the specified validator.', this, ErrorType.DoubleValidatorVote);
         }

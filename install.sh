@@ -9,7 +9,7 @@ replace_env() {
     sed -i "s/^$key=.*/$key=$value/g" "$file"
 }
 
-VERSION=release-0.0.9
+VERSION=v1.0.0
 TARGET_DIR="SPS-Validator"
 
 set -e  # Exit on any error
@@ -33,10 +33,13 @@ if ! command -v git &> /dev/null; then
     exit 1
 fi
 
-# Check if port 5432 is free
-if lsof -Pi :5432 -sTCP:LISTEN -t >/dev/null; then
-    echo -e "${RED}Port 5432 for the database is already in use. Please free up the port and try again.${NC}"
-    exit 1
+# Check if port 5432 is free if lsof is installed
+if command -v lsof &> /dev/null; then
+    echo "lsof is installed. Checking if port 5432 is free..."
+    if lsof -Pi :5432 -sTCP:LISTEN -t >/dev/null; then
+        echo -e "${RED}Port 5432 for the database is already in use. Please free up the port and try again.${NC}"
+        exit 1
+    fi
 fi
 
 # Install Docker if not present and on linux
@@ -47,7 +50,8 @@ if ! command -v docker &> /dev/null; then
         if [ "$EUID" -ne 0 ]; then
             echo "Adding user $(whoami) to docker group"
             sudo usermod -aG docker "$(whoami)"
-            echo "IMPORTANT: Please re-login (or close and re-connect SSH) for docker to function correctly"
+            echo "IMPORTANT: Please re-login (or close and re-connect SSH) for docker to function correctly. Please re-run this script after re-login."
+            exit 0
         fi
         # reload the environment to pick up docker
         # shellcheck source=/dev/null
@@ -117,6 +121,17 @@ if [[ ! "$account_name" =~ ^[Nn]$ ]]; then
     done
     replace_env "VALIDATOR_KEY" "$posting_key" .env
 fi
+
+# Ask for db block retention
+echo "Do you want to turn on block pruning? Turning this on keeps your database smaller by removing old blocks."
+echo "If you are running a node to make it into the top validators, you should not set this so you can archive everything."
+echo "If you are just looking to earn LICENSE rewards, turn this on so your database doesn't grow too big."
+read -p "Enable block pruning (y/n):" -n 1 -r db_block_retention
+echo
+if [[ "$db_block_retention" =~ ^[Yy]$ ]]; then
+    replace_env "DB_BLOCK_RETENTION" "432000" .env
+fi
+
 
 # Ensure validator is not running
 echo "Ensuring validator is not running..."

@@ -39,8 +39,8 @@ export class TransactionRepository extends BaseRepository {
             log(`Recording empty action in block`, LogLevel.Warning);
         }
 
-        const players: TransactionPlayerEntity[] = action.players.map((p) => {
-            return { transaction_id: action.unique_trx_id, player: p };
+        const players: TransactionPlayerEntity[] = action.players.map((p, i) => {
+            return { transaction_id: action.unique_trx_id, player: p, block_num: blockRef.block_num, is_owner: i === 0, type: action.id, success: action.success ?? null };
         });
         const transaction: TransactionEntity = {
             id: action.unique_trx_id,
@@ -88,6 +88,11 @@ export class BlockRepository extends BaseRepository {
 
     public async getLatestBlockNum(trx?: Trx) {
         const record: Record<'block_num', number | null> = await this.query(BlockEntity, trx).max('block_num', 'block_num').getFirst();
+        return record.block_num;
+    }
+
+    public async getEarliestBlockNum(trx?: Trx) {
+        const record: Record<'block_num', number | null> = await this.query(BlockEntity, trx).min('block_num', 'block_num').getFirst();
         return record.block_num;
     }
 

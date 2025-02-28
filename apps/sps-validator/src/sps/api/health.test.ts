@@ -17,6 +17,7 @@ class Fixture extends BaseFixture {
             resolver: container,
             health_checker: cfg.health_checker,
             injection_middleware: middleware,
+            db_block_retention: cfg.db_block_retention,
         });
         enableHealthChecker(app);
         this.request = supertest(app);
