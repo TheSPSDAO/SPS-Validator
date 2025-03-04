@@ -39,7 +39,8 @@ jobs:
       - name: 'Start validator'
         run: |
           # check for "Blocks to head" in the logs
-          ./run.sh start validator | tee validator.log & sleep 10
+          ./run.sh start validator-silent
+          ./run.sh logs | tee validator.log & sleep 10
           grep -q "Processed block" validator.log
           # check return code
           if [ $? -ne 0 ]; then
