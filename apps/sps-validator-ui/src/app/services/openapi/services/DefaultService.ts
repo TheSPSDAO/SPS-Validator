@@ -107,6 +107,7 @@ export class DefaultService {
      * @param limit
      * @param skip
      * @param search
+     * @param active
      * @returns Validators Successful operation
      * @throws ApiError
      */
@@ -114,6 +115,7 @@ export class DefaultService {
         limit?: number,
         skip?: number,
         search?: string,
+        active?: boolean,
     ): CancelablePromise<Validators> {
         return __request(OpenAPI, {
             method: 'GET',
@@ -122,6 +124,7 @@ export class DefaultService {
                 'limit': limit,
                 'skip': skip,
                 'search': search,
+                'active': active,
             },
         });
     }
