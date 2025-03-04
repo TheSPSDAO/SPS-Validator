@@ -1,4 +1,4 @@
-FROM sqitch/sqitch:1.2.1
+FROM sqitch/sqitch:v1.5.0
 USER root
 RUN apt-get -qq update && apt-get -qq install unzip && rm -rf /var/cache/apt/* /var/lib/apt/lists/*
 ARG snapshot
