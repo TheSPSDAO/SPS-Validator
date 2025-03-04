@@ -30,8 +30,8 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: 'Copy .env.example to .env'
-        run: cp .env.example .env
+      - name: 'Copy .env-example to .env'
+        run: cp .env-example .env
 
       - name: 'Run build'
         run: ./run.sh build
