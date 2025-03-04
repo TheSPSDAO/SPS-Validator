@@ -1,0 +1,45 @@
+---
+# This workflow will test the install scripts
+
+name: Install CI
+
+on:
+  push:
+    branches:
+      - master
+      - release-*
+  pull_request:
+    branches:
+      - master
+      - release-*
+
+jobs:
+  build:
+    permissions:
+      checks: write
+      contents: read
+      pull-requests: write
+      packages: read
+        # See supported Node.js release schedule at https://nodejs.org/en/about/releases/
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-14, macos-14-large]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: 'Copy .env.example to .env'
+        run: cp .env.example .env
+
+      - name: 'Run build'
+        run: ./run.sh build
+
+      - name: 'Start validator'
+        run: |
+          # check for "Blocks to head" in the logs
+          ./run.sh start-validator | tee validator.log & sleep 10
+          grep -q "Blocks to head" <(tail -f validator.log)
+
+          ./run.sh stop
