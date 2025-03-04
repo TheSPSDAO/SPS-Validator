@@ -113,6 +113,8 @@ start() {
         logs
     elif [[ $1 == "all-silent" ]]; then
         docker_compose_wrapper up -d
+    elif [[ $1 == "validator-silent" ]]; then
+        docker_compose_wrapper up -d validator
     else
         docker_compose_wrapper up -d validator
         logs

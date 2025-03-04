@@ -150,7 +150,7 @@ For local development, simply run `./run.sh start db` instead of `./run.sh start
 
 - Make sure you have `node` installed.
 - Run `npm i && npm run build sps-validator` to install dependencies and build the dependencies and the sps-validator itself
-- Copy `.env.example` to `.env` if you haven't and make any desired local changes
+- Copy `.env-example` to `.env` if you haven't and make any desired local changes
 - Run `npm start sps-validator` to run the validator process.
 
 ### Plugins
