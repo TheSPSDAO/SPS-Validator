@@ -39,7 +39,7 @@ jobs:
       - name: 'Start validator'
         run: |
           # check for "Blocks to head" in the logs
-          ./run.sh start-validator | tee validator.log & sleep 10
+          ./run.sh start validator | tee validator.log & sleep 10
           grep -q "Blocks to head" <(tail -f validator.log)
 
           ./run.sh stop
