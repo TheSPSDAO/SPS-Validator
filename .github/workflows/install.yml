@@ -40,6 +40,10 @@ jobs:
         run: |
           # check for "Blocks to head" in the logs
           ./run.sh start validator | tee validator.log & sleep 10
-          grep -q "Blocks to head" <(tail -f validator.log)
-
+          grep -q "Processed block" validator.log
+          # check return code
+          if [ $? -ne 0 ]; then
+            echo "Validator failed to start"
+            exit 1
+          fi
           ./run.sh stop
