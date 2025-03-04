@@ -1,5 +1,5 @@
 import { ArrowLeftIcon, ArrowRightIcon } from '@heroicons/react/24/solid';
-import { Button, IconButton, IconButtonProps } from '@material-tailwind/react';
+import { Button, IconButton, IconButtonProps, Typography } from '@material-tailwind/react';
 import { useMediaQuery } from "react-responsive";
 
 export type TableProps = {
@@ -93,9 +93,9 @@ export function TablePager(props: TablePagerProps) {
         props.onPageChange(props.page - 1);
     };
 
-    const isMobile = useMediaQuery({ query: '(max-width: 500px)' });
-    const isTablet = useMediaQuery({ query: '(min-width: 501px) and (max-width: 750px)' });
-    const isDesktop = useMediaQuery({ query: '(min-width: 751px)' });
+    /*const isMobile = useMediaQuery({ query: '(max-width: 500px)' });
+    const isTablet = useMediaQuery({ query: '(min-width: 501px) and (max-width: 850px)' });
+    const isDesktop = useMediaQuery({ query: '(min-width: 851px)' });
 
     const screenSize = isMobile ? "mobile" : isTablet ? "tablet" : "desktop";
     
@@ -103,8 +103,58 @@ export function TablePager(props: TablePagerProps) {
     const displayPageCount = {
         mobile: 3,
         tablet: 5,
-        desktop: 7
-    }[screenSize] ?? 7;
+        desktop: 9
+    }[screenSize] ?? 9;
+
+    const screenSizes = {
+        mobile: { query: '(max-width: 500px)', pages: 3 },
+        tablet: { query: '(min-width: 501px) and (max-width: 850px)', pages: 5 },
+        desktop: { query: '(min-width: 851px) and (max-width: 1200px)', pages: 9 },
+        largeDesktop: { query: '(min-width: 1201px)', pages: 11},
+      };
+      
+      const useScreenSize = () => {
+        for (const [key, { query, pages }] of Object.entries(screenSizes)) {
+          if (useMediaQuery({ query })) {
+            return { size: key as keyof typeof screenSizes, pages };
+          }
+        }
+        return { size: 'desktop', pages: screenSizes.desktop.pages }; // Default to desktop
+      };
+      
+      const { size: screenSize, pages: displayPageCount } = useScreenSize();*/
+    
+      enum ScreenSize {
+            Mobile = 'mobile',
+            Tablet = 'tablet',
+            Laptop = 'laptop',
+            Desktop = 'desktop',
+      }
+      
+      const useScreenSize = (): [ScreenSize, boolean] => {
+            const breakpoints = {
+                [ScreenSize.Mobile]: useMediaQuery({ query: '(max-width: 500px)' }),
+                [ScreenSize.Tablet]: useMediaQuery({ query: '(min-width: 501px) and (max-width: 850px)' }),
+                [ScreenSize.Laptop]: useMediaQuery({ query: '(min-width: 851px) and (max-width: 1200px)' }),
+                [ScreenSize.Desktop]: useMediaQuery({ query: '(min-width: 1201px)' }),
+            };
+      
+        const found = Object.entries(breakpoints).find(([_, matches]) => matches);
+        if (found) {
+          return [found[0] as ScreenSize, true];
+        }
+        return [ScreenSize.Laptop, true]; // Default to desktop
+      };
+    
+    const [screenSize] = useScreenSize();
+    
+    // Page count mapping
+    const displayPageCount = {
+        mobile: 3,
+        tablet: 5,
+        laptop: 9,
+        desktop: 11,
+    }[screenSize];
 
     const pageNumbers = [0]; // Always include the first page
     
@@ -150,3 +200,27 @@ export function TablePager(props: TablePagerProps) {
         </div>
     );
 }
+
+export type TableHeaderProps = {
+    columns: (string | React.ReactNode)[];
+}
+
+// TokenBalanes.tsx still has it's own header, for changing the style it would need to be done there also
+
+export const TableHeader: React.FC<TableHeaderProps> = ({ columns }) => {
+    return (
+        <TableHead>
+            <TableRow>
+                {columns.map((column, index) => (
+                    <TableColumn key={index} className="dark:bg-gray-300">
+                        {column && (
+                            <Typography color="blue-gray" className="font-normal text-left dark:text-gray-800">
+                                {column}
+                            </Typography>
+                        )}
+                    </TableColumn>
+                ))}
+            </TableRow>
+        </TableHead>
+    );
+};

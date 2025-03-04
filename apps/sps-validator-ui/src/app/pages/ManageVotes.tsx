@@ -1,14 +1,14 @@
-import React, {FormEvent, useEffect, useRef, useState } from 'react';
+import {FormEvent, useRef, useState } from 'react';
 import { Hive, HiveService } from '../services/hive';
 import { Button, Card, CardBody, CardFooter, Dialog, DialogBody, DialogHeader, Input, Spinner, Typography } from '@material-tailwind/react';
 import { AuthorizedAccountWrapper } from '../components/AuthorizedAccountWrapper';
 import { usePromise } from '../hooks/Promise';
 import { DefaultService, ValidatorConfig, ValidatorVote } from '../services/openapi';
-import { Table, TableBody, TableCell, TableColumn, TableHead, TablePager, TableRow } from '../components/Table';
+import { Table, TableBody, TableCell, TableHeader, TablePager, TableRow } from '../components/Table';
 import { TxLookupService } from '../services/TxLookupService';
 import { Link, useSearchParams } from 'react-router-dom';
 import useSpinnerColor from '../hooks/SpinnerColor'
-import { MagnifyingGlassIcon, TrashIcon } from '@heroicons/react/24/solid';
+import { MagnifyingGlassIcon, TrashIcon, EyeIcon } from '@heroicons/react/24/solid';
 import { GradientOverflow } from '../components/GradientOverflow';
 import { ValidatorStatsTable } from '../components/ValidatorStatsTable';
 import { ValidatorVotesTable } from '../components/ValidatorVotesTable';
@@ -74,7 +74,7 @@ function VoteCard({
     const noValidators = result?.validators === undefined || result.validators.length === 0;
 
     return (
-        <Card className="dark:bg-gray-800 dark:text-gray-300 dark:shadow-none">
+        <Card className="3xl:col-span-3 dark:bg-gray-800 dark:text-gray-300 dark:shadow-none">
             <CardBody>
                 <Typography variant="h5" color="blue-gray" className="mb-6 dark:text-gray-200">
                     Vote for Validator
@@ -87,16 +87,16 @@ function VoteCard({
                 )}
 
                 <div className="mt-2">
-                    <Typography variant="paragraph" color="blue-gray" className="text-sm">
+                    <Typography variant="paragraph" color="blue-gray" className="text-sm dark:text-gray-300">
                         You have used {votes.length} out of {config.max_votes} votes
                     </Typography>
                 </div>
 
                 <div className="mt-2">
-                    <Typography variant="h6" color="blue-gray">
+                    <Typography variant="h6" color="blue-gray" className="dark:text-gray-200">
                         Criteria to keep in mind when voting
                     </Typography>
-                    <Typography variant="paragraph" color="blue-gray" className="text-md">
+                    <Typography variant="paragraph" color="blue-gray" className="text-md dark:text-gray-300">
                         <ul className="list-disc list-inside">
                             <li>Validators are responsible for validating blocks that are based off sps transactions on the Hive blockchain.</li>
                             <li>Validators with the most votes have a higher chance to be selected to validate blocks, so vote for validators you trust.</li>
@@ -129,36 +129,7 @@ function VoteCard({
                 <div className="relative mt-4">
                     <div ref={containerRef} className="overflow-x-auto">
                         <Table className="w-full border-2 border-gray-200 dark:bg-gray-800 dark:text-gray-300 dark:border-gray-300">
-                            <TableHead>
-                                <TableRow>
-                                    <TableColumn className="dark:bg-gray-300">
-                                        <Typography color="blue-gray" className="font-normal text-left dark:text-gray-800">
-                                            Validator
-                                        </Typography>
-                                    </TableColumn>
-                                    <TableColumn>
-                                        <Typography color="blue-gray" className="font-normal text-left dark:text-gray-800">
-                                            Last Version
-                                        </Typography>
-                                    </TableColumn>
-                                    <TableColumn className="dark:bg-gray-300">
-                                        <Typography color="blue-gray" className="font-normal text-left dark:text-gray-800">
-                                            Active
-                                        </Typography>
-                                    </TableColumn>
-                                    <TableColumn className="dark:bg-gray-300">
-                                        <Typography color="blue-gray" className="font-normal text-left dark:text-gray-800">
-                                            Missed Blocks
-                                        </Typography>
-                                    </TableColumn>
-                                    <TableColumn className="dark:bg-gray-300">
-                                        <Typography color="blue-gray" className="font-normal text-left dark:text-gray-800">
-                                            Total Votes
-                                        </Typography>
-                                    </TableColumn >
-                                    <TableColumn className="dark:bg-gray-300" />
-                                </TableRow>
-                            </TableHead>
+                            <TableHeader columns={["Validator", "Last Version", "Active", "Missed Blocks", "Total Votes", ""]} />
                             <TableBody>
                                 {noValidators && (
                                     <TableRow className="dark:border-gray-300">
@@ -179,10 +150,10 @@ function VoteCard({
                                         </TableCell>
                                         <TableCell>{validator.last_version ?? 'unknown'}</TableCell>
                                         <TableCell>{validator.is_active ? 'Yes' : 'No'}</TableCell>
-                                        <TableCell>{validator.missed_blocks.toLocaleString()}</TableCell>
-                                        <TableCell>{validator.total_votes.toLocaleString()}</TableCell>
+                                        <TableCell>{localeNumber(validator.missed_blocks, 0)}</TableCell>
+                                        <TableCell>{localeNumber(validator.total_votes)}</TableCell>
                                         <TableCell>
-                                            <div className="flex justify-center">
+                                            <div className="flex flex-col md:flex-row justify-center">
                                                 <Button 
                                                     disabled={progress} 
                                                     onClick={() => onNodeSelected(validator.account_name)} 
@@ -197,7 +168,7 @@ function VoteCard({
                                                     size="sm"
                                                     className="dark:bg-blue-800 dark:hover:bg-blue-600 dark:border-gray-300 dark:border dark:text-gray-300 dark:hover:text-gray-100 dark:shadow-none"
                                                 >
-                                                    Vote
+                                                    Vote {votes.some((v) => v.validator === validator.account_name) && '(already voted)'}
                                                 </Button>
                                             </div>
                                         </TableCell>
@@ -253,7 +224,7 @@ function MyVotesCard({
         }
     };
     return (
-        <Card className="dark:bg-gray-800 dark:text-gray-300 dark:shadow-none">
+        <Card className="3xl:col-span-2 dark:bg-gray-800 dark:text-gray-300 dark:shadow-none">
             <CardBody>
                 <Typography variant="h5" color="blue-gray" className="mb-6 dark:text-gray-200">
                     My Votes
@@ -271,13 +242,7 @@ function MyVotesCard({
                 <div className="relative">
                     <div ref={containerRef} className="overflow-x-auto">
                         <Table className="w-full border-2 border-gray-200 dark:bg-gray-800 dark:text-gray-300 dark:border-gray-300">
-                            <TableHead>
-                                <TableRow>
-                                    <TableColumn className="dark:bg-gray-300 dark:text-gray-800">Validator</TableColumn>
-                                    <TableColumn className="dark:bg-gray-300 dark:text-gray-800">Vote Weight</TableColumn>
-                                    <TableColumn className="dark:bg-gray-300" />
-                                </TableRow>
-                            </TableHead>
+                            <TableHeader columns={["Validator", "Vote Weight", ""]} />
                             <TableBody>
                                 {votes.map((vote) => (
                                     <TableRow key={vote.validator}  className="dark:border-gray-300">
@@ -285,14 +250,15 @@ function MyVotesCard({
                                         <TableCell>{localeNumber(vote.vote_weight)}</TableCell>
                                         <TableCell>
                                             <div className="flex justify-center">
-                                                <Button disabled={progress} onClick={() => onNodeSelected(vote.validator)} size="sm" className="me-2">
-                                                    View
+                                                <Button disabled={progress} onClick={() => onNodeSelected(vote.validator)} size="sm" className="me-2 p-2 sm:py-3 sm:px-6 dark:bg-blue-800 dark:hover:bg-blue-600 dark:border-gray-300 dark:border dark:text-gray-300 dark:hover:text-gray-100 dark:shadow-none">
+                                                    <EyeIcon className="sm:hidden size-6" />
+                                                    <p className="sr-only sm:not-sr-only">View</p>
                                                 </Button>
                                                 <Button className="p-2 sm:py-3 sm:px-6 dark:bg-blue-800 dark:hover:bg-blue-600 dark:border-gray-300 dark:border dark:text-gray-300 dark:hover:text-gray-100 dark:shadow-none" disabled={progress} onClick={() => removeVote(vote.validator)}>
                                                     <div className="flex flex-row items-center">
                                                         {progress && <Spinner className="me-3" width={16} height={16} color={spinnerColor} />}
                                                         <TrashIcon className="sm:hidden size-6"/>
-                                                        <p className="sr-only sm:not-sr-only">Remove</p> Vote
+                                                        <p className="sr-only sm:not-sr-only">Remove Vote</p>
                                                     </div>
                                                 </Button>
                                             </div>
@@ -330,7 +296,7 @@ export function ManageVotes() {
     };
     return (
         <AuthorizedAccountWrapper title="Manage Votes" onAuthorized={setAccount} onAuthorizing={() => setAccount(undefined)}>
-            <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 3xl:grid-cols-5 gap-4">
                 {!loaded && !error && <Spinner className="w-full col-span-full" color={spinnerColor} />}
                 {error && (
                     <Card className="col-span-full dark:bg-gray-800 dark:text-gray-300 dark:shadow-none">
@@ -353,25 +319,25 @@ export function ManageVotes() {
                 )}
                 {loaded && <MyVotesCard votes={votes} config={validatorConfig} reloadVotes={reloadVotes} account={account} onNodeSelected={selectNode} />}
                 {loaded && <VoteCard votes={votes} config={validatorConfig} reloadVotes={reloadVotes} account={account} onNodeSelected={selectNode} />}
-                <Dialog className="dialog" open={hasSelectedNode} handler={() => setSearchParams({ node: '' })}>
+                <Dialog className="dialog dark:bg-gray-800 dark:text-gray-300 dark:shadow-none" open={hasSelectedNode} handler={() => setSearchParams({ node: '' })}>
                     <DialogHeader>
-                        <Typography variant="h5" color="blue-gray">
+                        <Typography variant="h5" color="blue-gray" className="dark:text-gray-200">
                             Validator Node - {selectedNode}
                         </Typography>
                     </DialogHeader>
-                    <DialogBody>
+                    <DialogBody className="dark:text-gray-300">
                         <div className="grid grid-cols-1 gap-4">
                             <div>
-                                <Typography variant="h6" color="blue-gray">
+                                <Typography variant="h6" color="blue-gray" className="dark:text-gray-200">
                                     Stats
                                 </Typography>
-                                <ValidatorStatsTable validator={selectedNode!} className="w-full mt-3" />
+                                <ValidatorStatsTable validator={selectedNode!} className="w-full mt-3 dark:text-gray-300" />
                             </div>
                             <div>
-                                <Typography variant="h6" color="blue-gray">
+                                <Typography variant="h6" color="blue-gray" className="dark:text-gray-200">
                                     Votes
                                 </Typography>
-                                <ValidatorVotesTable account={selectedNode!} className="w-full mt-3" />
+                                <ValidatorVotesTable account={selectedNode!} className="w-full mt-3 dark:text-gray-300" />
                             </div>
                         </div>
                     </DialogBody>

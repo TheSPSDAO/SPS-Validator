@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import { usePromise } from '../hooks/Promise';
 import { DefaultService } from '../services/openapi';
 import React, { useRef } from 'react';
-import { Table, TableHead, TableRow, TableColumn, TableBody, TableCell } from '../components/Table';
+import { Table, TableRow, TableBody, TableCell, TableHeader } from '../components/Table';
 import { useMetrics } from '../context/MetricsContext';
 import { ValidatorName } from '../components/ValidatorName';
 import { localeNumber } from '../components/LocaleNumber';
@@ -84,30 +84,7 @@ export function TopValidatorsTable(props: TopValidatorsTableProps) {
         <div className="relative">
             <div ref={containerRef} className="overflow-x-auto">
                 <Table className="w-full min-w-max p-4 border-2 border-gray-200 dark:bg-gray-800 dark:text-gray-300 dark:border-gray-300">
-                    <TableHead>
-                        <TableRow>
-                            <TableColumn className="dark:bg-gray-300">
-                                <Typography color="blue-gray" className="font-normal text-left dark:text-gray-800">
-                                    Validator
-                                </Typography>
-                            </TableColumn>
-                            <TableColumn className="dark:bg-gray-300">
-                                <Typography color="blue-gray" className="font-normal text-left dark:text-gray-800">
-                                    Active
-                                </Typography>
-                            </TableColumn>
-                            <TableColumn className="dark:bg-gray-300">
-                                <Typography color="blue-gray" className="font-normal text-left dark:text-gray-800">
-                                    Missed Blocks
-                                </Typography>
-                            </TableColumn>
-                            <TableColumn className="dark:bg-gray-300">
-                                <Typography color="blue-gray" className="font-normal text-left dark:text-gray-800">
-                                    Total Votes
-                                </Typography>
-                            </TableColumn>
-                        </TableRow>
-                    </TableHead>
+                    <TableHeader columns={["Validator", "Acitve", "Missed Blocks", "Total Votes"]}/>
                     <TableBody>
                         {noValidators && (
                             <TableRow>
@@ -156,20 +133,7 @@ export function TopSpsHoldersTable(props: TopSpsHoldersTableProps) {
         <div className="relative">
             <div ref={containerRef} className="overflow-x-auto">
                 <Table className={props.className}>
-                    <TableHead>
-                        <TableRow>
-                            <TableColumn className="dark:bg-gray-300">
-                                <Typography color="blue-gray" className="font-normal text-left dark:text-gray-800">
-                                    Player
-                                </Typography>
-                            </TableColumn>
-                            <TableColumn className="dark:bg-gray-300">
-                                <Typography color="blue-gray" className="font-normal text-left dark:text-gray-800">
-                                    Balance
-                                </Typography>
-                            </TableColumn>
-                        </TableRow>
-                    </TableHead>
+                    <TableHeader columns={["Player", "Balance"]} />
                     <TableBody>
                         {balances?.balances?.map((balance, index) => (
                             <TableRow key={index} className="dark:border-gray-300">

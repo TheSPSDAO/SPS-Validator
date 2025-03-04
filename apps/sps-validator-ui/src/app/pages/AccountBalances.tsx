@@ -4,7 +4,7 @@ import { Button, Card, CardBody, Input, Typography } from '@material-tailwind/re
 import { FormEvent, useRef, useState } from 'react';
 import { usePromise } from '../hooks/Promise';
 import { DefaultService } from '../services/openapi';
-import { Table, TableBody, TableCell, TableColumn, TableHead, TableRow } from '../components/Table';
+import { Table, TableBody, TableCell, TableRow, TableHeader } from '../components/Table';
 import { localeNumber } from '../components/LocaleNumber';
 import { MagnifyingGlassIcon } from '@heroicons/react/24/solid';
 import { GradientOverflow } from '../components/GradientOverflow';
@@ -23,12 +23,7 @@ export function AccountBalancesCard({ account }: { account: string }) {
                     <div className="relative">
                         <div ref={containerRef} className="overflow-x-auto">
                             <Table className="w-full border-2 border-gray-200 dark:bg-gray-800 dark:text-gray-300 dark:border-gray-300">
-                                <TableHead>
-                                    <TableRow>
-                                        <TableColumn className="dark:bg-gray-300 dark:text-gray-800">Token</TableColumn>
-                                        <TableColumn className="dark:bg-gray-300 dark:text-gray-800">Balance</TableColumn>
-                                    </TableRow>
-                                </TableHead>
+                                <TableHeader columns={["Token", "Balance"]} />
                                 <TableBody>
                                     {balances.map((balance) => (
                                         <TableRow key={balance.token} className="dark:border-gray-300">

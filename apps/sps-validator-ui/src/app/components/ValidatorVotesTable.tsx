@@ -1,7 +1,7 @@
 import { Spinner } from '@material-tailwind/react';
 import { usePromise } from '../hooks/Promise';
 import { DefaultService } from '../services/openapi';
-import { Table, TableBody, TableCell, TableColumn, TableHead, TablePager, TableRow } from './Table';
+import { Table, TableBody, TableCell, TableHeader, TablePager, TableRow } from './Table';
 import { useState } from 'react';
 import { localeNumber } from './LocaleNumber';
 
@@ -13,15 +13,11 @@ export function ValidatorVotesTable({ account, className }: { account: string; c
         return <Spinner className="w-full" />;
     }
     const totalVotes = votes?.reduce((acc, vote) => acc + Number(vote.vote_weight), 0) ?? 0;
+    const voteWeightHeader = `Vote Weight (total: ${localeNumber(totalVotes)})`;
     return (
         <div>
             <Table className={`border-2 border-gray-200 dark:border-gray-300 ${className}`}>
-                <TableHead>
-                    <TableRow>
-                        <TableColumn className="dark:bg-gray-300 dark:text-gray-800">Account</TableColumn>
-                        <TableColumn className="dark:bg-gray-300 dark:text-gray-800">Vote Weight (total: {localeNumber(totalVotes)})</TableColumn>
-                    </TableRow>
-                </TableHead>
+                <TableHeader columns={["Account", voteWeightHeader]} />
                 <TableBody>
                     {votes?.length === 0 && (
                         <TableRow className="dark:border-gray-300">

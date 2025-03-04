@@ -1,6 +1,6 @@
 import { Spinner, Typography, CardBody, Card, Input, Button, Dialog, DialogHeader, DialogBody } from '@material-tailwind/react';
 import { FormEvent, useRef, useState } from 'react';
-import { Table, TableHead, TableRow, TableColumn, TableBody, TableCell, TablePager } from '../components/Table';
+import { Table, TableRow, TableBody, TableCell, TablePager, TableHeader } from '../components/Table';
 import { usePromise } from '../hooks/Promise';
 import { DefaultService } from '../services/openapi';
 import { Link, useSearchParams } from 'react-router-dom';
@@ -60,36 +60,7 @@ function ValidatorNodesCard({ className, onNodeSelected }: { className?: string;
                 <div className="relative mt-4">
                     <div ref={containerRef} className="overflow-x-auto">
                         <Table className="w-full border-2 border-gray-200 dark:bg-gray-800 dark:text-gray-300 dark:border-gray-300">
-                            <TableHead>
-                                <TableRow>
-                                    <TableColumn className="dark:bg-gray-300">
-                                        <Typography color="blue-gray" className="font-normal text-left dark:text-gray-800">
-                                            Validator
-                                        </Typography>
-                                    </TableColumn>
-                                    <TableColumn>
-                                        <Typography color="blue-gray" className="font-normal text-left dark:text-gray-800">
-                                            Last Version
-                                        </Typography>
-                                    </TableColumn>
-                                    <TableColumn className="dark:bg-gray-300">
-                                        <Typography color="blue-gray" className="font-normal text-left dark:text-gray-800">
-                                            Active
-                                        </Typography>
-                                    </TableColumn>
-                                    <TableColumn className="dark:bg-gray-300">
-                                        <Typography color="blue-gray" className="font-normal text-left dark:text-gray-800">
-                                            Missed Blocks
-                                        </Typography>
-                                    </TableColumn>
-                                    <TableColumn className="dark:bg-gray-300">
-                                        <Typography color="blue-gray" className="font-normal text-left dark:text-gray-800">
-                                            Total Votes
-                                        </Typography>
-                                    </TableColumn>
-                                    <TableColumn  className="dark:bg-gray-300"/>
-                                </TableRow>
-                            </TableHead>
+                            <TableHeader columns={["Validator", "Last Version", "Active", "Missed Blocks", "Total Votes", ""]} />
                             <TableBody>
                                 {noValidators && (
                                     <TableRow className="dark:border-gray-300">
@@ -151,13 +122,13 @@ export function ValidatorNodes() {
                 <DialogBody className="dark:text-gray-300">
                     <div className="grid grid-cols-1 gap-4">
                         <div>
-                            <Typography variant="h6" color="blue-gray">
+                            <Typography variant="h6" color="blue-gray" className="dark:text-gray-200">
                                 Stats
                             </Typography>
                             <ValidatorStatsTable validator={selectedNode!} className="w-full mt-3 dark:text-gray-300" />
                         </div>
                         <div>
-                            <Typography variant="h6" color="blue-gray">
+                            <Typography variant="h6" color="blue-gray" className="dark:text-gray-200">
                                 Votes
                             </Typography>
                             <ValidatorVotesTable account={selectedNode!} className="w-full mt-3 dark:text-gray-300" />
