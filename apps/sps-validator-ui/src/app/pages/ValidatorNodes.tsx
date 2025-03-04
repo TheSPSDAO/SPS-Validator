@@ -1,4 +1,4 @@
-import { Spinner, Typography, CardBody, Card, Input, Button, Dialog, DialogHeader, DialogBody } from '@material-tailwind/react';
+import { Spinner, Typography, CardBody, Card, Input, Button, Dialog, DialogHeader, DialogBody, Checkbox } from '@material-tailwind/react';
 import { FormEvent, useRef, useState } from 'react';
 import { Table, TableHead, TableRow, TableColumn, TableBody, TableCell, TablePager } from '../components/Table';
 import { usePromise } from '../hooks/Promise';
@@ -19,10 +19,14 @@ function ValidatorNodesCard({ className, onNodeSelected }: { className?: string;
     const [limit, setLimit] = useState(10); // TODO: Add a limit selector
     const [search, setSearch] = useState('');
     const [count, isLoadingCount] = usePromise(() => DefaultService.getValidators(0, 0), [search]);
-    const [result, isLoading] = usePromise(() => DefaultService.getValidators(limit, page * limit, search), [search, page, limit]);
     const spinnerColor = useSpinnerColor("blue")
     const containerRef = useRef<HTMLDivElement | null>(null);
 
+    const [active, setActive] = useState<undefined | boolean>(undefined);
+    const updateActive = () => {
+        setPage(0);
+        setActive(active ? undefined : true);
+    };
     const [workingSearch, setWorkingSearch] = useState('');
     const updateSearch = (event: FormEvent<HTMLFormElement>) => {
         event.preventDefault();
@@ -30,6 +34,7 @@ function ValidatorNodesCard({ className, onNodeSelected }: { className?: string;
         setPage(0);
     };
 
+    const [result, isLoading] = usePromise(() => DefaultService.getValidators(limit, page * limit, search, active), [search, page, limit, active]);
     if (isLoading || isLoadingCount) {
         return <Spinner className="w-full" color={spinnerColor}/>;
     }
@@ -42,19 +47,16 @@ function ValidatorNodesCard({ className, onNodeSelected }: { className?: string;
                 <Typography variant="h5" color="blue-gray" className="mb-6 dark:text-gray-200">
                     Validators
                 </Typography>
-                
+
                 <form className="mt-4 w-full sm:max-w-[400px] flex justify-self-end gap-4" onSubmit={updateSearch}>
-                    <Input 
-                        value={workingSearch} 
-                        onChange={(e) => setWorkingSearch(e.target.value)} 
-                        label="Account" 
-                        placeholder="Account" 
-                        className="flex-grow-1 dark:text-gray-300 dark:border-gray-300 dark:placeholder-shown:border-t-gray-300 dark:focus:border-gray-200 dark:focus:border-t-transparent dark:placeholder:text-gray-300 dark:focus:placeholder:text-gray-500 dark:border-t-transparent" 
-                        labelProps={{className: "dark:peer-placeholder-shown:text-gray-300 dark:placeholder:text-gray-300 dark:text-gray-300 dark:peer-focus:text-gray-300 dark:peer-focus:before:!border-gray-200 dark:peer-focus:after:!border-gray-200 dark:before:border-gray-300 dark:after:border-gray-300"}}
-                    />
-                    <Button className="p-2 sm:w-32 dark:bg-blue-800 dark:hover:bg-blue-600 dark:border-gray-300 dark:border dark:text-gray-300 dark:hover:text-gray-100 dark:shadow-none" type="submit">
-                        <MagnifyingGlassIcon className="sm:hidden h-6 w-6"/>
-                        <p className="sr-only sm:not-sr-only">Search</p>
+                    <div className="flex-grow-0 w-32">
+                        <Checkbox checked={active ?? false} onChange={(e) => updateActive()} label="Active Only" />
+                    </div>
+                    <div className="flex-grow w-96">
+                        <Input value={workingSearch} onChange={(e) => setWorkingSearch(e.target.value)} label="Account" placeholder="Account" className="flex-grow-1" />
+                    </div>
+                    <Button className="w-32" type="submit">
+                        Search
                     </Button>
                 </form>
                 <div className="relative mt-4">
@@ -154,13 +156,13 @@ export function ValidatorNodes() {
                             <Typography variant="h6" color="blue-gray">
                                 Stats
                             </Typography>
-                            <ValidatorStatsTable validator={selectedNode!} className="w-full mt-3 dark:text-gray-300" />
+                            <ValidatorStatsTable validator={selectedNode} className="w-full mt-3 dark:text-gray-300" />
                         </div>
                         <div>
                             <Typography variant="h6" color="blue-gray">
                                 Votes
                             </Typography>
-                            <ValidatorVotesTable account={selectedNode!} className="w-full mt-3 dark:text-gray-300" />
+                            <ValidatorVotesTable account={selectedNode} className="w-full mt-3 dark:text-gray-300" />
                         </div>
                     </div>
                 </DialogBody>

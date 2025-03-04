@@ -69,10 +69,11 @@ const MetricsCard = () => {
 
 export type TopValidatorsTableProps = {
     limit?: number;
+    active?: boolean;
 };
 
 export function TopValidatorsTable(props: TopValidatorsTableProps) {
-    const [result, isLoading] = usePromise(() => DefaultService.getValidators(props.limit), [props.limit]);
+    const [result, isLoading] = usePromise(() => DefaultService.getValidators(props.limit, undefined, undefined, props.active), [props.limit]);
     const spinnerColor = useSpinnerColor("blue");
     const containerRef = useRef<HTMLDivElement | null>(null);
     
@@ -210,7 +211,7 @@ export function Home() {
                         <Typography variant="h5" color="blue-gray" className="mb-6 dark:text-gray-200">
                             Top Validators
                         </Typography>
-                        <TopValidatorsTable limit={10} />
+                        <TopValidatorsTable limit={10} active={true} />
                     </CardBody>
                 </Card>
 

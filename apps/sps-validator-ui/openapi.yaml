@@ -139,6 +139,10 @@ paths:
                   name: search
                   schema:
                       type: string
+                - in: query
+                  name: active
+                  schema:
+                      type: boolean
             responses:
                 200:
                     description: Successful operation
