@@ -321,8 +321,6 @@ export class CompositionRoot extends null {
         // Promise handlers
         container.register<DelegationPromiseHandler>(DelegationPromiseHandler, { useToken: SpsDelegationPromiseHandler });
 
-        // External chains
-
         // External price feeds
         const daoFeedConfig = cfg.price_feed_dao;
         if (DaoExternalPriceFeed.isAvailable(daoFeedConfig)) {
