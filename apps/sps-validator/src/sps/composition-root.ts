@@ -131,6 +131,7 @@ import {
     SpsTopPriceFeedWrapper,
 } from './features/price_feed';
 import { SpsValidatorCheckInRepository } from './entities/validator/validator_check_in';
+import { SpsBscRepository, SpsEthRepository } from './entities/tokens/eth';
 
 // Only use re-exported `container` to ensure composition root was loaded.
 export { container, singleton, inject, injectable } from 'tsyringe';
@@ -180,6 +181,10 @@ export class CompositionRoot extends null {
         container.register<HiveClient>(HiveClient, { useToken: SpsHiveClient });
         container.register<Client>(Client, { useToken: HiveClient });
         container.register<HiveStream>(HiveStream, { useToken: SpsHiveStream });
+
+        // External Chains
+        container.registerInstance(SpsEthRepository, new SpsEthRepository(cfg.eth));
+        container.registerInstance(SpsBscRepository, new SpsBscRepository(cfg.bsc));
 
         // Socket
         container.register<SocketWrapper>(SocketWrapper, { useToken: SpsSocketWrapper });
@@ -315,6 +320,8 @@ export class CompositionRoot extends null {
 
         // Promise handlers
         container.register<DelegationPromiseHandler>(DelegationPromiseHandler, { useToken: SpsDelegationPromiseHandler });
+
+        // External chains
 
         // External price feeds
         const daoFeedConfig = cfg.price_feed_dao;
