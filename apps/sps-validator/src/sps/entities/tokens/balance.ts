@@ -2,6 +2,7 @@ import { inject, injectable } from 'tsyringe';
 import { BalanceEntity, BalanceHistoryRepository, BalanceRepository, Bookkeeping, Handle, HiveClient, Trx } from '@steem-monsters/splinterlands-validator';
 import { TOKENS } from '../../features/tokens';
 import { BaseERC20Repository, SpsBscRepository, SpsEthRepository } from './eth';
+import { HiveEngineRepository } from './hive_engine';
 
 export type SupplyOpts = {
     burn_account: string;
@@ -39,7 +40,7 @@ export class SpsBalanceRepository extends BalanceRepository {
         @inject(Bookkeeping) bookkeeping: Bookkeeping,
         @inject(SpsEthRepository) private readonly ethRepository: SpsEthRepository,
         @inject(SpsBscRepository) private readonly bscRepository: SpsBscRepository,
-        @inject(HiveClient) private readonly hiveClient: HiveClient,
+        @inject(HiveEngineRepository) private readonly hiveEngineRepo: HiveEngineRepository,
     ) {
         super(handle, balanceHistory, bookkeeping);
     }
@@ -201,14 +202,11 @@ export class SpsBalanceRepository extends BalanceRepository {
     }
 
     private async calculateHiveEngineSupply() {
-        const response: { circulatingSupply: string } = await this.hiveClient.engine.contracts.findOne('tokens', 'tokens', { symbol: TOKENS.SPS });
-        const excludedBalances = await Promise.all(
-            this.supplyOpts.hive_supply_exclusion_accounts.map((account) => this.hiveClient.engine.tokens.getAccountBalance(account, TOKENS.SPS)),
-        );
-        const heCirculatingSupply = parseFloat(response.circulatingSupply);
-        const actualSupply = heCirculatingSupply - excludedBalances.reduce((acc, res) => acc + parseFloat(res.balance), 0);
+        const circulatingSupply = await this.hiveEngineRepo.getCirculatingSupply(TOKENS.SPS);
+        const excludedBalances = await Promise.all(this.supplyOpts.hive_supply_exclusion_accounts.map((account) => this.hiveEngineRepo.getBalance(account, TOKENS.SPS)));
+        const actualSupply = circulatingSupply - excludedBalances.reduce((acc, b) => acc + b, 0);
         return {
-            circulating_supply: this.roundToPlaces(heCirculatingSupply, 3),
+            circulating_supply: this.roundToPlaces(circulatingSupply, 3),
             actual_supply: this.roundToPlaces(actualSupply, 3),
         };
     }

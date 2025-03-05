@@ -132,6 +132,7 @@ import {
 } from './features/price_feed';
 import { SpsValidatorCheckInRepository } from './entities/validator/validator_check_in';
 import { SpsBscRepository, SpsEthRepository } from './entities/tokens/eth';
+import { HiveEngineRepository } from './entities/tokens/hive_engine';
 
 // Only use re-exported `container` to ensure composition root was loaded.
 export { container, singleton, inject, injectable } from 'tsyringe';
@@ -185,6 +186,7 @@ export class CompositionRoot extends null {
         // External Chains
         container.registerInstance(SpsEthRepository, new SpsEthRepository(cfg.eth));
         container.registerInstance(SpsBscRepository, new SpsBscRepository(cfg.bsc));
+        container.registerSingleton(HiveEngineRepository);
 
         // Socket
         container.register<SocketWrapper>(SocketWrapper, { useToken: SpsSocketWrapper });
