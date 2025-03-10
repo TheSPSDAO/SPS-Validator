@@ -46,6 +46,8 @@ services:
       CUSTOM_JSON_ID: ${CUSTOM_JSON_ID:-sps}
       RPC_NODES: ${RPC_NODES:-https://api.hive.blog,https://anyx.io,https://api.openhive.network,https://hived.splinterlands.com,https://hived-2.splinterlands.com}
       HIVE_ENGINE_RPC_NODES: ${HIVE_ENGINE_RPC_NODES:-https://api.hive-engine.com/rpc,https://engine.rishipanthee.com,https://herpc.dtools.dev,https://ha.herpc.dtools.dev,https://api.primersion.com,https://herpc.kanibot.com,https://ctpmain.com,https://herpc.actifit.io}
+      ETH_RPC_NODE: ${ETH_RPC_NODE:-https://eth.public-rpc.com}
+      BSC_RPC_NODE: ${BSC_RPC_NODE:-https://bsc-dataseed.binance.org}
       RPC_TIMEOUT: ${RPC_TIMEOUT:-5000}
       REPLAY_BATCH_SIZE: ${REPLAY_BATCH_SIZE:-25}
       DB: '{ "host": "pg", "port": 5432, "database": "${APP_DATABASE:-validator}", "user": "${APP_USER:-validator}", "password": "${APP_PASSWORD:-validator}" }'

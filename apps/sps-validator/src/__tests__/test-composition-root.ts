@@ -8,6 +8,8 @@ import { ConditionalApiActivator, KnexToken, Middleware } from '@steem-monsters/
 import { DefaultMiddleware } from '../sps/api';
 import { ValidatorShop } from '../sps/utilities/validator-shop';
 import cfg, { ConfigType } from '../sps/convict-config';
+import { SpsBscRepository, SpsEthRepository } from '../sps/entities/tokens/eth';
+import { HiveEngineRepository } from '../sps/entities/tokens/hive_engine';
 
 class _TestCompositionRoot extends null {
     static {
@@ -41,6 +43,21 @@ class _TestCompositionRoot extends null {
                 socket_url: null as unknown as string,
             },
         });
+
+        container.registerInstance(HiveEngineRepository, {
+            getCirculatingSupply: async () => 0,
+            getBalance: async () => 0,
+        } as unknown as HiveEngineRepository);
+
+        container.registerInstance(SpsEthRepository, {
+            getSupply: async () => 0,
+            getBalance: async () => 0,
+        } as unknown as SpsEthRepository);
+
+        container.registerInstance(SpsBscRepository, {
+            getSupply: async () => 0,
+            getBalance: async () => 0,
+        } as unknown as SpsBscRepository);
 
         container.register<ValidatorShop>(ValidatorShop, { useToken: HardcodedValidatorShop });
         CompositionRoot.assertValidRegistry();
