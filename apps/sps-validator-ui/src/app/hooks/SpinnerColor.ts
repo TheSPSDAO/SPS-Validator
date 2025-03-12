@@ -1,7 +1,7 @@
 import { color } from "@material-tailwind/react/types/components/spinner";
 import { useState, useEffect } from "react";
 
-function useSpinnerColor(defaultColor: color = "blue") {
+export function useSpinnerColor(defaultColor: color = "blue") {
   const [spinnerColor, setSpinnerColor] = useState<color| undefined>(undefined);
 
   useEffect(() => {
@@ -10,5 +10,3 @@ function useSpinnerColor(defaultColor: color = "blue") {
 
   return spinnerColor;
 }
-
-export default useSpinnerColor;

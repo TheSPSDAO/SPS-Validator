@@ -1,6 +1,6 @@
 import { ArrowLeftIcon, ArrowRightIcon } from '@heroicons/react/24/solid';
-import { Button, IconButton, IconButtonProps } from '@material-tailwind/react';
-import { useMediaQuery } from "react-responsive";
+import { Button, IconButton, IconButtonProps, Typography } from '@material-tailwind/react';
+import { useEffect, useState } from 'react';
 
 export type TableProps = {
     children: React.ReactNode;
@@ -69,6 +69,7 @@ export type TablePagerProps = {
     count: number;
     onPageChange: (page: number) => void;
     onLimitChange?: (limit: number) => void;
+    containerRef: React.RefObject<HTMLDivElement>;
 };
 
 export function TablePager(props: TablePagerProps) {
@@ -92,33 +93,60 @@ export function TablePager(props: TablePagerProps) {
         if (props.page === 0) return;
         props.onPageChange(props.page - 1);
     };
-
-    const isMobile = useMediaQuery({ query: '(max-width: 500px)' });
-    const isTablet = useMediaQuery({ query: '(min-width: 501px) and (max-width: 750px)' });
-    const isDesktop = useMediaQuery({ query: '(min-width: 751px)' });
-
-    const screenSize = isMobile ? "mobile" : isTablet ? "tablet" : "desktop";
     
-
-    const displayPageCount = {
-        mobile: 3,
-        tablet: 5,
-        desktop: 7
-    }[screenSize] ?? 7;
-
-    const pageNumbers = [0]; // Always include the first page
+    enum ScreenSize {
+        Mobile = 'mobile',
+        Tablet = 'tablet',
+        Laptop = 'laptop',
+        Desktop = 'desktop',
+    }
     
-    const numMiddlePages = displayPageCount - 2; // Remaining slots for middle pages
+    const getDisplayPageCount = (containerRef: React.RefObject<HTMLDivElement>): number => {
+        const [screenSize, setScreenSize] = useState<ScreenSize>(ScreenSize.Laptop);
+    
+        useEffect(() => {
+            if (!containerRef.current) return;
+    
+            const updateSize = () => {
+                const width = containerRef.current?.clientWidth || 0;
+    
+                if (width <= 470) setScreenSize(ScreenSize.Mobile);
+                else if (width <= 690) setScreenSize(ScreenSize.Tablet);
+                else if (width <= 790) setScreenSize(ScreenSize.Laptop);
+                else setScreenSize(ScreenSize.Desktop);
+            };
+    
+            const observer = new ResizeObserver(updateSize);
+            observer.observe(containerRef.current);
+    
+            updateSize();
+    
+            return () => observer.disconnect();
+        }, [containerRef]);
+        
+        const displayPageCount = {
+            mobile: 3,
+            tablet: 5,
+            laptop: 9,
+            desktop: 11,
+        }[screenSize];
+        return displayPageCount;
+    };
+
+    const displayPageCount = getDisplayPageCount(props.containerRef)
+
+    const pageNumbers = [0];
+    
+    const numMiddlePages = displayPageCount - 2;
     const halfMiddle = Math.floor(numMiddlePages / 2);
 
     let startPage = Math.max(1, props.page - halfMiddle);
     let endPage = Math.min(pageCount - 2, props.page + halfMiddle);
 
-    // Adjust if at the start
     if (startPage === 1) {
         endPage = Math.min(pageCount - 2, startPage + numMiddlePages - 1);
     }
-    // Adjust if at the end
+
     if (endPage === pageCount - 2) {
         startPage = Math.max(1, endPage - numMiddlePages + 1);
     }
@@ -127,7 +155,6 @@ export function TablePager(props: TablePagerProps) {
         pageNumbers.push(i);
     }
 
-    // Always include last page if more than 1 page
     pageNumbers.push(pageCount - 1);
 
     return (
@@ -148,5 +175,78 @@ export function TablePager(props: TablePagerProps) {
                 <ArrowRightIcon strokeWidth={2} className="h-4 w-4" />
             </Button>
         </div>
+    );
+}
+
+export type TableHeaderProps = {
+    columns: (string | React.ReactNode)[];
+}
+
+// TokenBalanes.tsx still has it's own header, for changing the style it would need to be done there also
+
+export const TableHeader: React.FC<TableHeaderProps> = ({ columns }) => {
+    return (
+        <TableHead>
+            <TableRow>
+                {columns.map((column, index) => (
+                    <TableColumn key={index} className="dark:bg-gray-300">
+                        {column && (
+                            <Typography color="blue-gray" className="font-normal text-left dark:text-gray-800">
+                                {column}
+                            </Typography>
+                        )}
+                    </TableColumn>
+                ))}
+            </TableRow>
+        </TableHead>
+    );
+};
+
+export type GradientOverflowProps = {
+    isLoading: boolean
+    containerRef: React.RefObject<HTMLDivElement>;
+};
+
+export function GradientOverflow(props: GradientOverflowProps) {
+    const [canScrollLeft, setCanScrollLeft] = useState(false);
+    const [canScrollRight, setCanScrollRight] = useState(false);
+    const [tableHeight, setTableHeight] = useState(0);
+
+    const checkScroll = (): void => {
+        if (!props.containerRef.current) return;
+    
+        const { scrollLeft, scrollWidth, clientWidth, clientHeight } = props.containerRef.current;
+        
+        setCanScrollLeft(scrollLeft > 0);
+        setCanScrollRight(scrollLeft < scrollWidth - clientWidth);
+        setTableHeight(clientHeight);
+    };
+    
+    useEffect(() => {
+        const element = props.containerRef.current;
+        if (!element) return;
+        
+            if (!props.isLoading) {
+                requestAnimationFrame(checkScroll);
+            }
+
+        element.addEventListener("scroll", checkScroll);
+        window.addEventListener("resize", checkScroll);
+    
+        return () => {
+            element.removeEventListener("scroll", checkScroll);
+            window.removeEventListener("resize", checkScroll);
+        };
+    }, [props.isLoading]);
+
+    return(
+        <>
+            {canScrollLeft && (
+                <div className="absolute top-0 left-0 w-5 sm:w-10 pointer-events-none bg-gradient-to-r from-black/70 to-transparent" style={{ height: tableHeight || '100%' }}></div>
+            )}
+            {canScrollRight && (
+                <div className="absolute top-0 right-0 w-5 sm:w-10 pointer-events-none bg-gradient-to-l from-black/70 to-transparent" style={{ height: tableHeight || '100%' }}></div>
+            )} 
+        </>
     );
 }

@@ -3,12 +3,11 @@ import { Hive } from '../services/hive';
 import { usePromise } from '../hooks/Promise';
 import { DefaultService } from '../services/openapi';
 import { Button, Card, CardBody, Input, Spinner, Typography } from '@material-tailwind/react';
-import { TableHead, TableRow, TableColumn, TableBody, TableCell, Table } from '../components/Table';
+import { TableRow, TableBody, TableCell, Table, TableHeader, GradientOverflow } from '../components/Table';
 import { useSearchParams } from 'react-router-dom';
 import { localeNumber } from '../components/LocaleNumber';
-import useSpinnerColor from '../hooks/SpinnerColor'
+import { useSpinnerColor } from '../hooks/SpinnerColor'
 import { MagnifyingGlassIcon } from '@heroicons/react/24/solid';
-import { GradientOverflow} from '../components/GradientOverflow'
 
 function AccountVotesCard({ account }: { account: string }) {
     const [votes, isLoading] = usePromise(() => DefaultService.getVotesByAccount(account), [account]);
@@ -29,20 +28,7 @@ function AccountVotesCard({ account }: { account: string }) {
                 <div className="relative">
                     <div ref={containerRef} className="overflow-x-auto">
                         <Table className="w-full dark:bg-gray-800 dark:text-gray-300 dark:border-gray-300">
-                            <TableHead>
-                                <TableRow>
-                                    <TableColumn className="dark:bg-gray-300">
-                                        <Typography color="blue-gray" className="font-normal text-left dark:text-gray-800">
-                                            Validator
-                                        </Typography>
-                                    </TableColumn>
-                                    <TableColumn className="dark:bg-gray-300">
-                                        <Typography color="blue-gray" className="font-normal text-left dark:text-gray-800">
-                                            Vote Weight
-                                        </Typography>
-                                    </TableColumn>
-                                </TableRow>
-                            </TableHead>
+                            <TableHeader columns={["Validator", "Vote Weight"]} />
                             <TableBody>
                                 {noVotes && (
                                     <TableRow className="dark:border-gray-300">
