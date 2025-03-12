@@ -1,6 +1,8 @@
 import { inject, injectable } from 'tsyringe';
-import { BalanceEntity, BalanceHistoryRepository, BalanceRepository, Bookkeeping, Handle, Trx } from '@steem-monsters/splinterlands-validator';
+import { BalanceEntity, BalanceHistoryRepository, BalanceRepository, Bookkeeping, Handle, HiveClient, Trx } from '@steem-monsters/splinterlands-validator';
 import { TOKENS } from '../../features/tokens';
+import { BaseERC20Repository, SpsBscRepository, SpsEthRepository } from './eth';
+import { HiveEngineRepository } from './hive_engine';
 
 export type SupplyOpts = {
     burn_account: string;
@@ -10,10 +12,14 @@ export type SupplyOpts = {
 
     dao_account: string;
     dao_reserve_account: string;
-    sl_cold_account: string;
+    sl_hive_account: string;
 
     terablock_bsc_account: string;
     terablock_eth_account: string;
+
+    hive_supply_exclusion_accounts: string[];
+    eth_supply_exclusion_addresses: string[];
+    bsc_supply_exclusion_addresses: string[];
 
     reward_pool_accounts: string[];
 };
@@ -32,38 +38,58 @@ export class SpsBalanceRepository extends BalanceRepository {
         @inject(SupplyOpts) private readonly supplyOpts: SupplyOpts,
         @inject(BalanceHistoryRepository) balanceHistory: BalanceHistoryRepository,
         @inject(Bookkeeping) bookkeeping: Bookkeeping,
+        @inject(SpsEthRepository) private readonly ethRepository: SpsEthRepository,
+        @inject(SpsBscRepository) private readonly bscRepository: SpsBscRepository,
+        @inject(HiveEngineRepository) private readonly hiveEngineRepo: HiveEngineRepository,
     ) {
         super(handle, balanceHistory, bookkeeping);
     }
 
+    /**
+     * do not use this in block processing.
+     */
     async getSupply(token: string, trx?: Trx): Promise<SupplyEntry> {
-        const query = this.query(BalanceEntity, trx)
-            .where('token', token)
-            .andWhere('balance', '>', String(0))
-            .whereNotIn('player', [this.supplyOpts.burn_account, this.supplyOpts.burned_ledger_account])
-            .whereRaw('(player NOT LIKE ? OR player = ?)', '$%', this.supplyOpts.staking_account)
-            .sum('balance', 'supply');
-        const record = await query.getSingleOrNull();
-        if (!record || record.supply === null) {
-            return {
-                token,
-                circulating_supply: 0,
-            };
-        }
-        const supply = parseFloat(record!.supply);
         switch (token) {
             case TOKENS.SPS:
-                return this.calculateSpsSupply(supply, trx);
-            default:
+                return this.calculateSpsSupply(trx);
+            default: {
+                const query = this.query(BalanceEntity, trx)
+                    .where('token', token)
+                    .andWhere('balance', '>', String(0))
+                    .whereNotIn('player', [this.supplyOpts.burn_account, this.supplyOpts.burned_ledger_account])
+                    .whereRaw('(player NOT LIKE ? OR player = ?)', '$%', this.supplyOpts.staking_account)
+                    .sum('balance', 'supply');
+                const record = await query.getSingleOrNull();
+                if (!record || record.supply === null) {
+                    return {
+                        token,
+                        circulating_supply: 0,
+                    };
+                }
+                const supply = parseFloat(record!.supply);
                 return {
                     token,
                     circulating_supply: supply,
                 };
+            }
         }
     }
 
-    async calculateSpsSupply(supply: number, trx?: Trx): Promise<SupplyEntry> {
-        const totalSupplySps = Math.abs(supply);
+    private async calculateSpsSupply(trx?: Trx): Promise<SupplyEntry> {
+        const query = this.query(BalanceEntity, trx)
+            .whereIn('token', [TOKENS.SPS, TOKENS.SPSP])
+            .andWhere('balance', '>', String(0))
+            .whereNotIn('player', [this.supplyOpts.burn_account, this.supplyOpts.burned_ledger_account])
+            .whereRaw("player NOT LIKE '$%'")
+            .sum('balance', 'supply');
+        const record = await query.getSingleOrNull();
+        if (!record || record.supply === null) {
+            return {
+                token: TOKENS.SPS,
+                circulating_supply: 0,
+            };
+        }
+        const totalSupplySps = Math.abs(parseFloat(record.supply));
         const balances = await this.sumMultiBalances(
             {
                 [TOKENS.SPS]: [
@@ -73,7 +99,7 @@ export class SpsBalanceRepository extends BalanceRepository {
 
                     this.supplyOpts.dao_account,
                     this.supplyOpts.dao_reserve_account,
-                    this.supplyOpts.sl_cold_account,
+                    this.supplyOpts.sl_hive_account,
                     this.supplyOpts.terablock_bsc_account,
                     this.supplyOpts.terablock_eth_account,
 
@@ -101,9 +127,26 @@ export class SpsBalanceRepository extends BalanceRepository {
         delete balances[this.supplyOpts.terablock_eth_account][TOKENS.SPSP];
 
         const daoReserveSps = balances[this.supplyOpts.dao_reserve_account][TOKENS.SPS];
-        const slColdSupplySps = balances[this.supplyOpts.sl_cold_account][TOKENS.SPS];
-        const circulatingSupplySps = totalSupplySps - combinedDaoSps - daoReserveSps - combinedTerablockBscSps - combinedTerablockEthSps - slColdSupplySps;
+        const slHiveSupplySps = balances[this.supplyOpts.sl_hive_account][TOKENS.SPS];
 
+        const heSupply = await this.calculateHiveEngineSupply();
+        const ethSupply = await this.calculateEcr20Supply(this.ethRepository, this.supplyOpts.eth_supply_exclusion_addresses);
+        const bscSupply = await this.calculateEcr20Supply(this.bscRepository, this.supplyOpts.bsc_supply_exclusion_addresses);
+
+        const circulatingSupplySps =
+            totalSupplySps -
+            combinedDaoSps -
+            daoReserveSps -
+            combinedTerablockBscSps -
+            combinedTerablockEthSps -
+            slHiveSupplySps +
+            ethSupply.actual_supply +
+            bscSupply.actual_supply +
+            heSupply.actual_supply;
+
+        const rewardPoolSupply = Object.entries(balances)
+            .filter(([account]) => this.supplyOpts.reward_pool_accounts.includes(account))
+            .reduce((acc, [_, b]) => acc + b[TOKENS.SPS], 0);
         const rewardPoolsSps = Object.entries(balances)
             .filter(([account]) => this.supplyOpts.reward_pool_accounts.includes(account))
             .reduce((acc, [account, b]) => {
@@ -113,18 +156,23 @@ export class SpsBalanceRepository extends BalanceRepository {
 
         return {
             token: TOKENS.SPS,
-            minted: totalSupplySps + combinedNullSps,
+            minted: Math.floor(totalSupplySps + combinedNullSps + rewardPoolSupply),
             burned: combinedNullSps,
-            total_supply: totalSupplySps,
+            total_supply: totalSupplySps + rewardPoolSupply,
             circulating_supply: circulatingSupplySps,
+            off_chain: {
+                hive_engine: heSupply.actual_supply,
+                eth: ethSupply.actual_supply,
+                bsc: bscSupply.actual_supply,
+            },
             reserve: {
                 dao: combinedDaoSps,
                 dao_reserve: daoReserveSps,
-                sl_cold: slColdSupplySps,
                 terablock_bsc: combinedTerablockBscSps,
                 terablock_eth: combinedTerablockEthSps,
             },
             reward_pools: {
+                total: rewardPoolSupply,
                 ...rewardPoolsSps,
             },
         };
@@ -151,5 +199,30 @@ export class SpsBalanceRepository extends BalanceRepository {
                 acc[balance.player][balance.token] = Math.abs(balance.balance);
                 return acc;
             }, groupedBalances);
+    }
+
+    private async calculateHiveEngineSupply() {
+        const circulatingSupply = await this.hiveEngineRepo.getCirculatingSupply(TOKENS.SPS);
+        const excludedBalances = await Promise.all(this.supplyOpts.hive_supply_exclusion_accounts.map((account) => this.hiveEngineRepo.getBalance(account, TOKENS.SPS)));
+        const actualSupply = circulatingSupply - excludedBalances.reduce((acc, b) => acc + b, 0);
+        return {
+            circulating_supply: this.roundToPlaces(circulatingSupply, 3),
+            actual_supply: this.roundToPlaces(actualSupply, 3),
+        };
+    }
+
+    private async calculateEcr20Supply(repository: BaseERC20Repository, excluded_addresses: string[]) {
+        const circulatingSupply = await repository.getSupply();
+        const excludedBalances = await Promise.all(excluded_addresses.map((address) => repository.getBalance(address)));
+        const actualSupply = circulatingSupply - excludedBalances.reduce((acc, balance) => acc + balance, 0);
+        return {
+            circulating_supply: this.roundToPlaces(circulatingSupply, 3),
+            actual_supply: this.roundToPlaces(actualSupply, 3),
+        };
+    }
+
+    private roundToPlaces(num: number, places: number) {
+        const factor = 10 ** places;
+        return Math.round(num * factor) / factor;
     }
 }

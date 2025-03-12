@@ -3,12 +3,11 @@ import { Link } from 'react-router-dom';
 import { usePromise } from '../hooks/Promise';
 import { DefaultService } from '../services/openapi';
 import React, { useRef } from 'react';
-import { Table, TableRow, TableBody, TableCell, TableHeader } from '../components/Table';
+import { Table, TableRow, TableBody, TableCell, TableHeader, GradientOverflow } from '../components/Table';
 import { useMetrics } from '../context/MetricsContext';
 import { ValidatorName } from '../components/ValidatorName';
 import { localeNumber } from '../components/LocaleNumber';
-import useSpinnerColor from '../hooks/SpinnerColor'
-import { GradientOverflow} from '../components/GradientOverflow'
+import { useSpinnerColor } from '../hooks/SpinnerColor'
 
 const usefulLinks = [
     { name: 'Splinterlands', url: 'https://splinterlands.com' },
@@ -35,7 +34,7 @@ function UsefulLinksCard() {
 }
 
 function useMetricsCard() {
-    const { spsPrice, validators, lastBlock } = useMetrics(); // Get shared state
+    const { spsPrice, validators, lastBlock } = useMetrics();
 
     return [
         { label: 'SPS Price', value: `$${spsPrice?.toFixed(5) ?? '...'}` },

@@ -15,7 +15,7 @@ export function ValidatorName({ account_name, api_url, post_url, link_to_validat
             )}
             {!link_to_validator && <span>{account_name}</span>} (
             {api_url && (
-                <a href={api_url} target="_blank" rel="noopener noreferrer" className="text-blue-600 underline dark:text-blue-500">
+                <a href={api_url.replace(/\/$/, "") + "/status"} target="_blank" rel="noopener noreferrer" className="text-blue-600 underline dark:text-blue-500">
                     api
                 </a>
             )}

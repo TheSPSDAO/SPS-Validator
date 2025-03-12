@@ -3,12 +3,11 @@ import { Hive } from '../services/hive';
 import { usePromise } from '../hooks/Promise';
 import { DefaultService } from '../services/openapi';
 import { Button, Card, CardBody, Input, Spinner, Typography } from '@material-tailwind/react';
-import { TableRow, TableBody, TableCell, Table, TableHeader } from '../components/Table';
+import { TableRow, TableBody, TableCell, Table, TableHeader, GradientOverflow } from '../components/Table';
 import { useSearchParams } from 'react-router-dom';
 import { localeNumber } from '../components/LocaleNumber';
-import useSpinnerColor from '../hooks/SpinnerColor'
+import { useSpinnerColor } from '../hooks/SpinnerColor'
 import { MagnifyingGlassIcon } from '@heroicons/react/24/solid';
-import { GradientOverflow} from '../components/GradientOverflow'
 
 function AccountVotesCard({ account }: { account: string }) {
     const [votes, isLoading] = usePromise(() => DefaultService.getVotesByAccount(account), [account]);

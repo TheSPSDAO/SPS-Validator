@@ -1,19 +1,17 @@
 import {FormEvent, useRef, useState } from 'react';
 import { Hive, HiveService } from '../services/hive';
-import { Button, Card, CardBody, CardFooter, Dialog, DialogBody, DialogHeader, Input, Spinner, Typography } from '@material-tailwind/react';
+import { Button, Card, CardBody, CardFooter, Input, Spinner, Typography } from '@material-tailwind/react';
 import { AuthorizedAccountWrapper } from '../components/AuthorizedAccountWrapper';
 import { usePromise } from '../hooks/Promise';
 import { DefaultService, ValidatorConfig, ValidatorVote } from '../services/openapi';
-import { Table, TableBody, TableCell, TableHeader, TablePager, TableRow } from '../components/Table';
+import { Table, TableBody, TableCell, TableHeader, TablePager, TableRow, GradientOverflow } from '../components/Table';
 import { TxLookupService } from '../services/TxLookupService';
 import { Link, useSearchParams } from 'react-router-dom';
-import useSpinnerColor from '../hooks/SpinnerColor'
+import { useSpinnerColor } from '../hooks/SpinnerColor'
 import { MagnifyingGlassIcon, TrashIcon, EyeIcon } from '@heroicons/react/24/solid';
-import { GradientOverflow } from '../components/GradientOverflow';
-import { ValidatorStatsTable } from '../components/ValidatorStatsTable';
-import { ValidatorVotesTable } from '../components/ValidatorVotesTable';
 import { ValidatorName } from '../components/ValidatorName';
 import { localeNumber } from '../components/LocaleNumber';
+import { ValidatorDialog } from '../components/ValidatorDialog';
 
 function VoteCard({
     account,
@@ -66,7 +64,7 @@ function VoteCard({
             setProgress(false);
         }
     };
-
+    
     if (isLoading || isLoadingCount) {
         return <Spinner className="w-full" color={spinnerColor}/>;
     }
@@ -153,12 +151,12 @@ function VoteCard({
                                         <TableCell>{localeNumber(validator.missed_blocks, 0)}</TableCell>
                                         <TableCell>{localeNumber(validator.total_votes)}</TableCell>
                                         <TableCell>
-                                            <div className="flex flex-col md:flex-row justify-center">
+                                            <div className="flex flex-col md:flex-row justify-center align-middle">
                                                 <Button 
                                                     disabled={progress} 
                                                     onClick={() => onNodeSelected(validator.account_name)} 
                                                     size="sm" 
-                                                    className="me-2 dark:bg-blue-800 dark:hover:bg-blue-600 dark:border-gray-300 dark:border dark:text-gray-300 dark:hover:text-gray-100 dark:shadow-none"
+                                                    className="md:me-2 mb-2 md:mb-0 dark:bg-blue-800 dark:hover:bg-blue-600 dark:border-gray-300 dark:border dark:text-gray-300 dark:hover:text-gray-100 dark:shadow-none"
                                                 >
                                                     View
                                                 </Button>
@@ -179,7 +177,7 @@ function VoteCard({
                     </div>
                     <GradientOverflow isLoading={isLoading} containerRef={containerRef} />
                 </div>
-                {count?.count && <TablePager className="w-full justify-center mt-3" page={page} limit={limit} displayPageCount={2} onPageChange={setPage} count={count?.count} />}
+                {count?.count && <TablePager className="w-full justify-center mt-3" page={page} limit={limit} displayPageCount={2} onPageChange={setPage} count={count?.count} containerRef={containerRef} />}
             </CardBody>
         </Card>
     );
@@ -250,11 +248,11 @@ function MyVotesCard({
                                         <TableCell>{localeNumber(vote.vote_weight)}</TableCell>
                                         <TableCell>
                                             <div className="flex justify-center">
-                                                <Button disabled={progress} onClick={() => onNodeSelected(vote.validator)} size="sm" className="me-2 p-2 sm:py-3 sm:px-6 dark:bg-blue-800 dark:hover:bg-blue-600 dark:border-gray-300 dark:border dark:text-gray-300 dark:hover:text-gray-100 dark:shadow-none">
+                                                <Button disabled={progress} onClick={() => onNodeSelected(vote.validator)} size="sm" className="me-2 p-2 sm:px-4 dark:bg-blue-800 dark:hover:bg-blue-600 dark:border-gray-300 dark:border dark:text-gray-300 dark:hover:text-gray-100 dark:shadow-none">
                                                     <EyeIcon className="sm:hidden size-6" />
                                                     <p className="sr-only sm:not-sr-only">View</p>
                                                 </Button>
-                                                <Button className="p-2 sm:py-3 sm:px-6 dark:bg-blue-800 dark:hover:bg-blue-600 dark:border-gray-300 dark:border dark:text-gray-300 dark:hover:text-gray-100 dark:shadow-none" disabled={progress} onClick={() => removeVote(vote.validator)}>
+                                                <Button className="p-2 sm:px-4 dark:bg-blue-800 dark:hover:bg-blue-600 dark:border-gray-300 dark:border dark:text-gray-300 dark:hover:text-gray-100 dark:shadow-none" disabled={progress} onClick={() => removeVote(vote.validator)}>
                                                     <div className="flex flex-row items-center">
                                                         {progress && <Spinner className="me-3" width={16} height={16} color={spinnerColor} />}
                                                         <TrashIcon className="sm:hidden size-6"/>
@@ -319,29 +317,7 @@ export function ManageVotes() {
                 )}
                 {loaded && <MyVotesCard votes={votes} config={validatorConfig} reloadVotes={reloadVotes} account={account} onNodeSelected={selectNode} />}
                 {loaded && <VoteCard votes={votes} config={validatorConfig} reloadVotes={reloadVotes} account={account} onNodeSelected={selectNode} />}
-                <Dialog className="dialog dark:bg-gray-800 dark:text-gray-300 dark:shadow-none" open={hasSelectedNode} handler={() => setSearchParams({ node: '' })}>
-                    <DialogHeader>
-                        <Typography variant="h5" color="blue-gray" className="dark:text-gray-200">
-                            Validator Node - {selectedNode}
-                        </Typography>
-                    </DialogHeader>
-                    <DialogBody className="dark:text-gray-300">
-                        <div className="grid grid-cols-1 gap-4">
-                            <div>
-                                <Typography variant="h6" color="blue-gray" className="dark:text-gray-200">
-                                    Stats
-                                </Typography>
-                                <ValidatorStatsTable validator={selectedNode!} className="w-full mt-3 dark:text-gray-300" />
-                            </div>
-                            <div>
-                                <Typography variant="h6" color="blue-gray" className="dark:text-gray-200">
-                                    Votes
-                                </Typography>
-                                <ValidatorVotesTable account={selectedNode!} className="w-full mt-3 dark:text-gray-300" />
-                            </div>
-                        </div>
-                    </DialogBody>
-                </Dialog>
+                <ValidatorDialog open={hasSelectedNode} onClose={() => setSearchParams({ node: '' })} selectedNode={selectedNode} />
             </div>
         </AuthorizedAccountWrapper>
     );

@@ -4,10 +4,9 @@ import { Button, Card, CardBody, Input, Typography } from '@material-tailwind/re
 import { FormEvent, useRef, useState } from 'react';
 import { usePromise } from '../hooks/Promise';
 import { DefaultService } from '../services/openapi';
-import { Table, TableBody, TableCell, TableRow, TableHeader } from '../components/Table';
+import { Table, TableBody, TableCell, TableRow, TableHeader, GradientOverflow } from '../components/Table';
 import { localeNumber } from '../components/LocaleNumber';
 import { MagnifyingGlassIcon } from '@heroicons/react/24/solid';
-import { GradientOverflow } from '../components/GradientOverflow';
 
 export function AccountBalancesCard({ account }: { account: string }) {
     const [balances, loading] = usePromise(() => DefaultService.getBalances(account), [account]);

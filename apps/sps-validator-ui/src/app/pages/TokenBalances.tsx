@@ -2,10 +2,9 @@ import { Card, CardBody, Checkbox, Spinner, Tab, TabPanel, Tabs, TabsBody, TabsH
 import { useRef, useState } from 'react';
 import { DefaultService } from '../services/openapi';
 import { usePromise } from '../hooks/Promise';
-import { Table, TableBody, TableCell, TableColumn, TableHead, TablePager, TableRow } from '../components/Table';
+import { Table, TableBody, TableCell, TableColumn, TableHead, TablePager, TableRow, GradientOverflow } from '../components/Table';
 import { localeNumber } from '../components/LocaleNumber';
-import useSpinnerColor from '../hooks/SpinnerColor'
-import { GradientOverflow } from '../components/GradientOverflow';
+import { useSpinnerColor } from '../hooks/SpinnerColor'
 
 const tokens = ['SPS', 'SPSP', 'LICENSE'];
 
@@ -58,7 +57,7 @@ function TokenBalancesTab({ token }: { token: string }) {
                 </Table>
             </div>
             <GradientOverflow isLoading={isLoading} containerRef={containerRef} />
-            {count?.count && <TablePager className="w-full justify-center mt-3" page={page} limit={limit} displayPageCount={2} onPageChange={setPage} count={count?.count} />}
+            {count?.count && <TablePager className="w-full justify-center mt-3" page={page} limit={limit} displayPageCount={2} onPageChange={setPage} count={count?.count} containerRef={containerRef} />}
         </div>
     );
 }

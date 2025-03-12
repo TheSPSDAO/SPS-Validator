@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { useLocalStorage } from '../hooks';
 import { Hive, HiveService } from '../services/hive';
 import { Button, Card, CardBody, CardFooter, Input, Spinner, Typography } from '@material-tailwind/react';
-import useSpinnerColor from '../hooks/SpinnerColor';
+import { useSpinnerColor } from '../hooks/SpinnerColor';
 
 export type AuthorizedAccountWrapperProps = {
     title: string;
