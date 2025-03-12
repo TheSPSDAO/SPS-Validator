@@ -291,11 +291,11 @@ const schema = {
         default: 'sps.dao.reserves',
         env: 'DAO_RESERVE_ACCOUNT',
     },
-    sl_cold_account: {
-        doc: 'SPS sl cold account',
+    sl_hive_account: {
+        doc: 'SPS sl-hive account',
         nullable: false,
-        default: 'sl-cold',
-        env: 'SL_COLD_ACCOUNT',
+        default: 'sl-hive',
+        env: 'SL_HIVE_ACCOUNT',
     },
     terablock_bsc_account: {
         doc: 'SPS terablock bsc account',
@@ -314,7 +314,7 @@ const schema = {
         nullable: false,
         format: 'stringy-array',
         default:
-            '$REWARD_POOLS_BRAWL,$REWARD_POOLS_LAND,$REWARD_POOLS_LICENSE,$VALIDATOR_REWARDS,$REWARD_POOLS_SOULKEEP,$REWARD_POOLS_MODERN,$REWARD_POOLS_WILD,$REWARD_POOLS_SURVIVAL,$UNCLAIMED_UNISWAP_REWARDS,$TOURNAMENTS_DISTRIBUTION,$TOKEN_STAKING_REWARDS,$REWARD_POOLS_FOCUS,$REWARD_POOLS_SEASON',
+            '$REWARD_POOLS_BRAWL,$REWARD_POOLS_LAND,$REWARD_POOLS_LICENSE,$VALIDATOR_REWARDS,$REWARD_POOLS_SOULKEEP,$REWARD_POOLS_MODERN,$REWARD_POOLS_WILD,$REWARD_POOLS_SURVIVAL,$UNCLAIMED_UNISWAP_REWARDS,$TOURNAMENTS_DISTRIBUTION,$SPS_STAKING_REWARDS,$REWARD_POOLS_FOCUS,$REWARD_POOLS_SEASON',
         env: 'REWARD_POOL_ACCOUNTS',
     },
     missed_blocks_account: {
@@ -405,6 +405,63 @@ const schema = {
         nullable: true,
         default: null as null | number,
         env: 'DB_BLOCK_RETENTION',
+    },
+    eth: {
+        rpc_node: {
+            doc: 'The Ethereum JSON RPC node to connect to',
+            format: 'url',
+            default: 'https://eth.public-rpc.com',
+            env: 'ETH_RPC_NODE',
+        },
+        contract_address: {
+            doc: 'The Ethereum SPS contract address',
+            format: String,
+            default: '0x00813E3421E1367353BfE7615c7f7f133C89df74',
+            env: 'ETH_CONTRACT_ADDRESS',
+        },
+    },
+    bsc: {
+        rpc_node: {
+            doc: 'The Binance Smart Chain JSON RPC node to connect to',
+            format: 'url',
+            default: 'https://bsc-dataseed.binance.org',
+            env: 'BSC_RPC_NODE',
+        },
+        contract_address: {
+            doc: 'The Binance Smart Chain SPS contract address',
+            format: String,
+            default: '0x1633b7157e7638C4d6593436111Bf125Ee74703F',
+            env: 'BSC_CONTRACT_ADDRESS',
+        },
+    },
+    hive_supply_exclusion_accounts: {
+        doc: 'Accounts to exclude from the circulating supply calculation',
+        format: 'stringy-array',
+        default: ['steemmonsters'],
+        env: 'HIVE_SUPPLY_EXCLUSION_ACCOUNTS',
+    },
+    eth_supply_exclusion_addresses: {
+        doc: 'Addresses to exclude from the circulating supply calculation',
+        format: 'stringy-array',
+        default: [
+            '0xc5465a401c8722ffcc0706ea0001a16dc9da94f3',
+            '0xde38b4681f7d0634182d032474fb72e47e9aa2d2',
+            '0xb4a84042F9Da14A4C46d704203f808A0B9FC93FA',
+            '0xe434f06f44700a41fa4747be53163148750a6478',
+        ],
+        env: 'ETH_SUPPLY_EXCLUSION_ADDRESSES',
+    },
+    bsc_supply_exclusion_addresses: {
+        doc: 'Addresses to exclude from the circulating supply calculation',
+        format: 'stringy-array',
+        default: [
+            '0xec93875c65476437bd56e3eaaa0b799a5c69e5f6',
+            '0xdf5Fd6B21E0E7aC559B41Cf2597126B3714f432C',
+            '0x000000000000000000000000000000000000dead',
+            '0xE434F06f44700a41FA4747bE53163148750a6478',
+            '0x61eB2237a1657fBeCa7554aa1b10908dE326918F',
+        ],
+        env: 'BSC_SUPPLY_EXCLUSION_ADDRESSES',
     },
 };
 
