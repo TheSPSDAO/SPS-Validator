@@ -5,14 +5,14 @@ import { usePromise } from '../hooks/Promise';
 import { Table, TableBody, TableCell, TableColumn, TableHead, TablePager, TableRow } from '../components/Table';
 import { localeNumber } from '../components/LocaleNumber';
 
-const tokens = ['SPS', 'SPSP', 'LICENSE'];
+const tokens = ['SPS_TOTAL', 'SPS', 'SPSP', 'LICENSE', 'ACTIVATED_LICENSE', 'LICENSE_TOTAL', 'RUNNING_LICENSE'];
 
 function TokenBalancesTab({ token }: { token: string }) {
     const [page, setPage] = useState(0);
     const [limit, setLimit] = useState(10); // TODO: Add a limit selector
     const [systemAccounts, setSystemAccounts] = useState(false);
-    const [count, isLoadingCount] = usePromise(() => DefaultService.getBalancesByToken(token, 0, 0, systemAccounts), [token, systemAccounts]);
-    const [balances, isLoading] = usePromise(() => DefaultService.getBalancesByToken(token, limit, page * limit, systemAccounts), [token, page, limit, systemAccounts]);
+    const [count, isLoadingCount] = usePromise(() => DefaultService.getExtendedBalancesByToken(token, 0, 0, systemAccounts), [token, systemAccounts]);
+    const [balances, isLoading] = usePromise(() => DefaultService.getExtendedBalancesByToken(token, limit, page * limit, systemAccounts), [token, page, limit, systemAccounts]);
 
     const toggleSystemAccounts = (value: boolean) => {
         setSystemAccounts(value);

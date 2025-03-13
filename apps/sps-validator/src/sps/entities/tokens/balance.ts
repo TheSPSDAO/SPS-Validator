@@ -1,6 +1,17 @@
 import { inject, injectable } from 'tsyringe';
-import { BalanceEntity, BalanceHistoryRepository, BalanceRepository, Bookkeeping, Handle, HiveClient, Trx } from '@steem-monsters/splinterlands-validator';
-import { TOKENS } from '../../features/tokens';
+import {
+    BalanceEntity,
+    BalanceEntry,
+    BalanceHistoryRepository,
+    BalanceRepository,
+    Bookkeeping,
+    GetTokenBalancesParams,
+    GetTokenBalancesResult,
+    Handle,
+    RawResult,
+    Trx,
+} from '@steem-monsters/splinterlands-validator';
+import { TOKENS, VirtualTokenConfig } from '../../features/tokens';
 import { BaseERC20Repository, SpsBscRepository, SpsEthRepository } from './eth';
 import { HiveEngineRepository } from './hive_engine';
 
@@ -31,6 +42,10 @@ export type SupplyEntry = {
     circulating_supply: number;
 } & Record<string, unknown>;
 
+export type GetTokenExtendedBalancesParams = Omit<GetTokenBalancesParams, 'tokens'> & {
+    token: string;
+};
+
 @injectable()
 export class SpsBalanceRepository extends BalanceRepository {
     public constructor(
@@ -41,55 +56,179 @@ export class SpsBalanceRepository extends BalanceRepository {
         @inject(SpsEthRepository) private readonly ethRepository: SpsEthRepository,
         @inject(SpsBscRepository) private readonly bscRepository: SpsBscRepository,
         @inject(HiveEngineRepository) private readonly hiveEngineRepo: HiveEngineRepository,
+        @inject(VirtualTokenConfig) private readonly virtualTokenConfig: VirtualTokenConfig,
     ) {
         super(handle, balanceHistory, bookkeeping);
     }
 
+    async getExtendedBalances(player: string, trx?: Trx): Promise<BalanceEntry[]> {
+        const records = await this.query(BalanceEntity, trx).where('player', player).select('player', 'token', 'balance').orderBy('player').orderBy('token').getMany();
+        const mappedRecords = records.map(BalanceRepository.into);
+        const virtualBalances = Object.entries(this.virtualTokenConfig).map(([token, sourceTokens]) => {
+            const sourceBalances = sourceTokens.map((sourceToken) => mappedRecords.find((r) => r.token === sourceToken)?.balance ?? 0);
+            return {
+                token,
+                player,
+                balance: sourceBalances.reduce((acc, b) => acc + b, 0),
+            };
+        });
+        return [...mappedRecords, ...virtualBalances];
+    }
+
+    async getMultipleExtendedBalancesByToken(token: string, players: string[], trx?: Trx): Promise<BalanceEntry[]> {
+        const virtualTokenSources = this.virtualTokenConfig[token];
+        if (virtualTokenSources) {
+            const records = await this.query(BalanceEntity, trx)
+                .whereIn('player', players)
+                .whereIn('token', virtualTokenSources)
+                .groupBy('player')
+                .select('player')
+                .sum('balance', 'balance')
+                .orderBy('player')
+                .orderBy('balance')
+                .getMany();
+            const mappedRecords = records.map((r) => ({
+                player: r.player,
+                token,
+                balance: parseFloat(r.balance),
+            }));
+            return mappedRecords;
+        } else {
+            const records = await this.query(BalanceEntity, trx)
+                .whereIn('player', players)
+                .andWhere('token', token)
+                .select('player', 'token', 'balance')
+                .orderBy('player')
+                .orderBy('token')
+                .getMany();
+            return records.map(BalanceRepository.into);
+        }
+    }
+
+    async getTokenExtendedBalances(params: GetTokenExtendedBalancesParams, trx?: Trx): Promise<GetTokenBalancesResult> {
+        const tokens = this.virtualTokenConfig[params.token] ?? [params.token];
+        let query = this.query(BalanceEntity, trx).whereIn('token', tokens).groupBy('player').sum('balance', 'balance').orderByRaw('balance DESC').select('player');
+        const excludeSystemAccounts = params.systemAccounts === false || params.systemAccounts === undefined;
+        if (excludeSystemAccounts) {
+            query = query.where('player', 'NOT LIKE', '$%');
+        }
+        const count = params.count ? await this.getPlayerCountForTokens(tokens, excludeSystemAccounts) : undefined;
+        if (params.limit === 0 && params.skip === 0) {
+            return {
+                count,
+                balances: [],
+            };
+        }
+
+        if (params.limit !== undefined) {
+            query = query.limit(params.limit);
+        }
+        if (params.skip !== undefined) {
+            query = query.offset(params.skip);
+        }
+        const records = await query.getMany();
+        const mappedRecords = records.map((r) => ({
+            player: r.player,
+            token: params.token,
+            balance: parseFloat(r.balance),
+        }));
+        return {
+            count,
+            balances: mappedRecords,
+        };
+    }
+
+    private async getPlayerCountForTokens(tokens: string[], excludeSystemAccounts: boolean, trx?: Trx) {
+        const raw = await this.queryRaw(trx).raw<RawResult<{ count: string }>>(
+            `SELECT COUNT(DISTINCT player) as count FROM balances WHERE token = ANY(?::text[])${excludeSystemAccounts ? " AND player NOT LIKE '$%'" : ''}`,
+            [tokens],
+        );
+        return parseInt(raw.rows[0].count);
+    }
+
     /**
      * do not use this in block processing.
+     *
+     * todo: move this out of the repository and into features/tokens
      */
     async getSupply(token: string, trx?: Trx): Promise<SupplyEntry> {
         switch (token) {
             case TOKENS.SPS:
                 return this.calculateSpsSupply(trx);
+            case TOKENS.LICENSE:
+                return this.calculateLicenseSupply(trx);
             default: {
-                const query = this.query(BalanceEntity, trx)
-                    .where('token', token)
-                    .andWhere('balance', '>', String(0))
-                    .whereNotIn('player', [this.supplyOpts.burn_account, this.supplyOpts.burned_ledger_account])
-                    .whereRaw('(player NOT LIKE ? OR player = ?)', '$%', this.supplyOpts.staking_account)
-                    .sum('balance', 'supply');
-                const record = await query.getSingleOrNull();
-                if (!record || record.supply === null) {
+                const virtualTokenSources = this.virtualTokenConfig[token];
+                if (virtualTokenSources) {
+                    const query = this.query(BalanceEntity, trx)
+                        .whereIn('token', virtualTokenSources)
+                        .whereNotIn('player', [this.supplyOpts.burn_account, this.supplyOpts.burned_ledger_account])
+                        .whereRaw('player NOT LIKE ?', '$%')
+                        .groupBy('token')
+                        .sum('balance', 'balance')
+                        .select('token', 'balance');
+                    const records = await query.getMany();
+                    const supply = records.reduce((acc, r) => acc + parseFloat(r.balance), 0);
                     return {
                         token,
-                        circulating_supply: 0,
+                        circulating_supply: supply,
+                        ...records.reduce((acc, r) => {
+                            acc[r.token] = parseFloat(r.balance);
+                            return acc;
+                        }, {} as Record<string, number>),
+                    };
+                } else {
+                    const query = this.query(BalanceEntity, trx)
+                        .where('token', token)
+                        .andWhere('balance', '>', String(0))
+                        .whereNotIn('player', [this.supplyOpts.burn_account, this.supplyOpts.burned_ledger_account])
+                        .whereRaw('player NOT LIKE ?', '$%')
+                        .sum('balance', 'supply');
+                    const record = await query.getSingleOrNull();
+                    if (!record || record.supply === null) {
+                        return {
+                            token,
+                            circulating_supply: 0,
+                        };
+                    }
+                    const supply = parseFloat(record!.supply);
+                    return {
+                        token,
+                        circulating_supply: supply,
                     };
                 }
-                const supply = parseFloat(record!.supply);
-                return {
-                    token,
-                    circulating_supply: supply,
-                };
             }
         }
     }
 
+    private async calculateLicenseSupply(trx?: Trx): Promise<SupplyEntry> {
+        // this is a hack - the shop account name is stored per shop item and its hard to get here.
+        // just going to hardcode it for now.
+        const shopSupply = await this.sumMultiBalances(
+            {
+                [TOKENS.LICENSE]: ['$SHOP'],
+            },
+            trx,
+        );
+        const totalLicenses = await this.sumPlayerBalances([TOKENS.LICENSE], trx);
+        const activatedLicenses = await this.sumPlayerBalances([TOKENS.ACTIVATED_LICENSE], trx);
+        const runningLicenses = await this.sumPlayerBalances([TOKENS.RUNNING_LICENSE], trx);
+        const circulatingLicenses = totalLicenses + activatedLicenses;
+        const shopLicenses = shopSupply['$SHOP'][TOKENS.LICENSE] ?? 0;
+        return {
+            token: TOKENS.LICENSE,
+            minted: circulatingLicenses + shopLicenses,
+            burned: 0,
+            total_supply: totalLicenses + shopLicenses,
+            circulating_supply: circulatingLicenses,
+            shop_supply: shopLicenses,
+            running_licenses: runningLicenses,
+        };
+    }
+
     private async calculateSpsSupply(trx?: Trx): Promise<SupplyEntry> {
-        const query = this.query(BalanceEntity, trx)
-            .whereIn('token', [TOKENS.SPS, TOKENS.SPSP])
-            .andWhere('balance', '>', String(0))
-            .whereNotIn('player', [this.supplyOpts.burn_account, this.supplyOpts.burned_ledger_account])
-            .whereRaw("player NOT LIKE '$%'")
-            .sum('balance', 'supply');
-        const record = await query.getSingleOrNull();
-        if (!record || record.supply === null) {
-            return {
-                token: TOKENS.SPS,
-                circulating_supply: 0,
-            };
-        }
-        const totalSupplySps = Math.abs(parseFloat(record.supply));
+        const supply = await this.sumPlayerBalances([TOKENS.SPS, TOKENS.SPSP], trx);
+        const totalSupplySps = Math.abs(supply);
         const balances = await this.sumMultiBalances(
             {
                 [TOKENS.SPS]: [
@@ -105,7 +244,7 @@ export class SpsBalanceRepository extends BalanceRepository {
 
                     ...this.supplyOpts.reward_pool_accounts,
                 ],
-                [TOKENS.SPSP]: [this.supplyOpts.dao_account, this.supplyOpts.terablock_bsc_account, this.supplyOpts.terablock_eth_account],
+                [TOKENS.SPSP]: [this.supplyOpts.staking_account, this.supplyOpts.dao_account, this.supplyOpts.terablock_bsc_account, this.supplyOpts.terablock_eth_account],
             },
             trx,
         );
@@ -128,6 +267,7 @@ export class SpsBalanceRepository extends BalanceRepository {
 
         const daoReserveSps = balances[this.supplyOpts.dao_reserve_account][TOKENS.SPS];
         const slHiveSupplySps = balances[this.supplyOpts.sl_hive_account][TOKENS.SPS];
+        const totalStaked = -1 * (await balances[this.supplyOpts.staking_account][TOKENS.SPSP]);
 
         const heSupply = await this.calculateHiveEngineSupply();
         const ethSupply = await this.calculateEcr20Supply(this.ethRepository, this.supplyOpts.eth_supply_exclusion_addresses);
@@ -158,6 +298,7 @@ export class SpsBalanceRepository extends BalanceRepository {
             token: TOKENS.SPS,
             minted: Math.floor(totalSupplySps + combinedNullSps + rewardPoolSupply),
             burned: combinedNullSps,
+            total_staked: totalStaked,
             total_supply: totalSupplySps + rewardPoolSupply,
             circulating_supply: circulatingSupplySps,
             off_chain: {
@@ -176,6 +317,20 @@ export class SpsBalanceRepository extends BalanceRepository {
                 ...rewardPoolsSps,
             },
         };
+    }
+
+    private async sumPlayerBalances(tokens: string[], trx?: Trx) {
+        const query = this.query(BalanceEntity, trx)
+            .whereIn('token', tokens)
+            .andWhere('balance', '>', String(0))
+            .whereNotIn('player', [this.supplyOpts.burn_account, this.supplyOpts.burned_ledger_account])
+            .whereRaw("player NOT LIKE '$%'")
+            .sum('balance', 'supply');
+        const record = await query.getSingleOrNull();
+        if (!record || record.supply === null) {
+            return 0;
+        }
+        return parseFloat(record.supply);
     }
 
     private async sumMultiBalances(tokens: Record<string, string[]>, trx?: Trx) {
