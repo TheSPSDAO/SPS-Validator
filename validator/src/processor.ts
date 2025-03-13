@@ -96,10 +96,7 @@ export class BlockProcessor<T extends SynchronisationConfig> {
             if (this.isChosenValidator(validator)) {
                 const maxBlockAge = this.watcher.validator?.max_block_age;
                 if (maxBlockAge && headBlock - maxBlockAge <= block_num) {
-                    // TODO: this.hash can be undefined (not initialized in the constructor), so we can just force it to be set I guess.
-                    this.hive.submitBlockValidation(block_num, l2_block_id, this.validatorOpts.version).then((r) => {
-                        utils.log(`Submitted validation for block [${block_num}] with hash [${l2_block_id}] in tx [${r.id}]`);
-                    });
+                    this.trySubmitBlockValidation(block_num, l2_block_id);
                 } else {
                     utils.log(`Block [${block_num}] is too old to validate - not submitting validate tx.`);
                 }
@@ -112,6 +109,22 @@ export class BlockProcessor<T extends SynchronisationConfig> {
             event_logs: operations.flatMap((x) => x.actions.flatMap((x) => x.result).filter(isDefined)),
             block_hash,
         };
+    }
+
+    private async trySubmitBlockValidation(block_num: number, l2_block_id: string, attempts = 5): Promise<void> {
+        const maxAttempts = attempts;
+        while (attempts > 0) {
+            try {
+                await this.hive.submitBlockValidation(block_num, l2_block_id, this.validatorOpts.version);
+                utils.log(`Submitted block validation for block [${block_num}] with hash [${l2_block_id}]`);
+                return;
+            } catch (e) {
+                utils.log(`Failed to submit block validation for block [${block_num}] with hash [${l2_block_id}]. Retrying...`);
+                attempts--;
+                const delay = 1000 * (maxAttempts - attempts);
+                await new Promise((resolve) => setTimeout(resolve, delay));
+            }
+        }
     }
 
     private isChosenValidator(validator: ValidatorEntry | null): boolean {
