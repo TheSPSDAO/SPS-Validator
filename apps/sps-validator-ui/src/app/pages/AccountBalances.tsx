@@ -8,7 +8,7 @@ import { Table, TableBody, TableCell, TableColumn, TableHead, TableRow } from '.
 import { localeNumber } from '../components/LocaleNumber';
 
 export function AccountBalancesCard({ account }: { account: string }) {
-    const [balances, loading] = usePromise(() => DefaultService.getBalances(account), [account]);
+    const [balances, loading] = usePromise(() => DefaultService.getExtendedBalances(account), [account]);
     return (
         <Card>
             <CardBody>

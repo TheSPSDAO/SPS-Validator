@@ -133,6 +133,7 @@ import {
 import { SpsValidatorCheckInRepository } from './entities/validator/validator_check_in';
 import { SpsBscRepository, SpsEthRepository } from './entities/tokens/eth';
 import { HiveEngineRepository } from './entities/tokens/hive_engine';
+import { VIRTUAL_TOKENS_CONFIG, VirtualTokenConfig } from './features/tokens';
 
 // Only use re-exported `container` to ensure composition root was loaded.
 export { container, singleton, inject, injectable } from 'tsyringe';
@@ -319,6 +320,7 @@ export class CompositionRoot extends null {
         container.register<DelegationManager>(DelegationManager, { useToken: SpsDelegationManager });
         container.register<PromiseManager>(PromiseManager, { useToken: SpsPromiseManager });
         container.register(SpsValidatorLicenseManager, { useClass: SpsValidatorLicenseManager });
+        container.register(VirtualTokenConfig, { useValue: VIRTUAL_TOKENS_CONFIG });
 
         // Promise handlers
         container.register<DelegationPromiseHandler>(DelegationPromiseHandler, { useToken: SpsDelegationPromiseHandler });
