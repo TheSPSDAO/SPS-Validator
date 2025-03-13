@@ -387,5 +387,4 @@ describe('Token API endpoints', () => {
         const bodyUsers = response.body?.balances.map((e: any) => e.player);
         expect(bodyUsers).toEqual(expect.arrayContaining(users));
     });
-
 });
