@@ -25,6 +25,7 @@ class Fixture extends BaseFixture {
             health_checker: cfg.health_checker,
             injection_middleware: middleware,
             db_block_retention: cfg.db_block_retention,
+            version: cfg.version,
         });
         registerSpsRoutes(app);
         this.request = supertest(app);
