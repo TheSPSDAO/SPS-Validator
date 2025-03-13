@@ -125,6 +125,7 @@ export class BlockProcessor<T extends SynchronisationConfig> {
                 await new Promise((resolve) => setTimeout(resolve, delay));
             }
         }
+        utils.log(`Failed to submit block validation for block [${block_num}] with hash [${l2_block_id}] after ${maxAttempts} attempts.`);
     }
 
     private isChosenValidator(validator: ValidatorEntry | null): boolean {
