@@ -108,7 +108,7 @@ type SpsTokenSupply = {
     };
 };
 function SpsSupplyTable({ supply }: { supply: SpsTokenSupply }) {
-    const onChain = useMemo(() => {
+    const summary = useMemo(() => {
         return {
             minted: supply.minted,
             burned: supply.burned,
@@ -118,16 +118,16 @@ function SpsSupplyTable({ supply }: { supply: SpsTokenSupply }) {
         };
     }, [supply]);
     return (
-        <Tabs value="onChain">
+        <Tabs value="sum">
             <TabsHeader>
-                <Tab value="onChain">On Chain</Tab>
+                <Tab value="sum">Summary</Tab>
                 <Tab value="offChain">Off Chain</Tab>
                 <Tab value="reserve">Reserve</Tab>
                 <Tab value="rewardPools">Reward Pools</Tab>
             </TabsHeader>
             <TabsBody>
-                <TabPanel value="onChain">
-                    <ObjectTable obj={onChain}></ObjectTable>
+                <TabPanel value="sum">
+                    <ObjectTable obj={summary}></ObjectTable>
                 </TabPanel>
                 <TabPanel value="offChain">
                     <ObjectTable obj={supply.off_chain}></ObjectTable>
