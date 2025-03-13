@@ -166,7 +166,7 @@ export class SpsBalanceRepository extends BalanceRepository {
                         .whereRaw('player NOT LIKE ?', '$%')
                         .groupBy('token')
                         .sum('balance', 'balance')
-                        .select('token', 'balance');
+                        .select('token');
                     const records = await query.getMany();
                     const supply = records.reduce((acc, r) => acc + parseFloat(r.balance), 0);
                     return {
@@ -267,7 +267,7 @@ export class SpsBalanceRepository extends BalanceRepository {
 
         const daoReserveSps = balances[this.supplyOpts.dao_reserve_account][TOKENS.SPS];
         const slHiveSupplySps = balances[this.supplyOpts.sl_hive_account][TOKENS.SPS];
-        const totalStaked = -1 * (await balances[this.supplyOpts.staking_account][TOKENS.SPSP]);
+        const totalStaked = Math.abs(await balances[this.supplyOpts.staking_account][TOKENS.SPSP]);
 
         const heSupply = await this.calculateHiveEngineSupply();
         const ethSupply = await this.calculateEcr20Supply(this.ethRepository, this.supplyOpts.eth_supply_exclusion_addresses);
