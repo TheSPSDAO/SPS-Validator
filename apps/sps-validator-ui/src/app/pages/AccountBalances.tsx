@@ -9,7 +9,7 @@ import { localeNumber } from '../components/LocaleNumber';
 import { MagnifyingGlassIcon } from '@heroicons/react/24/solid';
 
 export function AccountBalancesCard({ account }: { account: string }) {
-    const [balances, loading] = usePromise(() => DefaultService.getBalances(account), [account]);
+    const [balances, loading] = usePromise(() => DefaultService.getExtendedBalances(account), [account]);
     const containerRef = useRef<HTMLDivElement | null>(null);
     return (
         <Card className="dark:bg-gray-800 dark:text-gray-300 dark:shadow-none">

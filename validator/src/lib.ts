@@ -45,7 +45,7 @@ export {
     ActiveDelegationEntity,
 } from './db/tables';
 export type { DB_Connection } from './db/tables';
-export type { KnexOptions, Trx } from './db/tables';
+export type { KnexOptions, Trx, RawResult } from './db/tables';
 export { TransactionStarter } from './db/transaction';
 export { EntryOptions } from './utilities/entry-options';
 export { ActionOrBust, OperationFactory, PrefixOpts } from './entities/operation';
@@ -75,6 +75,7 @@ export { TransactionRepository_ } from './repositories/transactions';
 export { BlockRepository, LastBlockCache, TransactionRepository } from './entities/block';
 export { HiveAccountRepository } from './entities/account/hive_account';
 export type { BlockRef } from './entities/block';
+export type { BalanceEntry, GetTokenBalancesParams, GetTokenBalancesResult } from './entities/tokens/balance';
 export { BalanceRepository } from './entities/tokens/balance';
 export { BalanceHistoryRepository } from './entities/tokens/balance_history';
 export { StakingRewardsRepository } from './entities/tokens/staking_rewards';
@@ -102,3 +103,4 @@ export { Bookkeeping, BookkeepingWatch, BookkeepingFromConfig, BookkeepingDefaul
 export { DelegationManager, DelegationPromiseHandler } from './features/delegation';
 export type { DelegationManagerOpts, DelgationPromiseHandlerOpts } from './features/delegation';
 export { PromiseHandler, PromiseManager } from './features/promises';
+export { isStringArray } from './utilities/guards';

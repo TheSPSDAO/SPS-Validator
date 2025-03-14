@@ -1,5 +1,4 @@
 $ErrorActionPreference = "Stop"
-$git_commit = $(git rev-parse --short HEAD)
 $script_dir = $(Split-Path -Parent $MyInvocation.MyCommand.Definition)
 $sqitch_dir = "$script_dir/sqitch"
 $compose_file = "$script_dir/docker-compose.yml"
@@ -12,7 +11,6 @@ if (Test-Path ".env") {
         }
         Set-Content env:\$name $value
     }
-    $env:GIT_COMMIT = $git_commit
 }
 else {
     Write-Host "Missing .env, copying example .env. Edit it before running this again."

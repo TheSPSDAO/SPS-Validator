@@ -7,6 +7,7 @@ import type { BalancesCount } from '../models/BalancesCount';
 import type { PoolSettings } from '../models/PoolSettings';
 import type { PriceAtPoint } from '../models/PriceAtPoint';
 import type { Status } from '../models/Status';
+import type { TokenSupply } from '../models/TokenSupply';
 import type { TokenTransferTransactions } from '../models/TokenTransferTransactions';
 import type { Transaction } from '../models/Transaction';
 import type { Validator } from '../models/Validator';
@@ -291,6 +292,71 @@ export class DefaultService {
             },
             errors: {
                 404: `No price known for requested token`,
+            },
+        });
+    }
+    /**
+     * Gets the supply information for the specified token
+     * Returns the supply information for the specified token
+     * @param token Token identifier
+     * @returns TokenSupply Successful operation
+     * @throws ApiError
+     */
+    public static getExtendedTokenSupply(
+        token: string,
+    ): CancelablePromise<TokenSupply> {
+        return __request(OpenAPI, {
+            method: 'GET',
+            url: '/extensions/tokens/{token}/supply',
+            path: {
+                'token': token,
+            },
+        });
+    }
+    /**
+     * Gets the balances of account specified in the query params
+     * Returns the list of balances for the specified account name. Will return empty array if the account name was not found.
+     * @param account Account name
+     * @returns Balances Successful operation
+     * @throws ApiError
+     */
+    public static getExtendedBalances(
+        account: string,
+    ): CancelablePromise<Balances> {
+        return __request(OpenAPI, {
+            method: 'GET',
+            url: '/extensions/tokens/balances',
+            query: {
+                'account': account,
+            },
+        });
+    }
+    /**
+     * Gets balances of the token
+     * Returns the list of accounts with a balance of the specified token.
+     * @param token Name of the token
+     * @param limit The number of results to return
+     * @param skip The number of results to skip
+     * @param systemAccounts Include system accounts?
+     * @returns BalancesCount Successful operation
+     * @throws ApiError
+     */
+    public static getExtendedBalancesByToken(
+        token: string,
+        limit?: number,
+        skip?: number,
+        systemAccounts?: boolean,
+    ): CancelablePromise<BalancesCount> {
+        return __request(OpenAPI, {
+            method: 'GET',
+            url: '/extensions/tokens/{token}',
+            path: {
+                'token': token,
+            },
+            query: {
+                'limit': limit,
+                'skip': skip,
+                'systemAccounts': systemAccounts,
             },
         });
     }

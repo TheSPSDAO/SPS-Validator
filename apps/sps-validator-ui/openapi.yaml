@@ -353,6 +353,87 @@ paths:
                             schema:
                                 $ref: "#/components/schemas/NoPriceAtPoint"
 
+    /extensions/tokens/{token}/supply:
+        get:
+            tags:
+                - Default
+            summary: Gets the supply information for the specified token
+            description: Returns the supply information for the specified token
+            operationId: getExtendedTokenSupply
+            parameters:
+                - in: path
+                  name: token
+                  schema:
+                      type: string
+                  required: true
+                  description: Token identifier
+            responses:
+                200:
+                    description: Successful operation
+                    content:
+                        application/json:
+                            schema:
+                                $ref: "#/components/schemas/TokenSupply"
+
+    /extensions/tokens/balances:
+        get:
+            tags:
+                - Default
+            summary: Gets the balances of account specified in the query params
+            description: Returns the list of balances for the specified account name. Will return empty array if the account name was not found.
+            operationId: getExtendedBalances
+            parameters:
+                - in: query
+                  name: account
+                  schema:
+                      type: string
+                  required: true
+                  description: Account name
+            responses:
+                200:
+                    description: Successful operation
+                    content:
+                        application/json:
+                            schema:
+                                $ref: "#/components/schemas/Balances"
+
+    /extensions/tokens/{token}:
+        get:
+            tags:
+                - Default
+            summary: Gets balances of the token
+            description: Returns the list of accounts with a balance of the specified token.
+            operationId: getExtendedBalancesByToken
+            parameters:
+                - in: path
+                  name: token
+                  schema:
+                      type: string
+                  required: true
+                  description: Name of the token
+                - in: query
+                  name: limit
+                  schema:
+                      type: number
+                  description: The number of results to return
+                - in: query
+                  name: skip
+                  schema:
+                      type: number
+                  description: The number of results to skip
+                - in: query
+                  name: systemAccounts
+                  schema:
+                      type: boolean
+                  description: Include system accounts?
+            responses:
+                200:
+                    description: Successful operation
+                    content:
+                        application/json:
+                            schema:
+                                $ref: "#/components/schemas/BalancesCount"
+
 components:
     schemas:
         Balance:
@@ -574,6 +655,9 @@ components:
                     format: date-time
                 result:
                     type: string
+
+        TokenSupply:
+            type: object
 
         NoPriceAtPoint:
             type: object
