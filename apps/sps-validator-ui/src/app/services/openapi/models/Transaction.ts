@@ -14,5 +14,6 @@ export type Transaction = {
     error?: string;
     created_date?: string;
     result?: string;
+    index: number;
 };
 

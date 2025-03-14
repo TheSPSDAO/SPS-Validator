@@ -7,9 +7,11 @@ export { CancelablePromise, CancelError } from './core/CancelablePromise';
 export { OpenAPI } from './core/OpenAPI';
 export type { OpenAPIConfig } from './core/OpenAPI';
 
+export type { Account } from './models/Account';
 export type { Balance } from './models/Balance';
 export type { Balances } from './models/Balances';
 export type { BalancesCount } from './models/BalancesCount';
+export type { Block } from './models/Block';
 export type { NoPriceAtPoint } from './models/NoPriceAtPoint';
 export type { PoolSettings } from './models/PoolSettings';
 export type { PriceAtPoint } from './models/PriceAtPoint';

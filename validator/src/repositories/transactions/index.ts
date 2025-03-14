@@ -102,4 +102,32 @@ export class TransactionRepository_ extends BaseRepository {
     async lookupByTrxId(transactionId: string, trx?: Trx): Promise<TransactionEntity | null> {
         return this.query(TransactionEntity, trx).where('id', transactionId).getFirstOrNull();
     }
+
+    async lookupByAccount(account: string, limit?: number, sort?: 'asc' | 'desc', cursor?: [number, number], trx?: Trx): Promise<TransactionEntity[]> {
+        const query = this.query(TransactionEntity, trx).where('player', account);
+
+        if (sort === 'desc') {
+            query.orderBy('block_num', 'desc').orderBy('index', 'asc');
+        } else {
+            query.orderBy('block_num', 'asc').orderBy('index', 'desc');
+        }
+
+        if (cursor) {
+            if (sort === 'desc') {
+                query.whereParentheses((qb) =>
+                    qb.where('block_num', '<', cursor[0]).orWhereParentheses((iqb) => iqb.where('block_num', '=', cursor[0]).where('index', '>', cursor[1])),
+                );
+            } else {
+                query.whereParentheses((qb) =>
+                    qb.where('block_num', '>', cursor[0]).orWhereParentheses((iqb) => iqb.where('block_num', '=', cursor[0]).where('index', '<', cursor[1])),
+                );
+            }
+        }
+
+        if (limit) {
+            query.limit(limit);
+        }
+
+        return query.getMany();
+    }
 }
