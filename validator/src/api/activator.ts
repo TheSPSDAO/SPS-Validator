@@ -10,6 +10,7 @@ export type ApiOptions = {
     db_block_retention: number | null;
     health_checker: boolean;
     helmetjs: boolean;
+    version: string;
 };
 
 export const ApiOptions: unique symbol = Symbol('ApiOptions');

@@ -123,7 +123,7 @@ export type TopSpsHoldersTableProps = {
 };
 
 export function TopSpsHoldersTable(props: TopSpsHoldersTableProps) {
-    const [balances, isLoading] = usePromise(() => DefaultService.getBalancesByToken('SPS', props.limit), [props.limit]);
+    const [balances, isLoading] = usePromise(() => DefaultService.getExtendedBalancesByToken('SPS_TOTAL', props.limit), [props.limit]);
     const spinnerColor = useSpinnerColor("blue");
     const containerRef = useRef<HTMLDivElement | null>(null);
     if (isLoading) {
@@ -181,7 +181,7 @@ export function Home() {
                 <Card className="col-span-full dark:bg-gray-800 dark:shadow-none">
                     <CardBody>
                         <Typography variant="h5" color="blue-gray" className="mb-6 dark:text-gray-200">
-                            Top SPS Holders
+                            Top SPS Holders (liquid + staked)
                         </Typography>
                         <TopSpsHoldersTable limit={10} className="w-full border-2 p-4 border-gray-200 dark:bg-gray-800 dark:text-gray-300 dark:border-gray-300" />
                     </CardBody>

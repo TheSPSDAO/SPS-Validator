@@ -14,6 +14,7 @@ export type { NoPriceAtPoint } from './models/NoPriceAtPoint';
 export type { PoolSettings } from './models/PoolSettings';
 export type { PriceAtPoint } from './models/PriceAtPoint';
 export { Status } from './models/Status';
+export type { TokenSupply } from './models/TokenSupply';
 export type { TokenTransferTransaction } from './models/TokenTransferTransaction';
 export type { TokenTransferTransactions } from './models/TokenTransferTransactions';
 export type { Transaction } from './models/Transaction';

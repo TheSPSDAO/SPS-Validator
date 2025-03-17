@@ -20,6 +20,7 @@ type ApiOptions = {
     injection_middleware: Middleware;
     resolver: Resolver;
     db_block_retention: number | null;
+    version: string;
 };
 
 // @ts-expect-error
@@ -42,6 +43,7 @@ export function registerApiRoutes(app: Router, opts: ApiOptions): void {
                 last_block: lastBlockCache.value?.block_num || 0,
                 archive_node: opts.db_block_retention === null,
                 block_retention: opts.db_block_retention,
+                version: opts.version,
             });
         } catch (err) {
             next(err);
