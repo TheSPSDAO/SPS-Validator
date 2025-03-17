@@ -1,5 +1,5 @@
 import { Link, Route, Routes } from 'react-router-dom';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import {
     CurrencyDollarIcon,
     HomeIcon,
@@ -26,6 +26,8 @@ import { ManageValidatorNode } from './pages/ManageValidatorNode';
 import { ManageVotes } from './pages/ManageVotes';
 import { MetricsProvider } from './context/MetricsContext';
 import { useMetrics } from './context/MetricsContext';
+import { DarkModeProvider } from './context/DarkModeContext';
+import { useMediaQuery } from "react-responsive";
 
 function AppRoutes() {
     return (
@@ -44,7 +46,7 @@ function AppRoutes() {
 
 function AppSidebarItems({ closeSidebar }: { closeSidebar: () => void }) {
     return (
-        <>
+        <div className="h-full">
             <Link to="/" onClick={closeSidebar}>
                 <ListItem>
                     <ListItemPrefix>
@@ -109,12 +111,12 @@ function AppSidebarItems({ closeSidebar }: { closeSidebar: () => void }) {
                     Site Settings
                 </ListItem>
             </Link>
-        </>
+        </div>
     );
 }
 
 function useTickers() {
-    const { spsPrice, lastBlock } = useMetrics(); // Get shared state
+    const { spsPrice, lastBlock } = useMetrics();
 
     
         const tickers: AppNavbarTickerProps[] = [];
@@ -136,34 +138,76 @@ function useTickers() {
 }
 
 export function App() {
+    const isDesktop = useMediaQuery({ minWidth: 961 });
     const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
+    
     useEffect(() => {
-        const listener = () => {
-            if (window.innerWidth > 960) {
-                setMobileSidebarOpen(false);
-            }
-        };
-        window.addEventListener('resize', listener);
-        return () => window.removeEventListener('resize', listener);
-    });
+        if (isDesktop) {
+        setMobileSidebarOpen(false);
+        }
+    }, [isDesktop]);
     
     return (
-        <MetricsProvider>
-            <AppContent mobileSidebarOpen={mobileSidebarOpen} setMobileSidebarOpen={setMobileSidebarOpen} />
-        </MetricsProvider>
+        <DarkModeProvider>
+            <MetricsProvider>
+                <AppContent mobileSidebarOpen={mobileSidebarOpen} setMobileSidebarOpen={setMobileSidebarOpen}/>
+            </MetricsProvider>
+        </DarkModeProvider>
     );
 }
-function AppContent({ mobileSidebarOpen, setMobileSidebarOpen }: { mobileSidebarOpen: boolean, setMobileSidebarOpen: React.Dispatch<React.SetStateAction<boolean>> }) {
-    const tickers = useTickers(); 
+function AppContent({ mobileSidebarOpen, setMobileSidebarOpen}: { mobileSidebarOpen: boolean, setMobileSidebarOpen: React.Dispatch<React.SetStateAction<boolean>> }) {
+    const tickers = useTickers();
+    const sidebarRef = useRef<HTMLDivElement>(null);
+    const contentRef = useRef<HTMLDivElement>(null);
+    const toggleButtonRef = useRef<HTMLButtonElement>(null);
+    const overlayRef = useRef<HTMLDivElement>(null);
+
+    useEffect(() => {
+        function handleClickOutside(event: MouseEvent) {
+            if (
+                sidebarRef.current &&
+                !sidebarRef.current.contains(event.target as Node) &&
+                !toggleButtonRef.current?.contains(event.target as Node)
+            ) {
+                setMobileSidebarOpen(false);
+            }
+        }
+
+        function handleOverlayClick(event: MouseEvent) {
+            if (mobileSidebarOpen) {
+                handleClickOutside(event);
+            }
+        }
+
+        if (mobileSidebarOpen && overlayRef.current) {
+            overlayRef.current.addEventListener('mousedown', handleOverlayClick);
+        }
+
+        return () => {
+            if (overlayRef.current) {
+                overlayRef.current.removeEventListener('mousedown', handleOverlayClick);
+            }
+        };
+    }, [mobileSidebarOpen, setMobileSidebarOpen]);
+
 
     return (
-        <div className="h-screen w-full flex flex-col">
-            <AppNavbar tickers={tickers} toggleSidebar={() => setMobileSidebarOpen((prev) => !prev)} />
-            <div className="flex-grow flex relative">
-                <AppSidebar isMobileOpen={mobileSidebarOpen}>
+        <div ref={contentRef} className="h-screen w-full flex flex-col">
+            <AppNavbar 
+                tickers={tickers} 
+                toggleSidebar={(event) => {
+                    event.stopPropagation();
+                    setMobileSidebarOpen((prev) => !prev);
+                }}
+                toggleButtonRef={toggleButtonRef}
+                 
+            />
+            <div className="flex-grow flex relative dark:bg-gray-900">
+                <AppSidebar ref={sidebarRef} isMobileOpen={mobileSidebarOpen}>
                     <AppSidebarItems closeSidebar={() => setMobileSidebarOpen(false)} />
                 </AppSidebar>
-                <div className="flex-grow p-5">
+                <div className="flex-grow pt-5 sm:p-5 w-full">
+                    <div ref={overlayRef} className={`fixed inset-0 z-30 ${mobileSidebarOpen ? 'block' : 'hidden'}`} />
                     <AppRoutes />
                 </div>
             </div>
