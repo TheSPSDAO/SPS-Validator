@@ -143,7 +143,7 @@ You can find update guides for the different updates below. The type of update w
 
 ### block-hash-stable
 
-block-hash-stable updates are updates that don't affect the block hash. These are normally additional API endpoints or installing script improvements.
+block-hash-stable updates are updates that don't affect the block hash. These are normally additional API endpoints or install script improvements.
 
 - Pull the latest version with `git fetch && git checkout v<version>` *before*.
 - `./run.sh rebuild_service validator` to rebuild the validator with the latest updates. This will also start the validator.
