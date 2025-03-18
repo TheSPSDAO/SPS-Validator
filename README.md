@@ -145,7 +145,7 @@ You can find update guides for the different updates below. The type of update w
 
 block-hash-stable updates are updates that don't affect the block hash. These are normally additional API endpoints or install script improvements.
 
-- Pull the latest version with `git fetch --tags -f && git checkout vlatest`.
+- Pull the latest version with `git fetch --tags -f && git checkout v{version}`.
 - `./run.sh rebuild_service validator` to rebuild the validator with the latest updates. This will also start the validator.
 - `./run.sh rebuild_service ui` if you want to rebuild the UI.
   
@@ -153,7 +153,7 @@ block-hash-stable updates are updates that don't affect the block hash. These ar
 
 block-hash-breaking updates are designed to turn on at a certain block, so all you need to do is make sure you've updated and restarted your node before the go-live block.
 
-- Pull the latest version with `git fetch --tags -f && git checkout vlatest` *before*.
+- Pull the latest version with `git fetch --tags -f && git checkout v{version}` *before*.
 - `./run.sh rebuild_service validator` to rebuild the validator with the latest updates. This will also start the validator.
 - `./run.sh rebuild_service ui` if you want to rebuild the UI.
 
@@ -166,7 +166,7 @@ schema-breaking updates cannot be applied before the go-live block. To apply a s
 - When the `KILL_BLOCK` hits, your node will stop.
 - `./run.sh stop` so your node stops restarting itself.
 - _(Note)_ You can run `./run.sh snapshot` to take a backup of your database before updating to be safe. If you need to restore this snapshot, see [snapshots](#snapshots).
-- You can now pull the latest version with `git fetch --tags -f && git checkout vlatest`.
+- You can now pull the latest version with `git fetch --tags -f && git checkout v{version}`.
 - `./run.sh build` to apply the latest database updates. When it asks if you want to download a new snapshot, you can enter "n".
 - Remove the `KILL_BLOCK` from your .env file
 - `./run.sh rebuild_service validator` to rebuild the validator with the latest updates. This will also start the validator.
