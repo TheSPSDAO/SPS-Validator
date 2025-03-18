@@ -18,6 +18,7 @@ function Ticker(props: AppNavbarTickerProps) {
 }
 
 export type AppNavbarProps = {
+    className?: string;
     tickers: AppNavbarTickerProps[];
     toggleSidebar?:  (event: React.MouseEvent) => void
     toggleButtonRef?: React.RefObject<HTMLButtonElement>;
@@ -25,7 +26,7 @@ export type AppNavbarProps = {
 
 export function AppNavbar(props: AppNavbarProps) {
     return (
-        <Navbar fullWidth={true} className="px-4 py-2 lg:px-8 lg:py-4 flex-grow-0 z-50 dark:bg-gray-800 dark:text-gray-300 dark:border-0 dark:shadow-none">
+        <Navbar fullWidth={true} className={`px-4 py-2 lg:px-8 lg:py-4 flex-grow-0 z-50 dark:bg-gray-800 dark:text-gray-300 dark:border-0 dark:shadow-none ${props.className}`}>
             <div className="flex items-center justify-between text-blue-gray-900 dark:text-gray-300">
                 <div className="flex items-center gap-2">
                     <IconButton ref={props.toggleButtonRef} className="group lg:hidden dark:hover:bg-blue-gray-50/80 " variant="text" size="lg" onClick={(event) => props.toggleSidebar && props.toggleSidebar(event)}>

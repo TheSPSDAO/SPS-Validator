@@ -77,6 +77,13 @@ export class TransactionRepository extends BaseRepository {
     }
 }
 
+export type GetBlocksParams = {
+    limit?: number;
+    after_block?: number;
+    before_block?: number;
+    validator?: string;
+};
+
 export class BlockRepository extends BaseRepository {
     public constructor(handle: Handle, private readonly transactionRepository: TransactionRepository) {
         super(handle);
@@ -103,6 +110,23 @@ export class BlockRepository extends BaseRepository {
 
     public async getByBlockNum(block_num: number, trx?: Trx): Promise<BlockEntity | null> {
         return this.query(BlockEntity, trx).where('block_num', block_num).getFirstOrNull();
+    }
+
+    public async getBlocks(params: GetBlocksParams, trx?: Trx): Promise<BlockEntity[]> {
+        const query = this.query(BlockEntity, trx).orderBy('block_num', 'desc');
+        if (params.limit) {
+            query.limit(params.limit);
+        }
+        if (params.before_block) {
+            query.where('block_num', '<', params.before_block);
+        }
+        if (params.after_block) {
+            query.where('block_num', '>', params.after_block);
+        }
+        if (params.validator) {
+            query.where('validator', params.validator);
+        }
+        return query.getMany();
     }
 
     public async getMissedBlocks(last_checked_block_num: number, block_num: number, trx?: Trx): Promise<BlockEntity[]> {

@@ -10,8 +10,8 @@ import {
     UserIcon,
     ChartBarIcon,
     EnvelopeIcon,
-    EnvelopeOpenIcon,
     PencilSquareIcon,
+    CubeIcon,
 } from '@heroicons/react/24/solid';
 import { ListItem, ListItemPrefix } from '@material-tailwind/react';
 import { AppNavbar, AppNavbarTickerProps } from './components/layout/Navbar';
@@ -26,6 +26,10 @@ import { ManageValidatorNode } from './pages/ManageValidatorNode';
 import { ManageVotes } from './pages/ManageVotes';
 import { MetricsProvider } from './context/MetricsContext';
 import { useMetrics } from './context/MetricsContext';
+import { BlockExplorer } from './pages/block-explorer/BlockExplorer';
+import { Block } from './pages/block-explorer/Block';
+import { Transaction } from './pages/block-explorer/Transaction';
+import { Account } from './pages/block-explorer/Account';
 import { DarkModeProvider } from './context/DarkModeContext';
 import { useMediaQuery } from "react-responsive";
 
@@ -40,6 +44,10 @@ function AppRoutes() {
             <Route path="/account-votes" element={<AccountVotes />} />
             <Route path="/account-votes/manage" element={<ManageVotes />} />
             <Route path="/settings" element={<Settings />} />
+            <Route path="/block-explorer" element={<BlockExplorer />} />
+            <Route path="/block-explorer/block" element={<Block />} />
+            <Route path="/block-explorer/transaction" element={<Transaction />} />
+            <Route path="/block-explorer/account" element={<Account />} />
         </Routes>
     );
 }
@@ -53,6 +61,14 @@ function AppSidebarItems({ closeSidebar }: { closeSidebar: () => void }) {
                         <HomeIcon className="h-5 w-5" />
                     </ListItemPrefix>
                     Home
+                </ListItem>
+            </Link>
+            <Link to="/block-explorer" onClick={closeSidebar}>
+                <ListItem>
+                    <ListItemPrefix>
+                        <CubeIcon className="h-5 w-5" />
+                    </ListItemPrefix>
+                    Block Explorer
                 </ListItem>
             </Link>
             <Link to="/validator-nodes" onClick={closeSidebar}>
@@ -116,24 +132,23 @@ function AppSidebarItems({ closeSidebar }: { closeSidebar: () => void }) {
 }
 
 function useTickers() {
-    const { spsPrice, lastBlock } = useMetrics();
+    const { spsPrice, lastBlock } = useMetrics(); // Get shared state
 
-    
-        const tickers: AppNavbarTickerProps[] = [];
-        if (spsPrice) {
-            tickers.push({
-                name: 'SPS Price',
-                icon: <CurrencyDollarIcon className="size-6" />,
-                value: `$${spsPrice.toFixed(5)}`,
-            });
-        }
-        if (lastBlock) {
-            tickers.push({
-                name: 'Block Num',
-                icon: <Square3Stack3DIcon className="size-6" />,
-                value: lastBlock.toString(),
-            });
-        }
+    const tickers: AppNavbarTickerProps[] = [];
+    if (spsPrice) {
+        tickers.push({
+            name: 'SPS Price',
+            icon: <CurrencyDollarIcon className="size-6" />,
+            value: `$${spsPrice.toFixed(5)}`,
+        });
+    }
+    if (lastBlock) {
+        tickers.push({
+            name: 'Block Num',
+            icon: <Square3Stack3DIcon className="size-6" />,
+            value: lastBlock.toString(),
+        });
+    }
     return tickers;
 }
 

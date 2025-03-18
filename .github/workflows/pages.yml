@@ -3,7 +3,7 @@ name: Pages
 on:
     push:
         branches:
-            - release-*
+            - master # TODO: get the dao to update the gh settings so we can build off release branches.
 
 jobs:
     build:
