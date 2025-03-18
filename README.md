@@ -26,10 +26,13 @@ You should still look through the manual setup steps so you understand how to st
     - [Staking your licenses for LICENSE rewards](#staking-your-licenses-for-license-rewards)
     - [Price Feed](#price-feed)
     - [Known Bugs](#known-bugs)
-    - [Updating an existing node](#updating-an-existing-node)
     - [Starting over from a fresh snapshot](#starting-over-from-a-fresh-snapshot)
     - [Snapshots](#snapshots)
     - [Commands Reference](#commands-reference)
+- [Updating your node](#updating-your-node)
+    - [block-hash-stable updates](#block-hash-stable)
+    - [block-hash-breaking updates](#block-hash-breaking)
+    - [schema-breaking updates](#schema-breaking)
 - [Local development](#local-development)
     - [Plugins](#plugins)
     - [Testing](#testing)
@@ -100,21 +103,6 @@ Once those are set, you can run `./run.sh rebuild_service validator` to apply th
 
 - If your node is running and licenses are then staked for its `VALIDATOR_ACCOUNT` or reward account, it is not picking up the change and starting the check in process. You can resolve this by restarting your node after you've staked your licenses.
 
-### Updating an existing node
-
-You can update an existing node to a new release without replaying from a snapshot.
-
-- Set `KILL_BLOCK` in your .env file to the scheduled updates block number and rebuild your node (`./run.sh rebuild_service validator`).
-- As the kill block gets closer, you should set your node to inactive.
-- When the `KILL_BLOCK` hits, your node will stop.
-- `./run.sh stop` so your node stops restarting itself.
-- _(Note)_ You can run `./run.sh snapshot` to take a backup of your database before updating to be safe. If you need to restore this snapshot, see [snapshots](#snapshots).
-- You can now pull the latest version with `git fetch && git checkout v<version>`.
-- `./run.sh build` to apply the latest database updates. When it asks if you want to download a new snapshot, you can enter "n".
-- Remove the `KILL_BLOCK` from your .env file
-- `./run.sh rebuild_service validator` to rebuild the validator with the latest updates. This will also start the validator.
-- `./run.sh rebuild_service ui` if you want to rebuild the UI.
-
 ### Starting over from a fresh snapshot
 
 - Make sure you set your node to inactive before replaying.
@@ -143,6 +131,46 @@ You can take snapshots locally to take backups, and restore them without uploadi
 - `./run.sh rebuild_service <validator | pg | ui>`: force rebuilds a service to apply new environment variables.
 - `./run.sh replay`: rebuilds your node from the snapshot. :warning: **This will irrevocably destroy all local data, including blocks that have already been locally validated**: Be very careful here!
 - `./run.sh destroy`: completely removes the database, validator, and ui. :warning: **This will irrevocably destroy all local data, including blocks that have already been locally validated**: Be very careful here!
+
+## Updating your node
+
+There are different steps you need to take to update your node depending on the update. There are three types of updates:
+- "block-hash-stable" updates. These are updates that you don't need to apply. They normally add additional endpoints to the validator API, or improve or fix bugs with the installation scripts.
+- "block-hash-breaking" updates. These are updates that you must apply before their scheduled "go-live" block. If your node is not updated before the go-live block, your node's block hash will be different, and you will not earn rewards.
+- "schema-breaking" updates. These are updates you must apply before their scheduled "go-live" block, but you must apply them on the *block before* the go-live block.
+
+You can find update guides for the different updates below. The type of update will be specified in the GitHub Release and the DAOs PeakD post.
+
+### block-hash-stable
+
+block-hash-stable updates are updates that don't affect the block hash. These are normally additional API endpoints or install script improvements.
+
+- Pull the latest version with `git fetch && git checkout v<version>` *before*.
+- `./run.sh rebuild_service validator` to rebuild the validator with the latest updates. This will also start the validator.
+- `./run.sh rebuild_service ui` if you want to rebuild the UI.
+  
+### block-hash-breaking
+
+block-hash-breaking updates are designed to turn on at a certain block, so all you need to do is make sure you've updated and restarted your node before the go-live block.
+
+- Pull the latest version with `git fetch && git checkout v<version>` *before*.
+- `./run.sh rebuild_service validator` to rebuild the validator with the latest updates. This will also start the validator.
+- `./run.sh rebuild_service ui` if you want to rebuild the UI.
+
+### schema-breaking
+
+schema-breaking updates cannot be applied before the go-live block. To apply a schema-breaking update, follow the steps below.
+
+- Set `KILL_BLOCK` in your .env file to the scheduled updates block number and rebuild your node (`./run.sh rebuild_service validator`).
+- As the kill block gets closer, you should set your node to inactive.
+- When the `KILL_BLOCK` hits, your node will stop.
+- `./run.sh stop` so your node stops restarting itself.
+- _(Note)_ You can run `./run.sh snapshot` to take a backup of your database before updating to be safe. If you need to restore this snapshot, see [snapshots](#snapshots).
+- You can now pull the latest version with `git fetch && git checkout v<version>`.
+- `./run.sh build` to apply the latest database updates. When it asks if you want to download a new snapshot, you can enter "n".
+- Remove the `KILL_BLOCK` from your .env file
+- `./run.sh rebuild_service validator` to rebuild the validator with the latest updates. This will also start the validator.
+- `./run.sh rebuild_service ui` if you want to rebuild the UI.
 
 ## Local development
 
