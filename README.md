@@ -1,6 +1,6 @@
 # SPS Validator
 
-To update an existing node to a new release, see [updating](#updating-an-existing-node).
+To update an existing node to a new release, see [updating your node](#updating-your-node).
 
 ## Easy Install (mac or linux only):
 Easy install will run through the setup steps for you, but requires the following to be installed on your machine:
