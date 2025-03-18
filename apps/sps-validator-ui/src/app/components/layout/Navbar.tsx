@@ -18,6 +18,7 @@ function Ticker(props: AppNavbarTickerProps) {
 }
 
 export type AppNavbarProps = {
+    className?: string;
     tickers: AppNavbarTickerProps[];
     toggleSidebar?: () => void;
 };
@@ -27,7 +28,7 @@ export function AppNavbar(props: AppNavbarProps) {
         props.toggleSidebar?.();
     };
     return (
-        <Navbar fullWidth={true} className="px-4 py-2 lg:px-8 lg:py-4 flex-grow-0 z-50">
+        <Navbar fullWidth={true} className={`px-4 py-2 lg:px-8 lg:py-4 flex-grow-0 z-50 ${props.className}`}>
             <div className="flex items-center justify-between text-blue-gray-900">
                 <div className="flex items-center gap-2">
                     <IconButton className="lg:hidden" variant="text" size="lg" onClick={toggleDrawer}>

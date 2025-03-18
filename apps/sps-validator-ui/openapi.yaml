@@ -24,6 +24,71 @@ paths:
                         application/json:
                             schema:
                                 $ref: "#/components/schemas/Status"
+
+    /account/{account}:
+        get:
+            tags:
+                - Default
+            summary: Get the account
+            operationId: getAccount
+            parameters:
+                - in: path
+                  name: account
+                  schema:
+                      type: string
+                  required: true
+                  description: Account name
+            responses:
+                200:
+                    description: Successful operation
+                    content:
+                        application/json:
+                            schema:
+                                $ref: "#/components/schemas/Account"
+
+    /account/{account}/transactions:
+        get:
+            tags:
+                - Default
+            summary: Get the transactions of the account
+            operationId: getAccountTransactions
+            parameters:
+                - in: path
+                  name: account
+                  schema:
+                      type: string
+                  required: true
+                  description: Account name
+                - in: query
+                  name: limit
+                  schema:
+                      type: number
+                  description: The number of results to return
+                - in: query
+                  name: cursor_block_num
+                  schema:
+                      type: number
+                  description: The last block number of the previous page
+                - in: query
+                  name: cursor_index
+                  schema:
+                      type: number
+                  description: The last transaction index in the block_num of the previous page
+                - in: query
+                  name: sort
+                  schema:
+                      type: string
+                      enum: ["asc", "desc"]
+            responses:
+                200:
+                    description: Successful operation
+                    content:
+                        application/json:
+                            schema:
+                                type: array
+                                items:
+                                    $ref: "#/components/schemas/Transaction"
+
     /balances:
         get:
             tags:
@@ -353,6 +418,94 @@ paths:
                             schema:
                                 $ref: "#/components/schemas/NoPriceAtPoint"
 
+    /block/{blockNum}:
+        get:
+            tags:
+                - Default
+            summary: Get the block
+            operationId: getBlock
+            parameters:
+                - in: path
+                  name: blockNum
+                  schema:
+                      type: number
+                  required: true
+                  description: Block Number
+            responses:
+                200:
+                    description: Successful operation
+                    content:
+                        application/json:
+                            schema:
+                                $ref: "#/components/schemas/Block"
+                404:
+                    description: No block found
+
+    /blocks:
+        get:
+            tags:
+                - Default
+            summary: Get a range of blocks
+            operationId: getBlocks
+            parameters:
+                - in: query
+                  name: limit
+                  schema:
+                      type: number
+                  required: false
+                  description: Number of blocks to return
+                - in: query
+                  name: after_block
+                  schema:
+                      type: number
+                  required: false
+                  description: Block number to query after
+                - in: query
+                  name: before_block
+                  schema:
+                      type: number
+                  required: false
+                  description: Block number to query before
+                - in: query
+                  name: validator
+                  schema:
+                      type: string
+                  required: false
+            responses:
+                200:
+                    description: Successful operation
+                    content:
+                        application/json:
+                            schema:
+                                type: array
+                                items:
+                                    $ref: "#/components/schemas/Block"
+
+    /transactions/{blockNum}:
+        get:
+            tags:
+                - Default
+            summary: Get the transactions in a block
+            operationId: getTransactions
+            parameters:
+                - in: path
+                  name: blockNum
+                  schema:
+                      type: number
+                  required: true
+                  description: Block Number
+            responses:
+                200:
+                    description: Successful operation
+                    content:
+                        application/json:
+                            schema:
+                                type: array
+                                items:
+                                    $ref: "#/components/schemas/Transaction"
+                404:
+                    description: No transactions found
+
     /extensions/tokens/{token}/supply:
         get:
             tags:
@@ -436,6 +589,16 @@ paths:
 
 components:
     schemas:
+        Account:
+            type: object
+            required:
+                - name
+            properties:
+                name:
+                    type: string
+                authority:
+                    type: object
+
         Balance:
             type: object
             required:
@@ -467,6 +630,26 @@ components:
                     type: array
                     items:
                         $ref: "#/components/schemas/Balance"
+
+        Block:
+            type: object
+            properties:
+                block_num:
+                    type: integer
+                    format: int
+                block_time:
+                    type: string
+                    format: date-time
+                block_id:
+                    type: string
+                prev_block_id:
+                    type: string
+                l2_block_id:
+                    type: string
+                validator:
+                    type: string
+                validation_tx:
+                    type: string
 
         Status:
             type: object
@@ -631,6 +814,7 @@ components:
                 - block_num
                 - type
                 - player
+                - index
             properties:
                 id:
                     type: string
@@ -655,6 +839,8 @@ components:
                     format: date-time
                 result:
                     type: string
+                index:
+                    type: integer
 
         TokenSupply:
             type: object

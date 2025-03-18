@@ -2,8 +2,10 @@
 /* istanbul ignore file */
 /* tslint:disable */
 /* eslint-disable */
+import type { Account } from '../models/Account';
 import type { Balances } from '../models/Balances';
 import type { BalancesCount } from '../models/BalancesCount';
+import type { Block } from '../models/Block';
 import type { PoolSettings } from '../models/PoolSettings';
 import type { PriceAtPoint } from '../models/PriceAtPoint';
 import type { Status } from '../models/Status';
@@ -27,6 +29,54 @@ export class DefaultService {
         return __request(OpenAPI, {
             method: 'GET',
             url: '/status',
+        });
+    }
+    /**
+     * Get the account
+     * @param account Account name
+     * @returns Account Successful operation
+     * @throws ApiError
+     */
+    public static getAccount(
+        account: string,
+    ): CancelablePromise<Account> {
+        return __request(OpenAPI, {
+            method: 'GET',
+            url: '/account/{account}',
+            path: {
+                'account': account,
+            },
+        });
+    }
+    /**
+     * Get the transactions of the account
+     * @param account Account name
+     * @param limit The number of results to return
+     * @param cursorBlockNum The last block number of the previous page
+     * @param cursorIndex The last transaction index in the block_num of the previous page
+     * @param sort
+     * @returns Transaction Successful operation
+     * @throws ApiError
+     */
+    public static getAccountTransactions(
+        account: string,
+        limit?: number,
+        cursorBlockNum?: number,
+        cursorIndex?: number,
+        sort?: 'asc' | 'desc',
+    ): CancelablePromise<Array<Transaction>> {
+        return __request(OpenAPI, {
+            method: 'GET',
+            url: '/account/{account}/transactions',
+            path: {
+                'account': account,
+            },
+            query: {
+                'limit': limit,
+                'cursor_block_num': cursorBlockNum,
+                'cursor_index': cursorIndex,
+                'sort': sort,
+            },
         });
     }
     /**
@@ -292,6 +342,72 @@ export class DefaultService {
             },
             errors: {
                 404: `No price known for requested token`,
+            },
+        });
+    }
+    /**
+     * Get the block
+     * @param blockNum Block Number
+     * @returns Block Successful operation
+     * @throws ApiError
+     */
+    public static getBlock(
+        blockNum: number,
+    ): CancelablePromise<Block> {
+        return __request(OpenAPI, {
+            method: 'GET',
+            url: '/block/{blockNum}',
+            path: {
+                'blockNum': blockNum,
+            },
+            errors: {
+                404: `No block found`,
+            },
+        });
+    }
+    /**
+     * Get a range of blocks
+     * @param limit Number of blocks to return
+     * @param afterBlock Block number to query after
+     * @param beforeBlock Block number to query before
+     * @param validator
+     * @returns Block Successful operation
+     * @throws ApiError
+     */
+    public static getBlocks(
+        limit?: number,
+        afterBlock?: number,
+        beforeBlock?: number,
+        validator?: string,
+    ): CancelablePromise<Array<Block>> {
+        return __request(OpenAPI, {
+            method: 'GET',
+            url: '/blocks',
+            query: {
+                'limit': limit,
+                'after_block': afterBlock,
+                'before_block': beforeBlock,
+                'validator': validator,
+            },
+        });
+    }
+    /**
+     * Get the transactions in a block
+     * @param blockNum Block Number
+     * @returns Transaction Successful operation
+     * @throws ApiError
+     */
+    public static getTransactions(
+        blockNum: number,
+    ): CancelablePromise<Array<Transaction>> {
+        return __request(OpenAPI, {
+            method: 'GET',
+            url: '/transactions/{blockNum}',
+            path: {
+                'blockNum': blockNum,
+            },
+            errors: {
+                404: `No transactions found`,
             },
         });
     }
