@@ -1,4 +1,4 @@
-import { Spinner, Typography, CardBody, Card, Input, Button, Dialog, DialogHeader, DialogBody } from '@material-tailwind/react';
+import { Spinner, Typography, CardBody, Card, Input, Button, Dialog, DialogHeader, DialogBody, Checkbox } from '@material-tailwind/react';
 import { FormEvent, useState } from 'react';
 import { Table, TableHead, TableRow, TableColumn, TableBody, TableCell, TablePager } from '../components/Table';
 import { usePromise } from '../hooks/Promise';
@@ -14,8 +14,12 @@ function ValidatorNodesCard({ className, onNodeSelected }: { className?: string;
     const [limit, setLimit] = useState(10); // TODO: Add a limit selector
     const [search, setSearch] = useState('');
     const [count, isLoadingCount] = usePromise(() => DefaultService.getValidators(0, 0), [search]);
-    const [result, isLoading] = usePromise(() => DefaultService.getValidators(limit, page * limit, search), [search, page, limit]);
 
+    const [active, setActive] = useState<undefined | boolean>(undefined);
+    const updateActive = () => {
+        setPage(0);
+        setActive(active ? undefined : true);
+    };
     const [workingSearch, setWorkingSearch] = useState('');
     const updateSearch = (event: FormEvent<HTMLFormElement>) => {
         event.preventDefault();
@@ -23,6 +27,7 @@ function ValidatorNodesCard({ className, onNodeSelected }: { className?: string;
         setPage(0);
     };
 
+    const [result, isLoading] = usePromise(() => DefaultService.getValidators(limit, page * limit, search, active), [search, page, limit, active]);
     if (isLoading || isLoadingCount) {
         return <Spinner className="w-full" />;
     }
@@ -35,9 +40,14 @@ function ValidatorNodesCard({ className, onNodeSelected }: { className?: string;
                     Validators
                 </Typography>
 
-                <form className="mt-4 w-96 flex justify-self-end gap-4" onSubmit={updateSearch}>
-                    <Input value={workingSearch} onChange={(e) => setWorkingSearch(e.target.value)} label="Account" placeholder="Account" className="flex-grow-1" />
-                    <Button className="w-32" type="submit">
+                <form className="mt-4 justify-self-end gap-4 flex " onSubmit={updateSearch}>
+                    <div className="flex-grow-0 w-32">
+                        <Checkbox checked={active ?? false} onChange={(e) => updateActive()} label="Active Only" />
+                    </div>
+                    <div className="flex-grow w-96">
+                        <Input value={workingSearch} onChange={(e) => setWorkingSearch(e.target.value)} label="Account" placeholder="Account" />
+                    </div>
+                    <Button className="flex-grow-0 w-32" type="submit">
                         Search
                     </Button>
                 </form>
@@ -134,13 +144,13 @@ export function ValidatorNodes() {
                             <Typography variant="h6" color="blue-gray">
                                 Stats
                             </Typography>
-                            <ValidatorStatsTable validator={selectedNode!} className="w-full mt-3" />
+                            <ValidatorStatsTable validator={selectedNode} className="w-full mt-3" />
                         </div>
                         <div>
                             <Typography variant="h6" color="blue-gray">
                                 Votes
                             </Typography>
-                            <ValidatorVotesTable account={selectedNode!} className="w-full mt-3" />
+                            <ValidatorVotesTable account={selectedNode} className="w-full mt-3" />
                         </div>
                     </div>
                 </DialogBody>

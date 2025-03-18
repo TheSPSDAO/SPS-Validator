@@ -6,7 +6,7 @@ import { IAction } from '../../actions/action';
 import { BalanceEntity, BaseRepository, Handle, Trx } from '../../db/tables';
 import { Bookkeeping } from '../bookkeeping';
 
-type BalanceEntry = {
+export type BalanceEntry = {
     player: string;
     token: string;
     balance: number;
@@ -30,7 +30,7 @@ export class BalanceRepository extends BaseRepository {
         super(handle);
     }
 
-    private static into(row: BalanceEntity): BalanceEntry {
+    public static into(row: BalanceEntity): BalanceEntry {
         return { ...row, balance: parseFloat(row.balance) };
     }
 

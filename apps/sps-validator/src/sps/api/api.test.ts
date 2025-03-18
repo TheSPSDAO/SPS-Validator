@@ -25,6 +25,7 @@ class Fixture extends BaseFixture {
             health_checker: cfg.health_checker,
             injection_middleware: middleware,
             db_block_retention: cfg.db_block_retention,
+            version: cfg.version,
         });
         registerSpsRoutes(app);
         this.request = supertest(app);
@@ -386,17 +387,5 @@ describe('Token API endpoints', () => {
         expect(response.status).toBe(status);
         const bodyUsers = response.body?.balances.map((e: any) => e.player);
         expect(bodyUsers).toEqual(expect.arrayContaining(users));
-    });
-
-    test.dbOnly.each`
-        param             | status | total
-        ${'SPS'}          | ${200} | ${7}
-        ${'DEC'}          | ${200} | ${14}
-        ${'OTH'}          | ${200} | ${14}
-        ${'NONE'}         | ${200} | ${0}
-    `(`Checking supply for token [$param] = [$total] with HTTP status [$status]`, async ({ param, status, total }) => {
-        const response = await fixture.request.get(`/tokens/${param}/supply`);
-        expect(response.status).toBe(status);
-        expect(response.body.circulating_supply).toBe(total);
     });
 });

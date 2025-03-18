@@ -3,7 +3,6 @@
 IFS=$'\n\t'
 
 # try to match a tag, if not use the short commit hash
-GIT_COMMIT=$(git describe --exact-match --tags &>/dev/null || git rev-parse --short HEAD)
 SCRIPT_DIR=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" &>/dev/null && pwd)
 SQITCH_DIR="$SCRIPT_DIR/sqitch"
 COMPOSE_FILE="${SCRIPT_DIR}/docker-compose.yml"
@@ -34,7 +33,7 @@ fi
 
 # wrapper around docker compose that passes the current git commit as an environment variable
 docker_compose_wrapper() {
-    GIT_COMMIT=$GIT_COMMIT docker compose "$@"
+    docker compose "$@"
 }
 
 snapshot() {
@@ -113,6 +112,8 @@ start() {
         logs
     elif [[ $1 == "all-silent" ]]; then
         docker_compose_wrapper up -d
+    elif [[ $1 == "validator-silent" ]]; then
+        docker_compose_wrapper up -d validator
     else
         docker_compose_wrapper up -d validator
         logs

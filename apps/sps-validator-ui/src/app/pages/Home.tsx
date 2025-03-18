@@ -67,10 +67,11 @@ const MetricsCard = () => {
 
 export type TopValidatorsTableProps = {
     limit?: number;
+    active?: boolean;
 };
 
 export function TopValidatorsTable(props: TopValidatorsTableProps) {
-    const [result, isLoading] = usePromise(() => DefaultService.getValidators(props.limit), [props.limit]);
+    const [result, isLoading] = usePromise(() => DefaultService.getValidators(props.limit, undefined, undefined, props.active), [props.limit]);
     if (isLoading) {
         return <Spinner className="w-full" />;
     }
@@ -136,7 +137,7 @@ export type TopSpsHoldersTableProps = {
 };
 
 export function TopSpsHoldersTable(props: TopSpsHoldersTableProps) {
-    const [balances, isLoading] = usePromise(() => DefaultService.getBalancesByToken('SPS', props.limit), [props.limit]);
+    const [balances, isLoading] = usePromise(() => DefaultService.getExtendedBalancesByToken('SPS_TOTAL', props.limit), [props.limit]);
     if (isLoading) {
         return <Spinner className="w-full" />;
     }
@@ -193,14 +194,14 @@ export function Home() {
                         <Typography variant="h5" color="blue-gray" className="mb-2">
                             Top Validators
                         </Typography>
-                        <TopValidatorsTable limit={10} />
+                        <TopValidatorsTable limit={10} active={true} />
                     </CardBody>
                 </Card>
 
                 <Card className="col-span-full">
                     <CardBody>
                         <Typography variant="h5" color="blue-gray" className="mb-2">
-                            Top SPS Holders
+                            Top SPS Holders (liquid + staked)
                         </Typography>
                         <TopSpsHoldersTable limit={10} className="w-full mt-5 border-2 border-gray-200" />
                     </CardBody>

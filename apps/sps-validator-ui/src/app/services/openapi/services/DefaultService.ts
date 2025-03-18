@@ -2,11 +2,14 @@
 /* istanbul ignore file */
 /* tslint:disable */
 /* eslint-disable */
+import type { Account } from '../models/Account';
 import type { Balances } from '../models/Balances';
 import type { BalancesCount } from '../models/BalancesCount';
+import type { Block } from '../models/Block';
 import type { PoolSettings } from '../models/PoolSettings';
 import type { PriceAtPoint } from '../models/PriceAtPoint';
 import type { Status } from '../models/Status';
+import type { TokenSupply } from '../models/TokenSupply';
 import type { TokenTransferTransactions } from '../models/TokenTransferTransactions';
 import type { Transaction } from '../models/Transaction';
 import type { Validator } from '../models/Validator';
@@ -26,6 +29,54 @@ export class DefaultService {
         return __request(OpenAPI, {
             method: 'GET',
             url: '/status',
+        });
+    }
+    /**
+     * Get the account
+     * @param account Account name
+     * @returns Account Successful operation
+     * @throws ApiError
+     */
+    public static getAccount(
+        account: string,
+    ): CancelablePromise<Account> {
+        return __request(OpenAPI, {
+            method: 'GET',
+            url: '/account/{account}',
+            path: {
+                'account': account,
+            },
+        });
+    }
+    /**
+     * Get the transactions of the account
+     * @param account Account name
+     * @param limit The number of results to return
+     * @param cursorBlockNum The last block number of the previous page
+     * @param cursorIndex The last transaction index in the block_num of the previous page
+     * @param sort
+     * @returns Transaction Successful operation
+     * @throws ApiError
+     */
+    public static getAccountTransactions(
+        account: string,
+        limit?: number,
+        cursorBlockNum?: number,
+        cursorIndex?: number,
+        sort?: 'asc' | 'desc',
+    ): CancelablePromise<Array<Transaction>> {
+        return __request(OpenAPI, {
+            method: 'GET',
+            url: '/account/{account}/transactions',
+            path: {
+                'account': account,
+            },
+            query: {
+                'limit': limit,
+                'cursor_block_num': cursorBlockNum,
+                'cursor_index': cursorIndex,
+                'sort': sort,
+            },
         });
     }
     /**
@@ -107,6 +158,7 @@ export class DefaultService {
      * @param limit
      * @param skip
      * @param search
+     * @param active
      * @returns Validators Successful operation
      * @throws ApiError
      */
@@ -114,6 +166,7 @@ export class DefaultService {
         limit?: number,
         skip?: number,
         search?: string,
+        active?: boolean,
     ): CancelablePromise<Validators> {
         return __request(OpenAPI, {
             method: 'GET',
@@ -122,6 +175,7 @@ export class DefaultService {
                 'limit': limit,
                 'skip': skip,
                 'search': search,
+                'active': active,
             },
         });
     }
@@ -288,6 +342,137 @@ export class DefaultService {
             },
             errors: {
                 404: `No price known for requested token`,
+            },
+        });
+    }
+    /**
+     * Get the block
+     * @param blockNum Block Number
+     * @returns Block Successful operation
+     * @throws ApiError
+     */
+    public static getBlock(
+        blockNum: number,
+    ): CancelablePromise<Block> {
+        return __request(OpenAPI, {
+            method: 'GET',
+            url: '/block/{blockNum}',
+            path: {
+                'blockNum': blockNum,
+            },
+            errors: {
+                404: `No block found`,
+            },
+        });
+    }
+    /**
+     * Get a range of blocks
+     * @param limit Number of blocks to return
+     * @param afterBlock Block number to query after
+     * @param beforeBlock Block number to query before
+     * @param validator
+     * @returns Block Successful operation
+     * @throws ApiError
+     */
+    public static getBlocks(
+        limit?: number,
+        afterBlock?: number,
+        beforeBlock?: number,
+        validator?: string,
+    ): CancelablePromise<Array<Block>> {
+        return __request(OpenAPI, {
+            method: 'GET',
+            url: '/blocks',
+            query: {
+                'limit': limit,
+                'after_block': afterBlock,
+                'before_block': beforeBlock,
+                'validator': validator,
+            },
+        });
+    }
+    /**
+     * Get the transactions in a block
+     * @param blockNum Block Number
+     * @returns Transaction Successful operation
+     * @throws ApiError
+     */
+    public static getTransactions(
+        blockNum: number,
+    ): CancelablePromise<Array<Transaction>> {
+        return __request(OpenAPI, {
+            method: 'GET',
+            url: '/transactions/{blockNum}',
+            path: {
+                'blockNum': blockNum,
+            },
+            errors: {
+                404: `No transactions found`,
+            },
+        });
+    }
+    /**
+     * Gets the supply information for the specified token
+     * Returns the supply information for the specified token
+     * @param token Token identifier
+     * @returns TokenSupply Successful operation
+     * @throws ApiError
+     */
+    public static getExtendedTokenSupply(
+        token: string,
+    ): CancelablePromise<TokenSupply> {
+        return __request(OpenAPI, {
+            method: 'GET',
+            url: '/extensions/tokens/{token}/supply',
+            path: {
+                'token': token,
+            },
+        });
+    }
+    /**
+     * Gets the balances of account specified in the query params
+     * Returns the list of balances for the specified account name. Will return empty array if the account name was not found.
+     * @param account Account name
+     * @returns Balances Successful operation
+     * @throws ApiError
+     */
+    public static getExtendedBalances(
+        account: string,
+    ): CancelablePromise<Balances> {
+        return __request(OpenAPI, {
+            method: 'GET',
+            url: '/extensions/tokens/balances',
+            query: {
+                'account': account,
+            },
+        });
+    }
+    /**
+     * Gets balances of the token
+     * Returns the list of accounts with a balance of the specified token.
+     * @param token Name of the token
+     * @param limit The number of results to return
+     * @param skip The number of results to skip
+     * @param systemAccounts Include system accounts?
+     * @returns BalancesCount Successful operation
+     * @throws ApiError
+     */
+    public static getExtendedBalancesByToken(
+        token: string,
+        limit?: number,
+        skip?: number,
+        systemAccounts?: boolean,
+    ): CancelablePromise<BalancesCount> {
+        return __request(OpenAPI, {
+            method: 'GET',
+            url: '/extensions/tokens/{token}',
+            path: {
+                'token': token,
+            },
+            query: {
+                'limit': limit,
+                'skip': skip,
+                'systemAccounts': systemAccounts,
             },
         });
     }

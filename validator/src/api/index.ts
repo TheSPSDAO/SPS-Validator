@@ -2,6 +2,7 @@ import { Router } from 'express';
 import { BalanceRepository } from '../entities/tokens/balance';
 import { ValidatorRepository } from '../entities/validator/validator';
 import { ValidatorVoteRepository } from '../entities/validator/validator_vote';
+import { HiveAccountRepository } from '../entities/account/hive_account';
 import { enableHealthChecker } from './health';
 import { TransactionRepository_ } from '../repositories/transactions';
 import { Trx } from '../db/tables';
@@ -20,6 +21,7 @@ type ApiOptions = {
     injection_middleware: Middleware;
     resolver: Resolver;
     db_block_retention: number | null;
+    version: string;
 };
 
 // @ts-expect-error
@@ -42,6 +44,7 @@ export function registerApiRoutes(app: Router, opts: ApiOptions): void {
                 last_block: lastBlockCache.value?.block_num || 0,
                 archive_node: opts.db_block_retention === null,
                 block_retention: opts.db_block_retention,
+                version: opts.version,
             });
         } catch (err) {
             next(err);
@@ -328,13 +331,30 @@ export function registerApiRoutes(app: Router, opts: ApiOptions): void {
             const TransactionRepository = req.resolver.resolve(TransactionRepository_);
             await trxStarter.withTransaction(TransactionMode.Reporting, async (trx?: Trx) => {
                 const data = await TransactionRepository.lookupByBlockNum(blockNum, trx);
-
                 if (data.length === 0 && lastBlockCache.value !== null && lastBlockCache.value.block_num < blockNum) {
                     res.status(404).end();
                     return;
                 }
 
                 res.status(200).json(data);
+            });
+        } catch (err) {
+            next(err);
+        }
+    });
+
+    app.get('/blocks', async (req, res, next) => {
+        try {
+            const trxStarter = req.resolver.resolve(TransactionStarter);
+            const BlockRepository = req.resolver.resolve(BlockRepository_);
+            const MAX = 100;
+            const limit = typeof req.query.limit === 'string' ? parseInt(req.query.limit, 10) : undefined;
+            const after_block = typeof req.query.after_block === 'string' ? parseInt(req.query.after_block, 10) : undefined;
+            const before_block = typeof req.query.before_block === 'string' ? parseInt(req.query.before_block, 10) : undefined;
+            const validator = typeof req.query.validator === 'string' ? req.query.validator : undefined;
+            await trxStarter.withTransaction(TransactionMode.Reporting, async (trx?: Trx) => {
+                const realLimit = limit && !isNaN(limit) ? Math.min(limit, MAX) : MAX;
+                res.json(await BlockRepository.getBlocks({ limit: realLimit, after_block, before_block, validator }, trx));
             });
         } catch (err) {
             next(err);
@@ -355,13 +375,52 @@ export function registerApiRoutes(app: Router, opts: ApiOptions): void {
             const BlockRepository = req.resolver.resolve(BlockRepository_);
             await trxStarter.withTransaction(TransactionMode.Reporting, async (trx?: Trx) => {
                 const data = await BlockRepository.getByBlockNum(blockNum, trx);
-
                 if (!data && lastBlockCache.value !== null && lastBlockCache.value.block_num < blockNum) {
                     res.status(404).end();
                     return;
                 }
 
                 res.status(200).json(data);
+            });
+        } catch (err) {
+            next(err);
+        }
+    });
+
+    app.get('/account/:account', async (req, res, next) => {
+        try {
+            const account = req.params.account;
+            const trxStarter = req.resolver.resolve(TransactionStarter);
+            const Accounts = req.resolver.resolve(HiveAccountRepository);
+            await trxStarter.withTransaction(TransactionMode.Reporting, async (trx?: Trx) => {
+                const dbAccount = await Accounts.getAccount(account, trx);
+                if (dbAccount === null) {
+                    res.status(404).end();
+                    return;
+                }
+                res.json(dbAccount);
+            });
+        } catch (err) {
+            next(err);
+        }
+    });
+
+    app.get('/account/:account/transactions', async (req, res, next) => {
+        try {
+            const account = req.params.account;
+            const trxStarter = req.resolver.resolve(TransactionStarter);
+            const TransactionRepository = req.resolver.resolve(TransactionRepository_);
+            const MAX = 100;
+            const limit = typeof req.query.limit === 'string' ? parseInt(req.query.limit, 10) : undefined;
+            const sort = typeof req.query.sort === 'string' ? req.query.sort : undefined;
+            const cursorBlockNum = typeof req.query.cursor_block_num === 'string' ? req.query.cursor_block_num : undefined;
+            const cursorIndex = typeof req.query.cursor_index === 'string' ? req.query.cursor_index : undefined;
+            const cursor = cursorBlockNum && cursorIndex ? ([parseInt(cursorBlockNum, 10), parseInt(cursorIndex, 10)] as [number, number]) : undefined;
+            await trxStarter.withTransaction(TransactionMode.Reporting, async (trx?: Trx) => {
+                const realLimit = limit && !isNaN(limit) ? Math.min(limit, MAX) : MAX;
+                const realCursor = !cursor || cursor.some((x) => isNaN(x)) ? undefined : cursor;
+                const realSort = sort === 'asc' ? 'asc' : 'desc';
+                res.json(await TransactionRepository.lookupByAccount(account, realLimit, realSort, realCursor, trx));
             });
         } catch (err) {
             next(err);
