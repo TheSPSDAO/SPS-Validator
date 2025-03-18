@@ -410,7 +410,7 @@ const schema = {
         rpc_node: {
             doc: 'The Ethereum JSON RPC node to connect to',
             format: 'url',
-            default: 'https://eth.public-rpc.com',
+            default: 'https://eth-mainnet.public.blastapi.io',
             env: 'ETH_RPC_NODE',
         },
         contract_address: {
