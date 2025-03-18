@@ -141,6 +141,8 @@ There are different steps you need to take to update your node depending on the 
 
 You can find update guides for the different updates below. The type of update will be specified in the GitHub Release and the DAOs PeakD post.
 
+**You should set your node to inactive before updating so you don't miss any blocks.**
+
 ### block-hash-stable
 
 block-hash-stable updates are updates that don't affect the block hash. These are normally additional API endpoints or install script improvements.
