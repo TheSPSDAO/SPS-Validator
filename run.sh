@@ -245,7 +245,7 @@ logs() {
 status() {
   echo "Checking validator status..."
   
-  VALIDATOR_ACC=$(grep "VALIDATOR_ACCOUNT" .env | cut -d '=' -f2 | tr -d '"' | tr -d "'" | xargs)
+  VALIDATOR_ACC="$VALIDATOR_ACCOUNT"
   
   if [ -z "$VALIDATOR_ACC" ]; then
     echo "VALIDATOR_ACCOUNT not found in .env file"
