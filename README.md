@@ -234,6 +234,8 @@ The _only_ node_modules that you should need are:
 
 ## Useful links
 - [sqitch documentation](https://sqitch.org/docs/)
+- SPS Validator Node: Setup Guide for Dummies on [Windows](https://peakd.com/splinterlands/@hanv/sps-validator-node-setup-guide-for-dummies-on-windows), [macOS](https://peakd.com/splinterlands/@hanv/sps-validator-node-setup-guide-for-dummies-on-mac) and [Linux Ubuntu](https://peakd.com/splinterlands/@hanv/sps-validator-node-setup-guide-for-dummies-on-linux-ubuntu)
+- [SPS Validator Node: How to update to new version](https://peakd.com/splinterlands/@hanv/sps-validator-node-how-to-update-to-new-version)
 
 ## About the repository
 
