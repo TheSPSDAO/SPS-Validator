@@ -11,9 +11,9 @@ export function BlockTimeChip({ blockTime }: { blockTime?: string }) {
     );
 }
 
-export function AccountChip({ account }: { account: string }) {
+export function AccountChip({ account, className }: { account: string; className?: string }) {
     return (
-        <Link to={`/block-explorer/account?account=${account}`}>
+        <Link to={`/block-explorer/account?account=${account}`}  className={className}>
             <Tooltip content="Account name">
                 <Chip variant="outlined" value={account} icon={<UserCircleIcon />} />
             </Tooltip>
@@ -21,9 +21,9 @@ export function AccountChip({ account }: { account: string }) {
     );
 }
 
-export function ValidatorChip({ account, validation_tx }: { account?: string; validation_tx?: string }) {
+export function ValidatorChip({ account, validation_tx, className }: { account?: string; validation_tx?: string; className?: string }) {
     return (
-        <Link to={`/block-explorer/account?account=${account}`}>
+        <Link className={className} to={`/block-explorer/account?account=${account}`}>
             <Tooltip content="The validator selected for this block">
                 <Chip
                     variant="outlined"
@@ -36,18 +36,18 @@ export function ValidatorChip({ account, validation_tx }: { account?: string; va
     );
 }
 
-export function TxStatusChip({ success, error }: { success: boolean; error?: string }) {
+export function TxStatusChip({ success, error, className }: { success: boolean; error?: string; className?: string }) {
     return (
         <Tooltip content="Transaction status (success or error code)">
-            {success ? <Chip variant="gradient" color="green" value="success" /> : <Chip variant="gradient" color="red" value={`error: ${error}`} />}
+            {success ? <Chip variant="gradient" color="green" value="success" className={className} /> : <Chip variant="gradient" color="red" value={`error: ${error}`}  className={className} />}
         </Tooltip>
     );
 }
 
-export function TxTypeChip({ type }: { type: string }) {
+export function TxTypeChip({ type, className }: { type: string; className?: string }) {
     return (
         <Tooltip content="Transaction type (operation name)">
-            <Chip variant="ghost" value={type} icon={<BoltIcon />} />
+            <Chip variant="ghost" value={type} icon={<BoltIcon />} className={className} />
         </Tooltip>
     );
 }

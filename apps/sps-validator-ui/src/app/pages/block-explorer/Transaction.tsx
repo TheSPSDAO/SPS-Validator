@@ -8,12 +8,13 @@ import { usePromise } from '../../hooks/Promise';
 import { DefaultService } from '../../services/openapi';
 import { OmniBox } from './OmniBox';
 import { AccountChip, BlockTimeChip, TxStatusChip, TxTypeChip } from './Chips';
-import { useMemo } from 'react';
+import { useMemo, useRef } from 'react';
 import { InfoTooltip } from '../../components/InfoTooltip';
 
 SyntaxHighlighter.registerLanguage('json', json);
 
 function TransactionInfo({ id: trxId, className }: { id: string | null; className?: string }) {
+    const containerRef = useRef<HTMLDivElement | null>(null);
     const [transaction, isTrxLoading] = usePromise(async () => {
         if (!trxId) {
             return undefined;
@@ -52,8 +53,8 @@ function TransactionInfo({ id: trxId, className }: { id: string | null; classNam
         <>
             <Card className={className}>
                 <CardBody>
-                    <div className="flex items-center mb-3">
-                        <Typography variant="h5" color="blue-gray">
+                    <div className="flex flex-col sm:flex-row items-center mb-3">
+                        <Typography variant="h5" color="blue-gray" className="break-all">
                             Transaction {trxId}
                         </Typography>
                         {transaction?.id.includes('_') && <Chip variant="outlined" value="virtual" className="ml-2 rounded-full inline italic" />}
@@ -72,7 +73,7 @@ function TransactionInfo({ id: trxId, className }: { id: string | null; classNam
                     )}
 
                     {!isTrxLoading && transaction && (
-                        <div className="overflow-x-auto">
+                        <div >
                             <Table className="w-full">
                                 <TableBody>
                                     <TableRow>
@@ -82,7 +83,7 @@ function TransactionInfo({ id: trxId, className }: { id: string | null; classNam
                                                 to={`https://hivehub.dev/tx/${transaction.id}`}
                                                 target="_blank"
                                                 rel="noopener noreferrer"
-                                                className="text-blue-gray-800 underline"
+                                                className="text-blue-gray-800 underline break-all"
                                             >
                                                 {transaction.id}
                                             </Link>
@@ -144,9 +145,9 @@ function TransactionInfo({ id: trxId, className }: { id: string | null; classNam
                             Transaction Result
                             <InfoTooltip text="The transaction result is a JSON object that records every database change that was made by the transaction. These changes are hashed into the block hash, which is used to make sure all of the validators agree on the state of the database." />
                         </Typography>
-                        <SyntaxHighlighter language="json" style={oneLight} wrapLongLines={true}>
-                            {prettyResult}
-                        </SyntaxHighlighter>
+                            <SyntaxHighlighter language="json" style={oneLight} wrapLongLines={true}>
+                                {prettyResult}
+                            </SyntaxHighlighter>
                     </CardBody>
                 </Card>
             )}

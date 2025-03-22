@@ -28,11 +28,11 @@ function BlockInfo({ block: blockNum, className }: { block: string | null; class
                         Block {localeNumber(parsedBlockNum, 0)}
                     </Typography>
                     <div className="ml-auto flex gap-3 items-center">
-                        <Button variant="outlined" onClick={() => navigate(`/block-explorer/block?block=${parsedBlockNum - 1}`)}>
-                            Previous Block
+                        <Button variant="outlined" className="p-2 sm:px-6 sm:py-3 flex flex-col sm:flex-row sm:gap-1" onClick={() => navigate(`/block-explorer/block?block=${parsedBlockNum - 1}`)}>
+                            <span className="min-w-[65px] sm:min-w-0">Previous</span><span>Block</span>
                         </Button>
-                        <Button variant="outlined" onClick={() => navigate(`/block-explorer/block?block=${parsedBlockNum + 1}`)}>
-                            Next Block
+                        <Button variant="outlined" className="p-2 sm:px-6 sm:py-3 flex flex-col sm:flex-row sm:gap-1" onClick={() => navigate(`/block-explorer/block?block=${parsedBlockNum + 1}`)}>
+                            <span className="min-w-[65px] sm:min-w-0">Next</span><span>Block</span>
                         </Button>
                     </div>
                 </div>
@@ -50,20 +50,20 @@ function BlockInfo({ block: blockNum, className }: { block: string | null; class
                 )}
 
                 {!isBlocksLoading && block && (
-                    <div className="overflow-x-auto">
+                    <div className="">
                         <Table className="w-full">
                             <TableBody>
                                 <TableRow>
                                     <TableCell className="font-bold">Hive Block ID</TableCell>
-                                    <TableCell>
+                                    <TableCell className="break-all">
                                         <Link to={`https://hivehub.dev/b/${blockNum}`} target="_blank" rel="noopener noreferrer" className="text-blue-gray-800 underline">
                                             {block.block_id}
                                         </Link>
                                     </TableCell>
                                 </TableRow>
                                 <TableRow>
-                                    <TableCell className="font-bold">L2 Block ID</TableCell>
-                                    <TableCell>{block.l2_block_id}</TableCell>
+                                    <TableCell className="font-bold break-words">L2 Block ID</TableCell>
+                                    <TableCell className="break-all">{block.l2_block_id}</TableCell>
                                 </TableRow>
                                 <TableRow>
                                     <TableCell className="font-bold">Date</TableCell>
@@ -79,7 +79,7 @@ function BlockInfo({ block: blockNum, className }: { block: string | null; class
                                 </TableRow>
                                 <TableRow>
                                     <TableCell className="font-bold">Validation tx</TableCell>
-                                    <TableCell>
+                                    <TableCell className="break-all">
                                         {!block.validation_tx && 'none'}
                                         {block.validation_tx && (
                                             <Link to={`/block-explorer/transaction?id=${block.validation_tx}`} className="text-blue-gray-800 underline">
@@ -136,17 +136,18 @@ function TransactionList({ block: blockNum, className }: { block: string | null;
                                 <ListItem onClick={listItemClickHandler(() => nav(`/block-explorer/transaction?id=${tx.id}`))} className="cursor-pointer outer-list-item">
                                     <div>
                                         <div className="mb-2">
-                                            <Typography variant="paragraph" color="blue-gray" className="flex items-center">
+                                            <Typography variant="paragraph" color="blue-gray" className="flex items-center break-all">
                                                 <Link to={`/block-explorer/transaction?id=${tx.id}`} className="font-semibold underline text-blue-gray-800">
                                                     {tx.id}
                                                 </Link>
                                                 {tx.id.includes('_') && <Chip variant="outlined" value="virtual" className="ml-2 rounded-full inline italic" />}
                                             </Typography>
                                         </div>
-                                        <div className="flex items-center gap-2">
-                                            <TxTypeChip type={tx.type} />
-                                            <AccountChip account={tx.player} />
-                                            <TxStatusChip success={tx.success ?? false} error={tx.error} />
+                                        <div className="flex flex-wrap items-center gap-2 w-full">
+                                            <TxTypeChip type={tx.type} className="order-1" />
+                                            <AccountChip account={tx.player} className="order-4 sm:order-2" />
+                                            <TxStatusChip success={tx.success ?? false} error={tx.error} className="order-2 sm:order-3" />
+                                            <div className="basis-full h-0 sm:hidden order-3"></div>
                                         </div>
                                     </div>
                                 </ListItem>

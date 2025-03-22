@@ -2,6 +2,7 @@ import { Card, CardBody, Typography, Input, Button, Spinner } from '@material-ta
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { DefaultService } from '../../services/openapi';
+import { MagnifyingGlassIcon } from '@heroicons/react/24/solid';
 
 export function OmniBox({ className }: { className?: string }) {
     const navigate = useNavigate();
@@ -69,8 +70,9 @@ export function OmniBox({ className }: { className?: string }) {
                 </Typography>
                 <form className="flex items-center gap-4" onSubmit={(e) => search(e)}>
                     <Input value={input} onChange={(e) => setInput(e.target.value)} label="Search" placeholder="Search" className="flex-grow-1" disabled={progress} />
-                    <Button className="w-32 flex flex-row items-center justify-center" type="submit" disabled={progress}>
-                        <span className={progress ? 'me-2' : ''}>Search</span>
+                    <Button className="p-2 sm:w-32 flex flex-row items-center justify-center" type="submit" disabled={progress}>
+                        <MagnifyingGlassIcon className="sm:hidden size-6"/>
+                        <span className={`sr-only sm:not-sr-only ${progress ? 'me-2' : ''}`}>Search</span>
                         {progress && <Spinner width={16} height={16} />}
                     </Button>
                 </form>

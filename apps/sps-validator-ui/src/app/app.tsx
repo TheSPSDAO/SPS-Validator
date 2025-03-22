@@ -170,6 +170,7 @@ export function App() {
         </DarkModeProvider>
     );
 }
+
 function AppContent({ mobileSidebarOpen, setMobileSidebarOpen}: { mobileSidebarOpen: boolean, setMobileSidebarOpen: React.Dispatch<React.SetStateAction<boolean>> }) {
     const tickers = useTickers();
     const sidebarRef = useRef<HTMLDivElement>(null);
@@ -193,7 +194,7 @@ function AppContent({ mobileSidebarOpen, setMobileSidebarOpen}: { mobileSidebarO
                 handleClickOutside(event);
             }
         }
-
+        
         if (mobileSidebarOpen && overlayRef.current) {
             overlayRef.current.addEventListener('mousedown', handleOverlayClick);
         }
@@ -207,7 +208,7 @@ function AppContent({ mobileSidebarOpen, setMobileSidebarOpen}: { mobileSidebarO
 
 
     return (
-        <div ref={contentRef} className="h-screen w-full flex flex-col">
+        <div ref={contentRef} className="h-screen w-full flex flex-col overflow-x-auto">
             <AppNavbar 
                 tickers={tickers} 
                 toggleSidebar={(event) => {

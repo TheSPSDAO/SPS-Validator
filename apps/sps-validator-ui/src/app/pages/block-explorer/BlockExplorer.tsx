@@ -29,21 +29,20 @@ export function BlockList({ className }: { className?: string }) {
                 <List className="p-0 mt-4">
                     {blocks.map((block, i) => (
                         <React.Fragment key={block.block_num}>
-                            <ListItem onClick={listItemClickHandler(() => nav(`/block-explorer/block?block=${block.block_num}`))} className="cursor-pointer outer-list-item">
-                                <div>
-                                    <div className="mb-2">
-                                        <Typography variant="paragraph" color="blue-gray" className="font-semibold">
-                                            Block{' '}
-                                            <Link to={`/block-explorer/block?block=${block.block_num}`} className="font-semibold underline text-blue-gray-800">
-                                                {block.block_num}
-                                            </Link>
-                                        </Typography>
-                                    </div>
-                                    <div className="flex items-center gap-2">
-                                        <BlockTimeChip blockTime={block.block_time} />
-                                        <ValidatorChip account={block.validator} validation_tx={block.validation_tx} />
-                                    </div>
+                            <ListItem onClick={listItemClickHandler(() => nav(`/block-explorer/block?block=${block.block_num}`))} className="cursor-pointer outer-list-item px-0 py-2 sm:p-3">
+                                <div className="flex flex-row flex-wrap gap-2 w-full" onClick={() => {window.location.href = `/block-explorer/block?block=${block.block_num}`;;}} style={{ cursor: 'pointer' }}>
+                                    <Typography variant="paragraph" color="blue-gray" className="font-semibold">
+                                        Block{' '}
+                                        <Link to={`/block-explorer/block?block=${block.block_num}`} className="font-semibold underline text-blue-gray-800">
+                                            {block.block_num}
+                                        </Link>
+                                    </Typography>
+                                    <div className="sm:basis-full sm:h-0"></div>
+                                    <BlockTimeChip blockTime={block.block_time} />
+                                    <div className="basis-full h-0 sm:hidden"></div>
+                                    <ValidatorChip className="w-min" account={block.validator} validation_tx={block.validation_tx} />
                                 </div>
+                                
                             </ListItem>
                             {i !== blocks.length - 1 && <hr className="my-0 opacity-75 border-blue-gray-200" />}
                         </React.Fragment>

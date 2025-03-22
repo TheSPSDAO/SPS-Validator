@@ -1,15 +1,16 @@
 import { Button, Card, CardBody, Chip, List, ListItem, Spinner, Typography } from '@material-tailwind/react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { localeNumber } from '../../components/LocaleNumber';
-import { Table, TableBody, TableCell, TableColumn, TableHead, TableRow } from '../../components/Table';
+import { GradientOverflow, Table, TableBody, TableCell, TableColumn, TableHead, TableRow } from '../../components/Table';
 import { usePromise } from '../../hooks/Promise';
 import { DefaultService, Transaction } from '../../services/openapi';
-import React, { useState } from 'react';
+import React, { useRef, useState } from 'react';
 import { OmniBox } from './OmniBox';
 import { AccountChip, TxStatusChip, TxTypeChip } from './Chips';
 import { listItemClickHandler } from './utils';
 
 function AccountInfo({ account, className }: { account: string | null; className?: string }) {
+    const containerRef = useRef<HTMLDivElement | null>(null);
     const [accountData, isAccountLoading] = usePromise(async () => {
         try {
             if (!account) {
@@ -50,7 +51,8 @@ function AccountInfo({ account, className }: { account: string | null; className
                 )}
 
                 {!isAccountLoading && accountData && (
-                    <div className="overflow-x-auto">
+                    <div className="relative">
+                        <div ref={containerRef} className="overflow-x-auto">
                         <Table className="w-full">
                             <TableBody>
                                 <TableRow>
@@ -67,7 +69,7 @@ function AccountInfo({ account, className }: { account: string | null; className
                                         {isValidatorLoading && <Spinner />}
                                         {!isValidatorLoading && !validator && 'Not a validator'}
                                         {!isValidatorLoading && validator && (
-                                            <Link to={`/validator-nodes?node=${account}`} target="_blank" className="text-blue-gray-800 underline">
+                                            <Link to={`/validator-nodes?node=${account}`} className="text-blue-gray-800 underline">
                                                 {account}
                                             </Link>
                                         )}
@@ -75,6 +77,8 @@ function AccountInfo({ account, className }: { account: string | null; className
                                 </TableRow>
                             </TableBody>
                         </Table>
+                    </div>
+                    <GradientOverflow isLoading={isAccountLoading} containerRef={containerRef}/>
                     </div>
                 )}
             </CardBody>
@@ -84,30 +88,36 @@ function AccountInfo({ account, className }: { account: string | null; className
 
 function AccountBalances({ account, className }: { account: string | null; className?: string }) {
     const [balances, loading] = usePromise(() => DefaultService.getExtendedBalances(account ?? ''), [account]);
+    const containerRef = useRef<HTMLDivElement | null>(null);
     return (
         <Card className={className}>
             <CardBody>
-                <Typography variant="h5" color="blue-gray" className="mb-2">
+                <Typography variant="h5" color="blue-gray" className="mb-6">
                     Account Balances for {account}
                 </Typography>
                 {loading && <Typography variant="paragraph">Loading...</Typography>}
                 {balances && (
-                    <Table className="w-full mt-4 border-2 border-gray-200">
-                        <TableHead>
-                            <TableRow>
-                                <TableColumn>Token</TableColumn>
-                                <TableColumn>Balance</TableColumn>
-                            </TableRow>
-                        </TableHead>
-                        <TableBody>
-                            {balances.map((balance) => (
-                                <TableRow key={balance.token}>
-                                    <TableCell>{balance.token}</TableCell>
-                                    <TableCell>{localeNumber(balance.balance)}</TableCell>
-                                </TableRow>
-                            ))}
-                        </TableBody>
-                    </Table>
+                    <div className="relative">
+                        <div ref={containerRef} className="overflow-x-auto">
+                            <Table className="w-full border-2 border-gray-200">
+                                <TableHead>
+                                    <TableRow>
+                                        <TableColumn>Token</TableColumn>
+                                        <TableColumn>Balance</TableColumn>
+                                    </TableRow>
+                                </TableHead>
+                                <TableBody>
+                                    {balances.map((balance) => (
+                                        <TableRow key={balance.token}>
+                                            <TableCell>{balance.token}</TableCell>
+                                            <TableCell>{localeNumber(balance.balance)}</TableCell>
+                                        </TableRow>
+                                    ))}
+                                </TableBody>
+                            </Table>
+                        </div>
+                        <GradientOverflow isLoading={loading} containerRef={containerRef}/>
+                    </div>
                 )}
             </CardBody>
         </Card>
@@ -155,12 +165,12 @@ function TransactionList({ account, className }: { account: string | null; class
                     <Typography variant="h5" color="blue-gray">
                         Transactions
                     </Typography>
-                    <div className="ml-auto flex gap-3 items-center">
-                        <Button variant="outlined" onClick={() => page('prev')}>
-                            Previous Page
+                    <div className="ml-auto flex gap-2 sm:gap-3 items-center">
+                        <Button variant="outlined" className="px-2 py-2 sm:px-6 sm:py-3 flex flex-col sm:flex-row sm:gap-1" onClick={() => page('prev')}>
+                            <span className="min-w-[65px] sm:min-w-0">Previous</span><span>Page</span> 
                         </Button>
-                        <Button variant="outlined" onClick={() => page('next')}>
-                            Next Page
+                        <Button variant="outlined" className="px-2 py-2 sm:px-6 sm:py-3 flex flex-col sm:flex-row sm:gap-1" onClick={() => page('next')}>
+                            <span className="min-w-[65px] sm:min-w-0">Next</span><span>Page</span>
                         </Button>
                     </div>
                 </div>
@@ -177,27 +187,28 @@ function TransactionList({ account, className }: { account: string | null; class
                 )}
 
                 {!isTransactionsLoading && transactions && transactions.length > 0 && (
-                    <List className="p-0">
+                    <List className="p-0 ">
                         {transactions.map((tx, i) => (
                             <React.Fragment key={tx.id}>
                                 <ListItem onClick={listItemClickHandler(() => navigate(`/block-explorer/transaction?id=${tx.id}`))} className="cursor-pointer outer-list-item">
                                     <div>
                                         <div className="mb-2">
-                                            <Typography variant="paragraph" color="blue-gray" className="flex items-center gap-2">
-                                                <Link to={`/block-explorer/transaction?id=${tx.id}`} className="font-semibold underline text-blue-gray-800">
+                                            <Typography variant="paragraph" color="blue-gray" className="flex md:items-center gap-2 flex-col md:flex-row mb-2 md:mb-0">
+                                                <Link to={`/block-explorer/transaction?id=${tx.id}`} className="font-semibold underline text-blue-gray-800 break-all">
                                                     {tx.id}
                                                 </Link>{' '}
-                                                |{' '}
+                                                <span className="hidden md:block">|{' '}</span>
                                                 <Link to={`/block-explorer/block?block=${tx.block_num}`} className="font-semibold underline text-blue-gray-800">
                                                     Block {tx.block_num}
                                                 </Link>
                                                 {tx.id.includes('_') && <Chip variant="outlined" value="virtual" className="ml-2 rounded-full inline italic" />}
                                             </Typography>
                                         </div>
-                                        <div className="flex items-center gap-2">
-                                            <TxTypeChip type={tx.type} />
-                                            <AccountChip account={tx.player} />
-                                            <TxStatusChip success={tx.success ?? false} error={tx.error} />
+                                        <div className="flex flex-wrap items-center gap-2 w-full">
+                                            <TxTypeChip type={tx.type} className="order-1" />
+                                            <AccountChip account={tx.player} className="order-4 sm:order-2" />
+                                            <TxStatusChip success={tx.success ?? false} error={tx.error} className="order-2 sm:order-3" />
+                                            <div className="basis-full h-0 sm:hidden order-3"></div>
                                         </div>
                                     </div>
                                 </ListItem>
