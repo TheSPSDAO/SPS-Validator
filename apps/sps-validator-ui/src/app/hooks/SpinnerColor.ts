@@ -2,10 +2,17 @@ import { color } from "@material-tailwind/react/types/components/spinner";
 import { useState, useEffect } from "react";
 
 export function useSpinnerColor(defaultColor: color = "blue") {
-  const [spinnerColor, setSpinnerColor] = useState<color| undefined>(undefined);
+  const isDarkMode = document.documentElement.classList.contains("dark");
+  const [spinnerColor, setSpinnerColor] = useState<color | undefined>(
+    isDarkMode ? defaultColor : undefined
+  );
 
   useEffect(() => {
-    setSpinnerColor(document.documentElement.classList.contains("dark") ? defaultColor : undefined);
+    if (document.documentElement.classList.contains("dark")) {
+      setSpinnerColor(defaultColor);
+    } else {
+      setSpinnerColor(undefined);
+    }
   }, [defaultColor]);
 
   return spinnerColor;

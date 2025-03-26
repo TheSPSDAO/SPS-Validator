@@ -137,11 +137,11 @@ const ValidatorInputGroup: React.FC<ValidatorInputGroupProps> = ({ inputs, disab
                         className={`absolute right-0 -top-3 transform -translate-y-full z-10 transition-opacity duration-200 ${isTouchDevice ? (activeTooltipIndex === index ? 'opacity-100' : 'opacity-0 pointer-events-none') : (hoverTooltipIndex === index ? 'opacity-100' : 'opacity-0 pointer-events-none')}`}
                     >
                         <div className="relative">
-                            <div className="bg-blue-gray-50 text-blue-gray-900 dark:bg-gray-300 dark:text-gray-800 p-2 rounded-xl shadow-lg dark:shadow-none text-sm">
+                            <div className="bg-blue-gray-50 text-blue-gray-900 dark:bg-gray-600 dark:text-gray-100 p-2 rounded-xl shadow-lg dark:shadow-none text-sm">
                                 {input.tooltip}
                             </div>
                             <div 
-                                className="absolute -bottom-[16px] right-[26px] w-0 h-0 border-l-[16px] border-l-transparent border-r-[0px] border-r-transparent border-t-[16px] border-t-blue-gray-50 dark:border-t-gray-300"
+                                className="absolute -bottom-[16px] right-[26px] w-0 h-0 border-l-[16px] border-l-transparent border-r-[0px] border-r-transparent border-t-[16px] border-t-blue-gray-50 dark:border-t-gray-600"
                             />
                         </div>
                     </div>
@@ -382,7 +382,7 @@ function ManageCard({ account, validator, reloadValidator }: { account: string; 
                                 {error}
                             </Typography>
                         )}
-                        <div className="flex items-center justify-end">
+                        <div className="flex items-center justify-start md:justify-end">
                             <Button className="flex flex-row items-center dark:bg-blue-800 dark:hover:bg-blue-600 dark:border-gray-300 dark:border dark:text-gray-300 dark:hover:text-gray-100 dark:shadow-none" variant="filled" disabled={progress} onClick={update}>
                                 {progress && <Spinner className="me-3 text-sm" color={spinnerColor}/>}
                                 Update

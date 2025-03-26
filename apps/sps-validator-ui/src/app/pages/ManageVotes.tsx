@@ -13,6 +13,42 @@ import { ValidatorName } from '../components/ValidatorName';
 import { localeNumber } from '../components/LocaleNumber';
 import { ValidatorDialog } from '../components/ValidatorDialog';
 
+async function handleVoteAction(
+    validator: string,
+    action: 'disapprove' | 'approve',
+    setProgress: React.Dispatch<React.SetStateAction<boolean>>,
+    setError: React.Dispatch<React.SetStateAction<string>>,
+    reloadVotes: () => void
+): Promise<void> {
+    setError('');
+    setProgress(true);
+    try {
+        let broadcastResult;
+        if (action === 'disapprove') {
+            broadcastResult = await HiveService.disapproveValidator({
+                account_name: validator,
+            });
+        } else {
+            broadcastResult = await HiveService.approveValidator({
+                account_name: validator,
+            });
+        }
+  
+        if (broadcastResult.error || !broadcastResult.result) {
+            throw new Error(broadcastResult.error ?? 'There was an error broadcasting the transaction');
+        }
+        const txResult = await TxLookupService.waitForTx(broadcastResult.result!.id);
+        if (!txResult.success) {
+            throw new Error(txResult.error ?? 'There was an error broadcasting the transaction');
+        }
+        reloadVotes();
+    } catch (err) {
+        setError(err!.toString());
+    } finally {
+        setProgress(false);
+    }
+}
+
 function VoteCard({
     account,
     votes,
@@ -43,31 +79,17 @@ function VoteCard({
         setPage(0);
     };
 
-    const voteFor = async (validator: string) => {
-        setError('');
-        setProgress(true);
-        try {
-            const broadcastResult = await HiveService.approveValidator({
-                account_name: validator,
-            });
-            if (broadcastResult.error || !broadcastResult.result) {
-                throw new Error(broadcastResult.error ?? 'There was an error broadcasting the transaction');
-            }
-            const txResult = await TxLookupService.waitForTx(broadcastResult.result!.id);
-            if (!txResult.success) {
-                throw new Error(txResult.error ?? 'There was an error broadcasting the transaction');
-            }
-            reloadVotes();
-        } catch (err) {
-            setError(err!.toString());
-        } finally {
-            setProgress(false);
-        }
+    const removeVote = async (validator: string) => {
+        await handleVoteAction(validator, 'disapprove', setProgress, setError, reloadVotes);
     };
-    
+
+    const voteFor = async (validator: string) => {
+        await handleVoteAction(validator, 'approve', setProgress, setError, reloadVotes);
+    };
+
     if (isLoading || isLoadingCount) {
         return <Spinner className="w-full" color={spinnerColor}/>;
-    }
+    };
 
     const noValidators = result?.validators === undefined || result.validators.length === 0;
 
@@ -160,14 +182,26 @@ function VoteCard({
                                                 >
                                                     View
                                                 </Button>
-                                                <Button
-                                                    disabled={votes.some((v) => v.validator === validator.account_name) || progress}
-                                                    onClick={() => voteFor(validator.account_name)}
-                                                    size="sm"
-                                                    className="dark:bg-blue-800 dark:hover:bg-blue-600 dark:border-gray-300 dark:border dark:text-gray-300 dark:hover:text-gray-100 dark:shadow-none"
-                                                >
-                                                    Vote {votes.some((v) => v.validator === validator.account_name) && '(already voted)'}
-                                                </Button>
+                                                {
+                                                    votes.some((v) => v.validator === validator.account_name) ?
+                                                        <Button
+                                                            disabled={progress}
+                                                            onClick={() => removeVote(validator.account_name)}
+                                                            size="sm"
+                                                            className="dark:bg-red-800 dark:hover:bg-red-600 dark:border-gray-300 dark:border dark:text-gray-300 dark:hover:text-gray-100 dark:shadow-none !text-nowrap text-white"
+                                                        >
+                                                            Remove Vote
+                                                        </Button>
+                                                        :
+                                                        <Button
+                                                            disabled={progress}
+                                                            onClick={() =>voteFor(validator.account_name)}
+                                                            size="sm"
+                                                            className="dark:bg-blue-800 dark:hover:bg-blue-600 dark:border-gray-300 dark:border dark:text-gray-300 dark:hover:text-gray-100 dark:shadow-none"
+                                                        >
+                                                            Vote
+                                                        </Button>
+                                                }
                                             </div>
                                         </TableCell>
                                     </TableRow>
@@ -200,27 +234,11 @@ function MyVotesCard({
     const [error, setError] = useState<string>('');
     const spinnerColor = useSpinnerColor("teal");
     const containerRef = useRef<HTMLDivElement | null>(null);
+    
     const removeVote = async (validator: string) => {
-        setError('');
-        setProgress(true);
-        try {
-            const broadcastResult = await HiveService.disapproveValidator({
-                account_name: validator,
-            });
-            if (broadcastResult.error || !broadcastResult.result) {
-                throw new Error(broadcastResult.error ?? 'There was an error broadcasting the transaction');
-            }
-            const txResult = await TxLookupService.waitForTx(broadcastResult.result!.id);
-            if (!txResult.success) {
-                throw new Error(txResult.error ?? 'There was an error broadcasting the transaction');
-            }
-            reloadVotes();
-        } catch (err) {
-            setError(err!.toString());
-        } finally {
-            setProgress(false);
-        }
+        await handleVoteAction(validator, 'disapprove', setProgress, setError, reloadVotes);
     };
+
     return (
         <Card className="3xl:col-span-2 dark:bg-gray-800 dark:text-gray-300 dark:shadow-none">
             <CardBody>
@@ -252,7 +270,7 @@ function MyVotesCard({
                                                     <EyeIcon className="sm:hidden size-6" />
                                                     <p className="sr-only sm:not-sr-only">View</p>
                                                 </Button>
-                                                <Button className="p-2 sm:px-4 dark:bg-blue-800 dark:hover:bg-blue-600 dark:border-gray-300 dark:border dark:text-gray-300 dark:hover:text-gray-100 dark:shadow-none" disabled={progress} onClick={() => removeVote(vote.validator)}>
+                                                <Button className="p-2 sm:px-4 dark:bg-red-800 dark:hover:bg-red-600 dark:border-gray-300 dark:border dark:text-gray-300 dark:hover:text-gray-100 dark:shadow-none" disabled={progress} onClick={() => removeVote(vote.validator)}>
                                                     <div className="flex flex-row items-center">
                                                         {progress && <Spinner className="me-3" width={16} height={16} color={spinnerColor} />}
                                                         <TrashIcon className="sm:hidden size-6"/>

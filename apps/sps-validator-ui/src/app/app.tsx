@@ -12,6 +12,7 @@ import {
     EnvelopeIcon,
     PencilSquareIcon,
     CubeIcon,
+    ChevronUpIcon,
 } from '@heroicons/react/24/solid';
 import { ListItem, ListItemPrefix } from '@material-tailwind/react';
 import { AppNavbar, AppNavbarTickerProps } from './components/layout/Navbar';
@@ -152,6 +153,48 @@ function useTickers() {
     return tickers;
 }
 
+function BackToTopButton({ scrollDivRef }: { scrollDivRef: React.RefObject<HTMLDivElement> } ) {
+    const [isVisible, setIsVisible] = useState(false);
+  
+    useEffect(() => {
+        const handleScroll = () => {
+          if (scrollDivRef.current && scrollDivRef.current.scrollTop > 1000) {
+            setIsVisible(true);
+          } else {
+            setIsVisible(false);
+          }
+        };
+    
+        if (scrollDivRef.current) {
+          scrollDivRef.current.addEventListener('scroll', handleScroll);
+    
+          return () => {
+            if(scrollDivRef.current){
+              scrollDivRef.current.removeEventListener('scroll', handleScroll);
+            }
+          };
+        }
+      }, []);
+    
+      const scrollToTop = () => {
+        if (scrollDivRef.current) {
+          scrollDivRef.current.scrollTo({
+            top: 0,
+            behavior: 'smooth',
+          });
+        }
+      };
+  
+    return (
+        <div
+            className={`fixed bottom-8 right-8 cursor-pointer transition-opacity duration-300 md:hidden ${isVisible ? 'block' : 'hidden'}`}
+            onClick={scrollToTop}
+        >
+            <ChevronUpIcon className="h-8 w-8 rounded-full p-1 bg-black text-white dark:bg-blue-800 dark:border-gray-300 dark:border dark:text-gray-300" />
+        </div>
+    );
+}
+
 export function App() {
     const isDesktop = useMediaQuery({ minWidth: 961 });
     const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
@@ -227,6 +270,7 @@ function AppContent({ mobileSidebarOpen, setMobileSidebarOpen}: { mobileSidebarO
                     <AppRoutes />
                 </div>
             </div>
+            <BackToTopButton scrollDivRef={contentRef} />
         </div>
     );
 }
