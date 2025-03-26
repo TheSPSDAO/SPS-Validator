@@ -186,7 +186,7 @@ export function TokenBalances() {
                             label="Token" 
                             value={token} 
                             onChange={(val) => setToken(val ?? tokens[0])} 
-                            className="dark:bg-gray-800 dark:text-gray-300 border-x-gray-300 border-b-gray-300"
+                            className="dark:bg-gray-800 dark:text-gray-300 dark:border-x-gray-300 dark:border-b-gray-300"
                             labelProps={{className: "dark:text-gray-300 dark:peer-disabled:before:border-transparent dark:peer-disabled:after:border-transparent dark:before:border-gray-300 dark:after:border-gray-300 "}} 
                             containerProps={{className: "dark:bg-gray-800"}} 
                             menuProps={{className: "dark:bg-gray-800 dark:text-gray-300 dark:border-gray-300"}} 
