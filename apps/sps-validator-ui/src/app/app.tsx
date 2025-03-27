@@ -168,6 +168,7 @@ export function App() {
         </MetricsProvider>
     );
 }
+
 function AppContent({ mobileSidebarOpen, setMobileSidebarOpen }: { mobileSidebarOpen: boolean; setMobileSidebarOpen: React.Dispatch<React.SetStateAction<boolean>> }) {
     const tickers = useTickers();
 

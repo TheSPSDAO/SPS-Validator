@@ -463,6 +463,14 @@ const schema = {
         ],
         env: 'BSC_SUPPLY_EXCLUSION_ADDRESSES',
     },
+    transition_points: {
+        fix_vote_weight: {
+            doc: 'Block number for the fix_vote_weight transition',
+            format: 'nat',
+            default: 94703720,
+            env: 'FIX_VOTE_WEIGHT_TRANSITION_POINT',
+        },
+    },
 };
 
 const config = convict(schema);

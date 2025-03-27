@@ -54,16 +54,29 @@ export class TestHelper extends BaseRepository {
         });
     }
 
-    insertDummyVote(voter: string, validator: string, trx?: Trx) {
+    insertDummyVote(voter: string, validator: string, vote_weight = 1, trx?: Trx) {
         return this.query(ValidatorVoteEntity, trx).insertItem({
             voter,
             validator,
-            vote_weight: String(1),
+            vote_weight: String(vote_weight),
         });
     }
 
-    votesForValidator(validator: string, trx?: Trx) {
-        return this.query(ValidatorVoteEntity, trx).where('validator', validator).getMany();
+    async votesForValidator(validator: string, trx?: Trx) {
+        const rows = await this.query(ValidatorVoteEntity, trx).where('validator', validator).getMany();
+        return rows.map((row) => ({
+            ...row,
+            vote_weight: parseFloat(row.vote_weight),
+        }));
+    }
+
+    async validator(account_name: string, trx?: Trx) {
+        const row = await this.query(ValidatorEntity, trx).where('account_name', account_name).getSingleOrNull();
+        if (row) {
+            return { ...row, total_votes: parseFloat(row.total_votes), missed_blocks: parseFloat(row.missed_blocks as unknown as string) };
+        } else {
+            return null;
+        }
     }
 
     async getDummyToken(account_name: string, token = TOKENS.SPS, trx?: Trx) {

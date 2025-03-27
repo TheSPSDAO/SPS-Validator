@@ -46,6 +46,7 @@ export enum ErrorType {
     AlreadyValidatedBlock = 233,
     BlockHashMismatch = 234,
     BlockValidationPaused = 235,
+    InvalidTransitionBlock = 236,
     NoSuchSale = 330,
     SaleNotStarted = 331,
     SaleOutOfStock = 332,
