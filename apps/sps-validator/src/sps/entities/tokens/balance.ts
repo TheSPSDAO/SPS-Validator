@@ -11,7 +11,7 @@ import {
     RawResult,
     Trx,
 } from '@steem-monsters/splinterlands-validator';
-import { TOKENS, VirtualTokenConfig } from '../../features/tokens';
+import { TOKENS, VIRTUAL_TOKENS, VirtualTokenConfig } from '../../features/tokens';
 import { BaseERC20Repository, SpsBscRepository, SpsEthRepository } from './eth';
 import { HiveEngineRepository } from './hive_engine';
 
@@ -40,9 +40,11 @@ export const SupplyOpts = Symbol('SupplyOpts');
 export type SupplyEntry = {
     token: string;
     circulating_supply: number;
+    total_supply?: number;
 } & Record<string, unknown>;
 
 export type GetTokenExtendedBalancesParams = Omit<GetTokenBalancesParams, 'tokens'> & {
+    excluded_accounts?: string[];
     token: string;
 };
 
@@ -73,6 +75,27 @@ export class SpsBalanceRepository extends BalanceRepository {
             };
         });
         return [...mappedRecords, ...virtualBalances];
+    }
+
+    async getSpsRichlist(trx?: Trx): Promise<BalanceEntry[]> {
+        const result = await this.getTokenExtendedBalances(
+            {
+                count: false,
+                systemAccounts: false,
+                limit: 100,
+                skip: 0,
+                token: VIRTUAL_TOKENS.SPS_TOTAL,
+                excluded_accounts: [
+                    this.supplyOpts.dao_account,
+                    this.supplyOpts.dao_reserve_account,
+                    this.supplyOpts.sl_hive_account,
+                    this.supplyOpts.terablock_bsc_account,
+                    this.supplyOpts.terablock_eth_account,
+                ],
+            },
+            trx,
+        );
+        return result.balances;
     }
 
     async getMultipleExtendedBalancesByToken(token: string, players: string[], trx?: Trx): Promise<BalanceEntry[]> {
@@ -126,6 +149,10 @@ export class SpsBalanceRepository extends BalanceRepository {
         if (params.skip !== undefined) {
             query = query.offset(params.skip);
         }
+        if (params.excluded_accounts) {
+            query = query.whereNotIn('player', params.excluded_accounts);
+        }
+
         const records = await query.getMany();
         const mappedRecords = records.map((r) => ({
             player: r.player,
