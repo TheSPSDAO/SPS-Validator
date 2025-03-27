@@ -80,11 +80,18 @@ export const RouterImpl = MakeMultiRouter(
     ActivateLicenseRouter,
     DeactivateLicenseRouter,
     CheckInValidatorRouter,
-    FixVoteWeightRouter,
 );
 export type RouterImpl = InstanceType<typeof RouterImpl>;
 
-export const VirtualRouterImpl = MakeMultiRouter(TokenUnstakingRouter, ClaimPoolRouter, BurnRouter, ExpirePromisesRouter, ExpireCheckInsRouter, UpdateMissedBlocksRouter);
+export const VirtualRouterImpl = MakeMultiRouter(
+    TokenUnstakingRouter,
+    ClaimPoolRouter,
+    BurnRouter,
+    ExpirePromisesRouter,
+    ExpireCheckInsRouter,
+    UpdateMissedBlocksRouter,
+    FixVoteWeightRouter,
+);
 export type VirtualRouterImpl = InstanceType<typeof VirtualRouterImpl>;
 
 export const VirtualPayloadSource = MakeVirtualPayloadSource(
