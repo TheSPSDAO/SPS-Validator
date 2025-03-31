@@ -467,7 +467,7 @@ const schema = {
         fix_vote_weight: {
             doc: 'Block number for the fix_vote_weight transition',
             format: 'nat',
-            default: 94703720,
+            default: 95026480,
             env: 'FIX_VOTE_WEIGHT_TRANSITION_POINT',
         },
     },
