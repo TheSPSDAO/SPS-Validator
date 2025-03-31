@@ -39,10 +39,12 @@ import { Router as CancelPromiseRouter } from './promises/cancel_promise';
 import { Router as CompletePromiseRouter } from './promises/complete_promise';
 import { Router as ExpirePromisesRouter } from './promises/expire_promises';
 import { Router as UpdateMissedBlocksRouter } from './validator/update_missed_blocks';
+import { Router as FixVoteWeightRouter } from './transitions/fix_vote_weight';
 import { MakeMultiRouter, MakeVirtualPayloadSource } from './utils';
 import { SpsValidatorLicenseManager } from '../features/validator';
 import { SpsClearBurnedTokensSource } from './burn';
 import { SpsUpdateMissedBlocksSource } from './missed_blocks';
+import { TransitionManager } from '../features/transition';
 
 export const RouterImpl = MakeMultiRouter(
     TestActionRouter,
@@ -81,7 +83,15 @@ export const RouterImpl = MakeMultiRouter(
 );
 export type RouterImpl = InstanceType<typeof RouterImpl>;
 
-export const VirtualRouterImpl = MakeMultiRouter(TokenUnstakingRouter, ClaimPoolRouter, BurnRouter, ExpirePromisesRouter, ExpireCheckInsRouter, UpdateMissedBlocksRouter);
+export const VirtualRouterImpl = MakeMultiRouter(
+    TokenUnstakingRouter,
+    ClaimPoolRouter,
+    BurnRouter,
+    ExpirePromisesRouter,
+    ExpireCheckInsRouter,
+    UpdateMissedBlocksRouter,
+    FixVoteWeightRouter,
+);
 export type VirtualRouterImpl = InstanceType<typeof VirtualRouterImpl>;
 
 export const VirtualPayloadSource = MakeVirtualPayloadSource(
@@ -91,6 +101,7 @@ export const VirtualPayloadSource = MakeVirtualPayloadSource(
     PromiseManager,
     SpsValidatorLicenseManager,
     SpsUpdateMissedBlocksSource,
+    TransitionManager,
 );
 export type VirtualPayloadSource = InstanceType<typeof VirtualPayloadSource>;
 

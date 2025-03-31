@@ -61,6 +61,7 @@ export class SpsValidatorLicenseManager implements VirtualPayloadSource {
         if (expiredCheckIns === 0) {
             return [];
         }
+
         return [
             [
                 'custom_json',
