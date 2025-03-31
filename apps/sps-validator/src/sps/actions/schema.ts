@@ -410,6 +410,13 @@ const update_missed_blocks = new Schema.Schema(
     }),
 );
 
+const transition_fix_vote_weight = new Schema.Schema(
+    'transition_fix_vote_weight',
+    object({
+        block_num: number().integer().positive().required(),
+    }),
+);
+
 export {
     token_award,
     token_transfer,
@@ -452,4 +459,5 @@ export {
     expire_check_ins,
     return_tokens,
     update_missed_blocks,
+    transition_fix_vote_weight,
 };

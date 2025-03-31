@@ -1,6 +1,6 @@
 # SPS Validator
 
-To update an existing node to a new release, see [updating](#updating-an-existing-node).
+To update an existing node to a new release, see [updating your node](#updating-your-node).
 
 ## Easy Install (mac or linux only):
 Easy install will run through the setup steps for you, but requires the following to be installed on your machine:
@@ -141,11 +141,13 @@ There are different steps you need to take to update your node depending on the 
 
 You can find update guides for the different updates below. The type of update will be specified in the GitHub Release and the DAOs PeakD post.
 
+**You should set your node to inactive before updating so you don't miss any blocks.**
+
 ### block-hash-stable
 
 block-hash-stable updates are updates that don't affect the block hash. These are normally additional API endpoints or install script improvements.
 
-- Pull the latest version with `git fetch && git checkout v<version>` *before*.
+- Pull the latest version with `git fetch --tags -f && git checkout v{version}`.
 - `./run.sh rebuild_service validator` to rebuild the validator with the latest updates. This will also start the validator.
 - `./run.sh rebuild_service ui` if you want to rebuild the UI.
   
@@ -153,7 +155,7 @@ block-hash-stable updates are updates that don't affect the block hash. These ar
 
 block-hash-breaking updates are designed to turn on at a certain block, so all you need to do is make sure you've updated and restarted your node before the go-live block.
 
-- Pull the latest version with `git fetch && git checkout v<version>` *before*.
+- Pull the latest version with `git fetch --tags -f && git checkout v{version}` *before*.
 - `./run.sh rebuild_service validator` to rebuild the validator with the latest updates. This will also start the validator.
 - `./run.sh rebuild_service ui` if you want to rebuild the UI.
 
@@ -166,7 +168,7 @@ schema-breaking updates cannot be applied before the go-live block. To apply a s
 - When the `KILL_BLOCK` hits, your node will stop.
 - `./run.sh stop` so your node stops restarting itself.
 - _(Note)_ You can run `./run.sh snapshot` to take a backup of your database before updating to be safe. If you need to restore this snapshot, see [snapshots](#snapshots).
-- You can now pull the latest version with `git fetch && git checkout v<version>`.
+- You can now pull the latest version with `git fetch --tags -f && git checkout v{version}`.
 - `./run.sh build` to apply the latest database updates. When it asks if you want to download a new snapshot, you can enter "n".
 - Remove the `KILL_BLOCK` from your .env file
 - `./run.sh rebuild_service validator` to rebuild the validator with the latest updates. This will also start the validator.

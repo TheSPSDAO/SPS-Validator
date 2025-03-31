@@ -15,6 +15,7 @@ import {
 import { SUPPORTED_TOKENS, TOKENS } from '../../features/tokens';
 import { token_unstaking } from '../schema';
 import { MakeActionFactory, MakeRouter } from '../utils';
+import { TransitionManager } from '../../features/transition';
 
 export class TokenUnstakingAction extends Action<typeof token_unstaking.actionSchema> {
     private readonly stakedToken?: token;
@@ -27,6 +28,7 @@ export class TokenUnstakingAction extends Action<typeof token_unstaking.actionSc
         private readonly balanceRepository: BalanceRepository,
         private readonly validatorVoteRepository: ValidatorVoteRepository,
         private readonly stakingRewardsRepository: StakingRewardsRepository,
+        private readonly transitionManager: TransitionManager,
     ) {
         super(token_unstaking, op, data, index);
         this.stakedToken = TokenSupport.stake(SUPPORTED_TOKENS, this.params.token);
@@ -77,8 +79,10 @@ export class TokenUnstakingAction extends Action<typeof token_unstaking.actionSc
                 )),
             );
 
-            // TODO: Refactor this once vote weight calculation is decoupled from SPS.
-            if (this.params.token === TOKENS.SPS && this.stakedToken === TOKENS.SPS) {
+            // old bug that needs to be preserved pre-transition: unstaking SPSP would not update the vote weight
+            // because it was checking for SPS instead of SPSP.
+            const checkStakedToken = this.transitionManager.isTransitioned('fix_vote_weight', this.op.block_num) ? TOKENS.SPSP : TOKENS.SPS;
+            if (this.params.token === TOKENS.SPS && this.stakedToken === checkStakedToken) {
                 // Update the total votes for all validators voted on by this player now that their staked SPS has decreased
                 results.push(...(await this.validatorVoteRepository.incrementVoteWeight(this.params.player, unstake_amount * -1, trx)));
             }
@@ -90,5 +94,5 @@ export class TokenUnstakingAction extends Action<typeof token_unstaking.actionSc
     }
 }
 
-const Builder = MakeActionFactory(TokenUnstakingAction, StakingConfiguration, BalanceRepository, ValidatorVoteRepository, StakingRewardsRepository);
+const Builder = MakeActionFactory(TokenUnstakingAction, StakingConfiguration, BalanceRepository, ValidatorVoteRepository, StakingRewardsRepository, TransitionManager);
 export const Router = MakeRouter(token_unstaking.action_name, Builder);
