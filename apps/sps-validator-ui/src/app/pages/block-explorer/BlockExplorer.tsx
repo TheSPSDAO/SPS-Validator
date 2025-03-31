@@ -1,17 +1,44 @@
 import { Card, CardBody, List, ListItem, Spinner, Tooltip, Typography } from '@material-tailwind/react';
-import { DefaultService } from '../../services/openapi';
-import React, { useState } from 'react';
-import { usePromise } from '../../hooks/Promise';
+import { DefaultService, Block } from '../../services/openapi';
+import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { OmniBox } from './OmniBox';
 import { BlockTimeChip, ValidatorChip } from './Chips';
 import { listItemClickHandler } from './utils';
 
 export function BlockList({ className }: { className?: string }) {
-    const [blockOffset] = useState(undefined);
+    const [blockOffset] = useState<number | undefined>(undefined);
     const [limit] = useState(15);
-    const [blocks, isBlocksLoading] = usePromise(() => DefaultService.getBlocks(limit, blockOffset), [limit, blockOffset]);
+    const [blocks, setBlocks] = useState<Block[] | undefined>(undefined);
+    const [isBlocksLoading, setIsBlocksLoading] = useState(true);
     const nav = useNavigate();
+
+    useEffect(() => {
+        let isMounted = true;
+        const fetchBlocks = async () => {
+            try {
+                const fetchedBlocks = await DefaultService.getBlocks(limit, blockOffset);
+                if (isMounted) {
+                    setBlocks(fetchedBlocks);
+                    setIsBlocksLoading(false);
+                }
+            } catch (error) {
+                console.error('Failed to fetch blocks:', error);
+                if (isMounted) {
+                    setIsBlocksLoading(false);
+                }
+            }
+        };
+
+        fetchBlocks();
+
+        const intervalId = setInterval(fetchBlocks, 3000);
+
+        return () => {
+            isMounted = false;
+            clearInterval(intervalId);
+        };
+    }, [limit, blockOffset]);
 
     if (isBlocksLoading) {
         return <Spinner />;
