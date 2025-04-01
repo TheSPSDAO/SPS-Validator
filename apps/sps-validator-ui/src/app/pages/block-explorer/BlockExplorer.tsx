@@ -1,23 +1,24 @@
 import { Card, CardBody, List, ListItem, Spinner, Tooltip, Typography } from '@material-tailwind/react';
-import { DefaultService } from '../../services/openapi';
-import React, { useState } from 'react';
-import { usePromise } from '../../hooks/Promise';
+import { DefaultService, Block } from '../../services/openapi';
+import React from 'react';
+import { usePromiseRefresh } from '../../hooks/Promise';
 import { Link, useNavigate } from 'react-router-dom';
 import { OmniBox } from './OmniBox';
 import { BlockTimeChip, ValidatorChip } from './Chips';
 import { listItemClickHandler } from './utils';
 
 export function BlockList({ className }: { className?: string }) {
-    const [blockOffset] = useState(undefined);
-    const [limit] = useState(15);
-    const [blocks, isBlocksLoading] = usePromise(() => DefaultService.getBlocks(limit, blockOffset), [limit, blockOffset]);
+    const [blockOffset] = React.useState<number | undefined>(undefined);
+    const [limit] = React.useState(15);
     const nav = useNavigate();
 
-    if (isBlocksLoading) {
+    const [blocks, isBlocksLoading, error] = usePromiseRefresh<Block[]>(() => DefaultService.getBlocks(limit, blockOffset), 3000, [limit, blockOffset]);
+
+    if (isBlocksLoading && !blocks) {
         return <Spinner />;
     }
-    if (!blocks || blocks.length === 0) {
-        return <div>No blocks found</div>;
+    if (blocks === null) {
+        return <div>Waiting for block data</div>;
     }
 
     return (
