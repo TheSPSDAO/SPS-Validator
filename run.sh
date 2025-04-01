@@ -242,6 +242,55 @@ logs() {
     docker_compose_wrapper logs validator -f --tail 30
 }
 
+status() {
+  echo "Checking validator status..."
+  
+  VALIDATOR_ACC="$VALIDATOR_ACCOUNT"
+  
+  if [ -z "$VALIDATOR_ACC" ]; then
+    echo "VALIDATOR_ACCOUNT not found in .env file"
+    return 1
+  fi
+  
+  LOCAL_INFO=$(curl -s --connect-timeout 3 http://localhost:3333/status 2>/dev/null)
+  API_STATUS=$(echo "$LOCAL_INFO" | grep -o '"status":"[^"]*"' | cut -d':' -f2 | tr -d '"')
+  
+  if [ "$API_STATUS" = "running" ]; then
+    LAST_BLOCK=$(echo "$LOCAL_INFO" | grep -o '"last_block":[0-9]*' | cut -d':' -f2)
+    echo "- Node status: RUNNING"
+    echo "- Last block: $LAST_BLOCK"
+    echo "Your Node is synchronized"
+    API_URL="http://localhost:3333"
+  else
+    echo "Your node isn't running properly. Using the external API instead."
+    API_URL="https://splinterlands-validator-api.splinterlands.com"
+  fi
+  
+  echo ""
+  echo "Validator Account: $VALIDATOR_ACC"
+  
+  VALIDATORS_RESPONSE=$(curl -s $API_URL/validators)
+  NODE_INFO=$(echo "$VALIDATORS_RESPONSE" | grep -o "{[^{]*\"account_name\":\"$VALIDATOR_ACC\"[^}]*}")
+  
+  echo -n "Validator node status: "
+  
+  if [[ $NODE_INFO == *'"is_active":true'* ]]; then
+    echo "ACTIVE"
+  elif [[ $NODE_INFO == *'"is_active":false'* ]]; then
+    echo "INACTIVE"
+  elif [ -z "$NODE_INFO" ]; then
+    echo "Not registered or not found"
+    
+    if [ -z "$LOCAL_INFO" ]; then
+      echo "(Make sure your node is running with './run.sh start')"
+    else
+      echo "(If you've just registered, it might take some time for the registration to be recognized)"
+    fi
+  else
+    echo "Status unclear. Raw data: $NODE_INFO"
+  fi
+}
+
 help() {
     echo "Usage: $0 COMMAND"
     echo
@@ -256,6 +305,7 @@ help() {
     echo "    dl_snapshot                   - downloads snapshot if it doesn't exists locally"
     echo "    snapshot                      - creates a snapshot of the current database."
     echo "    logs                          - trails the last 30 lines of logs"
+    echo "    status                        - checks your validator node status and registration status"
     echo
     echo "Helpers:"
     echo "    install_docker - install docker"
@@ -300,6 +350,9 @@ case $1 in
     ;;
     help)
         help
+    ;;
+    status)
+        status
     ;;
     *)
         echo "Invalid CMD"

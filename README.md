@@ -131,6 +131,7 @@ You can take snapshots locally to take backups, and restore them without uploadi
 - `./run.sh rebuild_service <validator | pg | ui>`: force rebuilds a service to apply new environment variables.
 - `./run.sh replay`: rebuilds your node from the snapshot. :warning: **This will irrevocably destroy all local data, including blocks that have already been locally validated**: Be very careful here!
 - `./run.sh destroy`: completely removes the database, validator, and ui. :warning: **This will irrevocably destroy all local data, including blocks that have already been locally validated**: Be very careful here!
+- `./run.sh status`: checks your validator node status and registration status (running/active/inactive)
 
 ## Updating your node
 
