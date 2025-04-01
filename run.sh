@@ -253,10 +253,10 @@ status() {
   fi
   
   LOCAL_INFO=$(curl -s --connect-timeout 3 http://localhost:3333/status 2>/dev/null)
-  API_STATUS=$(echo $LOCAL_INFO | grep -o '"status":"[^"]*"' | cut -d':' -f2 | tr -d '"')
+  API_STATUS=$(echo "$LOCAL_INFO" | grep -o '"status":"[^"]*"' | cut -d':' -f2 | tr -d '"')
   
   if [ "$API_STATUS" = "running" ]; then
-    LAST_BLOCK=$(echo $LOCAL_INFO | grep -o '"last_block":[0-9]*' | cut -d':' -f2)
+    LAST_BLOCK=$(echo "$LOCAL_INFO" | grep -o '"last_block":[0-9]*' | cut -d':' -f2)
     echo "- Node status: RUNNING"
     echo "- Last block: $LAST_BLOCK"
     echo "Your Node is synchronized"
