@@ -96,6 +96,23 @@ snapshot() {
     fi
 }
 
+repartition_tables() {
+    repartition_table "blocks"
+    repartition_table "validator_transactions"
+    repartition_table "validator_transaction_players"
+}
+
+repartition_table() {
+    APP_SCHEMA=${APP_SCHEMA:-public}
+    APP_DATABASE=${APP_DATABASE:-validator}
+
+    echo "Repartitioning table $1 in schema $APP_SCHEMA"
+    docker_compose_wrapper exec pg psql -U postgres -h 127.0.0.1 -d "$APP_DATABASE" -t -c "CALL partman.partition_data_proc(p_parent_table := '$APP_SCHEMA'::text || '.$1'::text, p_interval := '432000'::text);"
+    docker_compose_wrapper exec pg psql -U postgres -h 127.0.0.1 -d "$APP_DATABASE" -t -c "VACUUM ANALYZE $APP_SCHEMA.$1;"
+    docker_compose_wrapper exec pg psql -U postgres -h 127.0.0.1 -d "$APP_DATABASE" -t -c "CALL partman.run_maintenance_proc();"
+    echo "Repartitioned table $1 in schema $APP_SCHEMA"
+}
+
 rebuild_service() {
     echo "Rebuilding $DOCKER_NAME $1 service"
     docker_compose_wrapper down "$1"
@@ -244,17 +261,17 @@ logs() {
 
 status() {
   echo "Checking validator status..."
-  
+
   VALIDATOR_ACC="$VALIDATOR_ACCOUNT"
-  
+
   if [ -z "$VALIDATOR_ACC" ]; then
     echo "VALIDATOR_ACCOUNT not found in .env file"
     return 1
   fi
-  
+
   LOCAL_INFO=$(curl -s --connect-timeout 3 http://localhost:3333/status 2>/dev/null)
   API_STATUS=$(echo "$LOCAL_INFO" | grep -o '"status":"[^"]*"' | cut -d':' -f2 | tr -d '"')
-  
+
   if [ "$API_STATUS" = "running" ]; then
     LAST_BLOCK=$(echo "$LOCAL_INFO" | grep -o '"last_block":[0-9]*' | cut -d':' -f2)
     echo "- Node status: RUNNING"
@@ -265,22 +282,22 @@ status() {
     echo "Your node isn't running properly. Using the external API instead."
     API_URL="https://splinterlands-validator-api.splinterlands.com"
   fi
-  
+
   echo ""
   echo "Validator Account: $VALIDATOR_ACC"
-  
+
   VALIDATORS_RESPONSE=$(curl -s $API_URL/validators)
   NODE_INFO=$(echo "$VALIDATORS_RESPONSE" | grep -o "{[^{]*\"account_name\":\"$VALIDATOR_ACC\"[^}]*}")
-  
+
   echo -n "Validator node status: "
-  
+
   if [[ $NODE_INFO == *'"is_active":true'* ]]; then
     echo "ACTIVE"
   elif [[ $NODE_INFO == *'"is_active":false'* ]]; then
     echo "INACTIVE"
   elif [ -z "$NODE_INFO" ]; then
     echo "Not registered or not found"
-    
+
     if [ -z "$LOCAL_INFO" ]; then
       echo "(Make sure your node is running with './run.sh start')"
     else
@@ -353,6 +370,9 @@ case $1 in
     ;;
     status)
         status
+    ;;
+    repartition_tables)
+        repartition_tables
     ;;
     *)
         echo "Invalid CMD"
