@@ -97,6 +97,15 @@ snapshot() {
 }
 
 repartition_tables() {
+    # confirm they want to do this
+    echo "Repartioning only has to be done if your database existed before version v1.1.1, or if you have restored a snapshot from before that version."
+    echo "Repartitioning will take a while and will lock the tables. It's not required, but you should stop your validator to be safe."
+    read -p "Are you sure you want to repartition the tables? (y/n)" -n 1 -r
+    echo    # (optional) move to a new line
+    if [[ ! $REPLY =~ ^[Yy]$ ]]; then
+        echo "Aborting repartition"
+        exit
+    fi
     repartition_table "blocks"
     repartition_table "validator_transactions"
     repartition_table "validator_transaction_players"

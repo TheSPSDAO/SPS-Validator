@@ -18,3 +18,4 @@ validator_api_url 2025-02-24T20:07:55Z stephen <stephen@LAPTOP-N4OOE985> # Add a
 transaction_players_perf 2025-02-25T20:07:13Z stephen <stephen@LAPTOP-N4OOE985> # Update transaction players schema for better performance
 partitions 2025-02-25T20:31:18Z stephen <stephen@LAPTOP-N4OOE985> # Add partitioning to large tables
 snapshot-function-v2 2025-02-26T01:44:21Z stephen <stephen@LAPTOP-N4OOE985> # add new transaction players columns to freshsnapshot and rework archive logic
+post-snapshot-restore-partition-prep 2025-04-15T18:53:29Z stephen <stephen@LAPTOP-N4OOE985> # Prep partitioned tables when restoring snapshots
