@@ -41,11 +41,11 @@ docker_compose() {
 }
 
 run_psql() {
-    docker_compose exec pg psql -U $POSTGRES_USER -h 127.0.0.1 -d "$APP_DATABASE" "$@"
+    docker_compose exec pg psql -U "$POSTGRES_USER" -h 127.0.0.1 -d "$APP_DATABASE" "$@"
 }
 
 run_psql_quiet() {
-    docker_compose exec -e PGOPTIONS="--client-min-messages=warning" pg psql -U $POSTGRES_USER -h 127.0.0.1 -d "$APP_DATABASE" "$@"
+    docker_compose exec -e PGOPTIONS="--client-min-messages=warning" pg psql -U "$POSTGRES_USER" -h 127.0.0.1 -d "$APP_DATABASE" "$@"
 }
 
 snapshot() {
