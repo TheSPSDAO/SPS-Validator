@@ -7,6 +7,10 @@ SCRIPT_DIR=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" &>/dev/null && pwd)
 SQITCH_DIR="$SCRIPT_DIR/sqitch"
 COMPOSE_FILE="${SCRIPT_DIR}/docker-compose.yml"
 
+APP_SCHEMA=${APP_SCHEMA:-public}
+APP_DATABASE=${APP_DATABASE:-validator}
+POSTGRES_USER=${POSTGRES_USER:-postgres}
+
 if [[ -f ".env" ]]; then
     # shellcheck source=/dev/null
     source .env
@@ -31,9 +35,17 @@ if [[ ! $SNAPSHOT_URL ]]; then
     exit
 fi
 
-# wrapper around docker compose that passes the current git commit as an environment variable
-docker_compose_wrapper() {
+docker_compose() {
+    # not really useful anymore but leaving it in case it is needed
     docker compose "$@"
+}
+
+run_psql() {
+    docker_compose exec pg psql -U $POSTGRES_USER -h 127.0.0.1 -d "$APP_DATABASE" "$@"
+}
+
+run_psql_quiet() {
+    docker_compose exec -e PGOPTIONS="--client-min-messages=warning" pg psql -U $POSTGRES_USER -h 127.0.0.1 -d "$APP_DATABASE" "$@"
 }
 
 snapshot() {
@@ -47,26 +59,23 @@ snapshot() {
     echo "Stopping validator"
     stop "validator"
 
-    # set app_database to default value
-    APP_DATABASE=${APP_DATABASE:-validator}
-
     echo "Creating snapshot"
     # connect to the database and run the freshsnapshot() function
-    docker_compose_wrapper exec pg psql -U postgres -h 127.0.0.1 -d "$APP_DATABASE" -c "SELECT snapshot.freshsnapshot(TRUE);"
+    run_psql -c "SELECT snapshot.freshsnapshot(TRUE);"
 
     # dump the snapshot to a file
     echo "Dumping snapshot to file"
-    docker_compose_wrapper exec -e PGPASSWORD="$POSTGRES_PASSWORD" pg pg_dump \
+    docker_compose exec -e PGPASSWORD="$POSTGRES_PASSWORD" pg pg_dump \
         --no-owner --no-acl \
         --no-comments --no-publications --no-security-labels \
         --schema snapshot \
         --no-subscriptions --no-tablespaces --data-only \
         --host "127.0.0.1" \
-        --username "${POSTGRES_USER:-postgres}" \
+        --username "$POSTGRES_USER" \
         "${APP_DATABASE}" > snapshot.sql
 
     # get the latest change from the sqitch.changes table with psql
-    CHANGE=$(docker_compose_wrapper exec pg psql -U postgres -h 127.0.0.1 -d "$APP_DATABASE" -t -c "SELECT change FROM sqitch.changes WHERE project = 'splinterlands-validator' ORDER BY committed_at DESC LIMIT 1")
+    CHANGE=$(run_psql -t -c "SELECT change FROM sqitch.changes WHERE project = 'splinterlands-validator' ORDER BY committed_at DESC LIMIT 1")
     # trim whitespace from the change
     CHANGE=$(echo "$CHANGE" | xargs echo -n)
     echo "Latest change: $CHANGE"
@@ -106,42 +115,41 @@ repartition_tables() {
         echo "Aborting repartition"
         exit
     fi
-    repartition_table "blocks"
-    repartition_table "validator_transactions"
-    repartition_table "validator_transaction_players"
+
+    _repartition_table "blocks"
+    _repartition_table "validator_transactions"
+    _repartition_table "validator_transaction_players"
+
+    run_psql -q -c "CALL partman.run_maintenance_proc();"
 }
 
-repartition_table() {
-    APP_SCHEMA=${APP_SCHEMA:-public}
-    APP_DATABASE=${APP_DATABASE:-validator}
-
+_repartition_table() {
     echo "Repartitioning table $1 in schema $APP_SCHEMA"
-    docker_compose_wrapper exec pg psql -U postgres -h 127.0.0.1 -d "$APP_DATABASE" -t -c "CALL partman.partition_data_proc(p_parent_table := '$APP_SCHEMA'::text || '.$1'::text, p_interval := '432000'::text);"
-    docker_compose_wrapper exec pg psql -U postgres -h 127.0.0.1 -d "$APP_DATABASE" -t -c "VACUUM ANALYZE $APP_SCHEMA.$1;"
-    docker_compose_wrapper exec pg psql -U postgres -h 127.0.0.1 -d "$APP_DATABASE" -t -c "CALL partman.run_maintenance_proc();"
+    run_psql_quiet -q -c "CALL partman.partition_data_proc(p_parent_table := '$APP_SCHEMA'::text || '.$1'::text, p_interval := '432000'::text);"
+    run_psql_quiet -q -c "VACUUM ANALYZE $APP_SCHEMA.$1;"
     echo "Repartitioned table $1 in schema $APP_SCHEMA"
 }
 
 rebuild_service() {
     echo "Rebuilding $DOCKER_NAME $1 service"
-    docker_compose_wrapper down "$1"
-    docker_compose_wrapper up -d --build "$1"
+    docker_compose down "$1"
+    docker_compose up -d --build "$1"
     logs
 }
 
 start() {
     echo "Starting $DOCKER_NAME"
     if [[ $1 == "db" ]]; then
-        docker_compose_wrapper up -d pg
+        docker_compose up -d pg
     elif [[ $1 == "all" ]]; then
-        docker_compose_wrapper up -d
+        docker_compose up -d
         logs
     elif [[ $1 == "all-silent" ]]; then
-        docker_compose_wrapper up -d
+        docker_compose up -d
     elif [[ $1 == "validator-silent" ]]; then
-        docker_compose_wrapper up -d validator
+        docker_compose up -d validator
     else
-        docker_compose_wrapper up -d validator
+        docker_compose up -d validator
         logs
     fi
 }
@@ -149,9 +157,9 @@ start() {
 stop() {
     echo "Stopping & removing $DOCKER_NAME"
     if [[ -z $1 ]]; then
-        docker_compose_wrapper down
+        docker_compose down
     else
-        docker_compose_wrapper down "$1"
+        docker_compose down "$1"
     fi
 }
 
@@ -194,20 +202,20 @@ build() {
         echo "Skipping snapshot"
         echo "Running migrations. This could take several minutes..."
         if [[ $1 == "no-cache" ]] || [[ $2 == "no-cache" ]]; then
-            docker_compose_wrapper build --no-cache validator-sqitch
+            docker_compose build --no-cache validator-sqitch
         else
-            docker_compose_wrapper build validator-sqitch
+            docker_compose build validator-sqitch
         fi
     else
         dl_snapshot "$1"
         echo "Running migrations. This could take several minutes..."
         if [[ $1 == "no-cache" ]] || [[ $2 == "no-cache" ]]; then
-            docker_compose_wrapper build --build-arg snapshot="$SNAPSHOT_FILE" --no-cache validator-sqitch
+            docker_compose build --build-arg snapshot="$SNAPSHOT_FILE" --no-cache validator-sqitch
         else
-            docker_compose_wrapper build --build-arg snapshot="$SNAPSHOT_FILE" validator-sqitch
+            docker_compose build --build-arg snapshot="$SNAPSHOT_FILE" validator-sqitch
         fi
     fi
-    docker_compose_wrapper --profile cli -f "${COMPOSE_FILE}" run validator-sqitch
+    docker_compose --profile cli -f "${COMPOSE_FILE}" run validator-sqitch
 }
 
 dl_snapshot() {
@@ -265,7 +273,7 @@ container_exists() {
 
 logs() {
     echo "DOCKER LOGS: (press ctrl-c to exit) "
-    docker_compose_wrapper logs validator -f --tail 30
+    docker_compose logs validator -f --tail 30
 }
 
 status() {
@@ -332,6 +340,8 @@ help() {
     echo "    snapshot                      - creates a snapshot of the current database."
     echo "    logs                          - trails the last 30 lines of logs"
     echo "    status                        - checks your validator node status and registration status"
+    echo "    repartition_tables            - helper command to repartition the partitioned database tables. only needed if upgrading a database from before v1.1.1 or if restoring a snapshot from before v1.1.1"
+    echo "    psql [args]                   - runs psql with the given args. e.g. run.sh psql -c 'SELECT * FROM blocks'".
     echo
     echo "Helpers:"
     echo "    install_docker - install docker"
@@ -382,6 +392,9 @@ case $1 in
     ;;
     repartition_tables)
         repartition_tables
+    ;;
+    psql)
+        run_psql "${@:2}"
     ;;
     *)
         echo "Invalid CMD"
