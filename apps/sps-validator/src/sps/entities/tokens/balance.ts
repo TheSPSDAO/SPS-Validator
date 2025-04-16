@@ -23,6 +23,7 @@ export type SupplyOpts = {
 
     dao_account: string;
     dao_reserve_account: string;
+    dao_delegation_account: string;
     sl_hive_account: string;
 
     terablock_bsc_account: string;
@@ -293,6 +294,7 @@ export class SpsBalanceRepository extends BalanceRepository {
         delete balances[this.supplyOpts.terablock_eth_account][TOKENS.SPSP];
 
         const daoReserveSps = balances[this.supplyOpts.dao_reserve_account][TOKENS.SPS];
+        const daoDelegationSps = balances[this.supplyOpts.dao_delegation_account][TOKENS.SPS] + balances[this.supplyOpts.dao_delegation_account][TOKENS.SPSP];
         const slHiveSupplySps = balances[this.supplyOpts.sl_hive_account][TOKENS.SPS];
         const totalStaked = Math.abs(await balances[this.supplyOpts.staking_account][TOKENS.SPSP]);
 
@@ -304,6 +306,7 @@ export class SpsBalanceRepository extends BalanceRepository {
             totalSupplySps -
             combinedDaoSps -
             daoReserveSps -
+            daoDelegationSps -
             combinedTerablockBscSps -
             combinedTerablockEthSps -
             slHiveSupplySps +
@@ -321,6 +324,8 @@ export class SpsBalanceRepository extends BalanceRepository {
                 return acc;
             }, {} as Record<string, number>);
 
+        const unstaking = await this.sumUnstaking(TOKENS.SPS, trx);
+
         return {
             token: TOKENS.SPS,
             minted: Math.floor(totalSupplySps + combinedNullSps + rewardPoolSupply),
@@ -328,21 +333,63 @@ export class SpsBalanceRepository extends BalanceRepository {
             total_staked: totalStaked,
             total_supply: totalSupplySps + rewardPoolSupply,
             circulating_supply: circulatingSupplySps,
+            unstaking,
             off_chain: {
+                total: heSupply.circulating_supply + ethSupply.circulating_supply + bscSupply.circulating_supply,
                 hive_engine: heSupply.actual_supply,
                 eth: ethSupply.actual_supply,
                 bsc: bscSupply.actual_supply,
             },
             reserve: {
-                dao: combinedDaoSps,
-                dao_reserve: daoReserveSps,
-                terablock_bsc: combinedTerablockBscSps,
-                terablock_eth: combinedTerablockEthSps,
+                total: combinedDaoSps + daoReserveSps + daoDelegationSps + combinedTerablockBscSps + combinedTerablockEthSps + slHiveSupplySps,
+                [this.supplyOpts.dao_account]: combinedDaoSps,
+                [this.supplyOpts.dao_reserve_account]: daoReserveSps,
+                [this.supplyOpts.dao_delegation_account]: totalStaked,
+                [this.supplyOpts.terablock_bsc_account]: combinedTerablockBscSps,
+                [this.supplyOpts.terablock_eth_account]: combinedTerablockEthSps,
+                [this.supplyOpts.sl_hive_account]: slHiveSupplySps,
             },
             reward_pools: {
                 total: rewardPoolSupply,
                 ...rewardPoolsSps,
             },
+        };
+    }
+
+    private async sumUnstaking(token: string, trx?: Trx) {
+        const pendingUnstakeRows = await this.queryRaw(trx).raw<RawResult<{ pending_unstake: string }>>(
+            `
+                SELECT
+                  SUM(total_qty - total_unstaked) as pending_unstake
+                FROM
+                  token_unstaking
+                WHERE
+                    token = ?
+                    AND is_active = true
+            `,
+            [token],
+        );
+        const pendingUnstake = parseFloat(pendingUnstakeRows.rows[0]?.pending_unstake ?? 0);
+
+        const pendingImmediateUnstakeRows = await this.queryRaw(trx).raw<RawResult<{ pending_unstake: string }>>(
+            `
+                SELECT
+                  SUM(
+                    LEAST(ABS(total_qty - total_unstaked), ABS(total_qty / unstaking_periods))
+                  ) as pending_unstake
+                FROM
+                  token_unstaking
+                WHERE
+                    token = ?
+                    AND is_active = true
+            `,
+            [token],
+        );
+        const pendingImmediateUnstake = parseFloat(pendingImmediateUnstakeRows.rows[0]?.pending_unstake ?? 0);
+
+        return {
+            pending_unstake: pendingUnstake,
+            pending_immediate_unstake: pendingImmediateUnstake,
         };
     }
 

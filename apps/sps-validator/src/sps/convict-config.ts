@@ -291,6 +291,12 @@ const schema = {
         default: 'sps.dao.reserves',
         env: 'DAO_RESERVE_ACCOUNT',
     },
+    dao_delegation_account: {
+        doc: 'SPS dao delegation account',
+        nullable: false,
+        default: 'spsdaodelegations ',
+        env: 'DAO_DELEGATIONS_ACCOUNT',
+    },
     sl_hive_account: {
         doc: 'SPS sl-hive account',
         nullable: false,
@@ -300,13 +306,13 @@ const schema = {
     terablock_bsc_account: {
         doc: 'SPS terablock bsc account',
         nullable: false,
-        default: 'terablock-bsc',
+        default: 'zkcn-bsc',
         env: 'TERABLOCK_BSC_ACCOUNT',
     },
     terablock_eth_account: {
         doc: 'SPS terablock eth account',
         nullable: false,
-        default: 'terablock-eth',
+        default: 'zkcn-eth',
         env: 'TERABLOCK_ETH_ACCOUNT',
     },
     reward_pool_accounts: {
