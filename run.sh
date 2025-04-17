@@ -223,8 +223,8 @@ update() {
         stop validator
         echo "Checking out latest update"
         git fetch --all -f
-        git checkout "$TO_VERSION"
-        if [[ $? -ne 0 ]]; then
+
+        if ! git checkout "$TO_VERSION"; then
             echo "Error checking out $TO_VERSION. Please check the version and try again. If you have local changes, please stash them before updating."
             echo "You can use the following command to stash your changes:"
             echo "git stash"
