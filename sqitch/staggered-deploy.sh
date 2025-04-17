@@ -47,6 +47,14 @@ if [ -z "$to_change" ]; then
 fi
 echo "Deploying changes up to $to_change"
 
+# Make sure to_change is actually in the sqitch.plan (a new snapshot on an old version)
+# skip any lines that start with % or blank lines, look at the first column
+# and check if it matches the to_change
+if ! grep --max-count=1 --only-matching --perl-regexp "^$to_change\s" "$SCRIPT_DIR/sqitch.plan" > /dev/null; then
+  echo "Error: $to_change not found in sqitch.plan"
+  exit 1
+fi
+
 pushd "$SCRIPT_DIR" > /dev/null
 PGUSER=$APP_USER PGPASSWORD=$APP_PASSWORD PGDATABASE=$APP_DATABASE sqitch deploy --to-change "$to_change"@HEAD --set APP_USER="$APP_USER" --set "APP_SCHEMA=$APP_SCHEMA" --set "DB_BLOCK_RETENTION=$DB_BLOCK_RETENTION" --verbose |& grep --invert-match "$silent_expected_error" || echo "Initial part of the migration was already run, skipping..."
 PGUSER=$APP_USER PGPASSWORD=$APP_PASSWORD PGDATABASE=$APP_DATABASE sqitch deploy -t sqitch-data --set snapshot_file="$SNAPSHOT" --set APP_USER="$APP_USER" --set "APP_SCHEMA=$APP_SCHEMA" --verbose | { grep --invert-match "$silent_expected_logspam" || true; }

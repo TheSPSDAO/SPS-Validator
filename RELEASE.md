@@ -6,4 +6,4 @@ When master branch is ready to be released:
 - Create a new branch named `release-{version}` from the previous release branch. 
 - Create a PR from master to the new branch and review the changes. The tests will run.
 - Create a new release on the new branch, the tag should match the `VERSION=` variable you set (`v{version}`)
-- Force create/push a new tag, `vlatest`, pointed to the new branch.
+- Force create/push a new tag, `vlatest`, pointed to the new branch (`git tag -f vlatest v{version}^{}`).
