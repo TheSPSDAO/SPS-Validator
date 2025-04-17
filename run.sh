@@ -398,7 +398,7 @@ case $1 in
         status
     ;;
     update)
-        update
+        update "$2"
     ;;
     *)
         echo "Invalid CMD"
