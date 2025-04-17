@@ -2,6 +2,11 @@
 
 BEGIN;
 
+-- fix a previous issue with the partman retention policy when you have no retention set
+UPDATE
+  partman.part_config
+SET
+  retention=NULLIF(retention, '')::text;
 
 CREATE OR REPLACE FUNCTION snapshot.post_snapshot_restore(p_data_schema text DEFAULT :'APP_SCHEMA'::text)
     RETURNS void

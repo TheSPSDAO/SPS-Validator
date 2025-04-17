@@ -9,7 +9,8 @@ COMPOSE_FILE="${SCRIPT_DIR}/docker-compose.yml"
 
 APP_SCHEMA=${APP_SCHEMA:-public}
 APP_DATABASE=${APP_DATABASE:-validator}
-POSTGRES_USER=${POSTGRES_USER:-postgres}
+APP_USER=${APP_USER:-validator}
+APP_PASSWORD=${APP_PASSWORD:-validator}
 
 if [[ -f ".env" ]]; then
     # shellcheck source=/dev/null
@@ -41,11 +42,11 @@ docker_compose() {
 }
 
 run_psql() {
-    docker_compose exec pg psql -U "$POSTGRES_USER" -h 127.0.0.1 -d "$APP_DATABASE" "$@"
+    docker_compose exec pg psql -U "$APP_USER" -h 127.0.0.1 -d "$APP_DATABASE" "$@"
 }
 
 run_psql_quiet() {
-    docker_compose exec -e PGOPTIONS="--client-min-messages=warning" pg psql -U "$POSTGRES_USER" -h 127.0.0.1 -d "$APP_DATABASE" "$@"
+    docker_compose exec -e PGOPTIONS="--client-min-messages=warning" pg psql -U "$APP_USER" -h 127.0.0.1 -d "$APP_DATABASE" "$@"
 }
 
 snapshot() {
@@ -65,13 +66,13 @@ snapshot() {
 
     # dump the snapshot to a file
     echo "Dumping snapshot to file"
-    docker_compose exec -e PGPASSWORD="$POSTGRES_PASSWORD" pg pg_dump \
+    docker_compose exec -e PGPASSWORD="$APP_PASSWORD" pg pg_dump \
         --no-owner --no-acl \
         --no-comments --no-publications --no-security-labels \
         --schema snapshot \
         --no-subscriptions --no-tablespaces --data-only \
         --host "127.0.0.1" \
-        --username "$POSTGRES_USER" \
+        --username "$APP_USER" \
         "${APP_DATABASE}" > snapshot.sql
 
     # get the latest change from the sqitch.changes table with psql
