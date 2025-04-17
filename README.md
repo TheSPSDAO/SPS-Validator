@@ -132,8 +132,8 @@ You can take snapshots locally to take backups, and restore them without uploadi
 - `./run.sh replay`: rebuilds your node from the snapshot. :warning: **This will irrevocably destroy all local data, including blocks that have already been locally validated**: Be very careful here!
 - `./run.sh destroy`: completely removes the database, validator, and ui. :warning: **This will irrevocably destroy all local data, including blocks that have already been locally validated**: Be very careful here!
 - `./run.sh status`: checks your validator node status and registration status (running/active/inactive)
-- `./run.sh repartition_tables`: Rhelper command to repartition the partitioned database tables. only needed if upgrading a database from before v1.1.1 or if restoring a snapshot from before v1.1.1.
-- `./run.sh psql [args]`: runs psql with the given args. e.g. run.sh psql -c 'SELECT * FROM blocks
+- `./run.sh repartition_tables`: helper command to repartition the partitioned database tables. only needed if upgrading a database from before v1.1.1 or if restoring a snapshot from before v1.1.1.
+- `./run.sh psql [args]`: runs psql against the validator database with the given args. e.g. `run.sh psql -c "SELECT * FROM blocks LIMIT 10"`
 
 ## Updating your node
 
