@@ -7,11 +7,6 @@ SCRIPT_DIR=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" &>/dev/null && pwd)
 SQITCH_DIR="$SCRIPT_DIR/sqitch"
 COMPOSE_FILE="${SCRIPT_DIR}/docker-compose.yml"
 
-APP_SCHEMA=${APP_SCHEMA:-public}
-APP_DATABASE=${APP_DATABASE:-validator}
-APP_USER=${APP_USER:-validator}
-APP_PASSWORD=${APP_PASSWORD:-validator}
-
 if [[ -f ".env" ]]; then
     # shellcheck source=/dev/null
     source .env
@@ -35,6 +30,11 @@ if [[ ! $SNAPSHOT_URL ]]; then
     echo "SNAPSHOT_URL not defined in the .env file"
     exit
 fi
+
+APP_SCHEMA=${APP_SCHEMA:-public}
+APP_DATABASE=${APP_DATABASE:-validator}
+APP_USER=${APP_USER:-validator}
+APP_PASSWORD=${APP_PASSWORD:-validator}
 
 docker_compose() {
     # not really useful anymore but leaving it in case it is needed
