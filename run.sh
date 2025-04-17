@@ -100,7 +100,6 @@ rebuild_service() {
     echo "Rebuilding $DOCKER_NAME $1 service"
     docker_compose_wrapper down "$1"
     docker_compose_wrapper up -d --build "$1"
-    logs
 }
 
 start() {
@@ -211,6 +210,49 @@ _dl_snapshot() {
     fi
 }
 
+update() {
+    TO_VERSION=${1:-vlatest}
+    echo "Updating node to $TO_VERSION"
+
+    # ask for confirmation to stop the validator
+    read -p "Are you sure you want to update? This will stop the validator and checkout the latest update (y/n):" -n 1 -r
+    echo
+    if [[ $REPLY =~ ^[Yy]$ ]]
+    then
+        echo "Stopping validator"
+        stop validator
+        echo "Checking out latest update"
+        git fetch --all -f
+        git checkout "$TO_VERSION"
+        if [[ $? -ne 0 ]]; then
+            echo "Error checking out $TO_VERSION. Please check the version and try again. If you have local changes, please stash them before updating."
+            echo "You can use the following command to stash your changes:"
+            echo "git stash"
+            echo "If you want to discard your changes, you can use the following command:"
+            echo "git reset --hard HEAD"
+            exit 1
+        fi
+
+        echo "Latest update checked out. Restarting node now."
+        rebuild_service validator
+
+        # ask if they want to rebuild the ui
+        read -p "Would you like to rebuild the UI? (y/n):" -n 1 -r
+        echo
+        if [[ $REPLY =~ ^[Yy]$ ]]
+        then
+            rebuild_service ui
+        fi
+
+        echo "Update complete. Please check the logs to ensure everything is working correctly."
+        echo "NOTE: If this is a version with a database migration, you may need to run the following command to apply the migration:"
+        echo "./run.sh build"
+        echo "Please check the release notes for more information."
+    else
+        echo "Update cancelled"
+    fi
+}
+
 preinstall() {
     sudo apt update
     sudo apt install -y curl git wget xz-utils
@@ -244,17 +286,17 @@ logs() {
 
 status() {
   echo "Checking validator status..."
-  
+
   VALIDATOR_ACC="$VALIDATOR_ACCOUNT"
-  
+
   if [ -z "$VALIDATOR_ACC" ]; then
     echo "VALIDATOR_ACCOUNT not found in .env file"
     return 1
   fi
-  
+
   LOCAL_INFO=$(curl -s --connect-timeout 3 http://localhost:3333/status 2>/dev/null)
   API_STATUS=$(echo "$LOCAL_INFO" | grep -o '"status":"[^"]*"' | cut -d':' -f2 | tr -d '"')
-  
+
   if [ "$API_STATUS" = "running" ]; then
     LAST_BLOCK=$(echo "$LOCAL_INFO" | grep -o '"last_block":[0-9]*' | cut -d':' -f2)
     echo "- Node status: RUNNING"
@@ -265,22 +307,22 @@ status() {
     echo "Your node isn't running properly. Using the external API instead."
     API_URL="https://splinterlands-validator-api.splinterlands.com"
   fi
-  
+
   echo ""
   echo "Validator Account: $VALIDATOR_ACC"
-  
+
   VALIDATORS_RESPONSE=$(curl -s $API_URL/validators)
   NODE_INFO=$(echo "$VALIDATORS_RESPONSE" | grep -o "{[^{]*\"account_name\":\"$VALIDATOR_ACC\"[^}]*}")
-  
+
   echo -n "Validator node status: "
-  
+
   if [[ $NODE_INFO == *'"is_active":true'* ]]; then
     echo "ACTIVE"
   elif [[ $NODE_INFO == *'"is_active":false'* ]]; then
     echo "INACTIVE"
   elif [ -z "$NODE_INFO" ]; then
     echo "Not registered or not found"
-    
+
     if [ -z "$LOCAL_INFO" ]; then
       echo "(Make sure your node is running with './run.sh start')"
     else
@@ -306,6 +348,7 @@ help() {
     echo "    snapshot                      - creates a snapshot of the current database."
     echo "    logs                          - trails the last 30 lines of logs"
     echo "    status                        - checks your validator node status and registration status"
+    echo "    update                        - updates your validator node to the latest version"
     echo
     echo "Helpers:"
     echo "    install_docker - install docker"
@@ -353,6 +396,9 @@ case $1 in
     ;;
     status)
         status
+    ;;
+    update)
+        update
     ;;
     *)
         echo "Invalid CMD"
