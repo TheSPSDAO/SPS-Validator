@@ -266,13 +266,20 @@ export class SpsBalanceRepository extends BalanceRepository {
 
                     this.supplyOpts.dao_account,
                     this.supplyOpts.dao_reserve_account,
+                    this.supplyOpts.dao_delegation_account,
                     this.supplyOpts.sl_hive_account,
                     this.supplyOpts.terablock_bsc_account,
                     this.supplyOpts.terablock_eth_account,
 
                     ...this.supplyOpts.reward_pool_accounts,
                 ],
-                [TOKENS.SPSP]: [this.supplyOpts.staking_account, this.supplyOpts.dao_account, this.supplyOpts.terablock_bsc_account, this.supplyOpts.terablock_eth_account],
+                [TOKENS.SPSP]: [
+                    this.supplyOpts.staking_account,
+                    this.supplyOpts.dao_account,
+                    this.supplyOpts.dao_delegation_account,
+                    this.supplyOpts.terablock_bsc_account,
+                    this.supplyOpts.terablock_eth_account,
+                ],
             },
             trx,
         );
@@ -388,8 +395,8 @@ export class SpsBalanceRepository extends BalanceRepository {
         const pendingImmediateUnstake = parseFloat(pendingImmediateUnstakeRows.rows[0]?.pending_unstake ?? 0);
 
         return {
-            pending_unstake: pendingUnstake,
-            pending_immediate_unstake: pendingImmediateUnstake,
+            pending_unstake: +pendingUnstake.toFixed(3),
+            pending_immediate_unstake: +pendingImmediateUnstake.toFixed(3),
         };
     }
 
