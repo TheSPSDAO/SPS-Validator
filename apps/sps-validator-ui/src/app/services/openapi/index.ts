@@ -20,6 +20,8 @@ export type { TokenSupply } from './models/TokenSupply';
 export type { TokenTransferTransaction } from './models/TokenTransferTransaction';
 export type { TokenTransferTransactions } from './models/TokenTransferTransactions';
 export type { Transaction } from './models/Transaction';
+export type { TransitionStatus } from './models/TransitionStatus';
+export type { TransitionStatuses } from './models/TransitionStatuses';
 export type { Validator } from './models/Validator';
 export type { ValidatorConfig } from './models/ValidatorConfig';
 export type { Validators } from './models/Validators';
