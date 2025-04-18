@@ -364,26 +364,13 @@ export class SpsBalanceRepository extends BalanceRepository {
     }
 
     private async sumUnstaking(token: string, trx?: Trx) {
-        const pendingUnstakeRows = await this.queryRaw(trx).raw<RawResult<{ pending_unstake: string }>>(
+        const pendingUnstakeRows = await this.queryRaw(trx).raw<RawResult<{ pending_unstake: string; pending_immediate_unstake: string }>>(
             `
                 SELECT
-                  SUM(total_qty - total_unstaked) as pending_unstake
-                FROM
-                  token_unstaking
-                WHERE
-                    token = ?
-                    AND is_active = true
-            `,
-            [token],
-        );
-        const pendingUnstake = parseFloat(pendingUnstakeRows.rows[0]?.pending_unstake ?? 0);
-
-        const pendingImmediateUnstakeRows = await this.queryRaw(trx).raw<RawResult<{ pending_unstake: string }>>(
-            `
-                SELECT
+                  SUM(total_qty - total_unstaked) as pending_unstake,
                   SUM(
                     LEAST(ABS(total_qty - total_unstaked), ABS(total_qty / unstaking_periods))
-                  ) as pending_unstake
+                  ) as pending_immediate_unstake
                 FROM
                   token_unstaking
                 WHERE
@@ -392,11 +379,10 @@ export class SpsBalanceRepository extends BalanceRepository {
             `,
             [token],
         );
-        const pendingImmediateUnstake = parseFloat(pendingImmediateUnstakeRows.rows[0]?.pending_unstake ?? 0);
-
+        const row = pendingUnstakeRows.rows[0] ?? { pending_unstake: 0, pending_immediate_unstake: 0 };
         return {
-            pending_unstake: +pendingUnstake.toFixed(3),
-            pending_immediate_unstake: +pendingImmediateUnstake.toFixed(3),
+            pending_unstake: +parseFloat(row.pending_unstake).toFixed(3),
+            pending_immediate_unstake: +parseFloat(row.pending_immediate_unstake).toFixed(3),
         };
     }
 
