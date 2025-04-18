@@ -12,6 +12,7 @@ import type { Status } from '../models/Status';
 import type { TokenSupply } from '../models/TokenSupply';
 import type { TokenTransferTransactions } from '../models/TokenTransferTransactions';
 import type { Transaction } from '../models/Transaction';
+import type { TransitionStatuses } from '../models/TransitionStatuses';
 import type { Validator } from '../models/Validator';
 import type { ValidatorConfig } from '../models/ValidatorConfig';
 import type { Validators } from '../models/Validators';
@@ -474,6 +475,18 @@ export class DefaultService {
                 'skip': skip,
                 'systemAccounts': systemAccounts,
             },
+        });
+    }
+    /**
+     * Gets the upcoming validator transitions
+     * Returns the list of upcoming validator transitions
+     * @returns TransitionStatuses Successful operation
+     * @throws ApiError
+     */
+    public static getTransitions(): CancelablePromise<TransitionStatuses> {
+        return __request(OpenAPI, {
+            method: 'GET',
+            url: '/extensions/transitions',
         });
     }
 }

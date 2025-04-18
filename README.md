@@ -132,6 +132,7 @@ You can take snapshots locally to take backups, and restore them without uploadi
 - `./run.sh replay`: rebuilds your node from the snapshot. :warning: **This will irrevocably destroy all local data, including blocks that have already been locally validated**: Be very careful here!
 - `./run.sh destroy`: completely removes the database, validator, and ui. :warning: **This will irrevocably destroy all local data, including blocks that have already been locally validated**: Be very careful here!
 - `./run.sh status`: checks your validator node status and registration status (running/active/inactive)
+- `./run.sh update <version>`: updates your node to the latest version. version is optional - default will be vlatest
 
 ## Updating your node
 
@@ -148,6 +149,10 @@ You can find update guides for the different updates below. The type of update w
 
 block-hash-stable updates are updates that don't affect the block hash. These are normally additional API endpoints or install script improvements.
 
+#### Update command
+- Run `./run.sh update` and follow the prompts.
+
+#### Manually updating
 - Pull the latest version with `git fetch --tags -f && git checkout v{version}`.
 - `./run.sh rebuild_service validator` to rebuild the validator with the latest updates. This will also start the validator.
 - `./run.sh rebuild_service ui` if you want to rebuild the UI.
@@ -156,10 +161,14 @@ block-hash-stable updates are updates that don't affect the block hash. These ar
 
 block-hash-breaking updates are designed to turn on at a certain block, so all you need to do is make sure you've updated and restarted your node before the go-live block.
 
-- Pull the latest version with `git fetch --tags -f && git checkout v{version}` *before*.
+#### Update command
+- Run `./run.sh update` and follow the prompts.
+
+#### Manually updating
+- Pull the latest version with `git fetch --tags -f && git checkout v{version}`.
 - `./run.sh rebuild_service validator` to rebuild the validator with the latest updates. This will also start the validator.
 - `./run.sh rebuild_service ui` if you want to rebuild the UI.
-
+  
 ### schema-breaking
 
 schema-breaking updates cannot be applied before the go-live block. To apply a schema-breaking update, follow the steps below.
