@@ -587,6 +587,21 @@ paths:
                             schema:
                                 $ref: "#/components/schemas/BalancesCount"
 
+    /extensions/transitions:
+        get:
+            tags:
+                - Default
+            summary: Gets the upcoming validator transitions
+            description: Returns the list of upcoming validator transitions
+            operationId: getTransitions
+            responses:
+                200:
+                    description: Successful operation
+                    content:
+                        application/json:
+                            schema:
+                                $ref: "#/components/schemas/TransitionStatuses"
+
 components:
     schemas:
         Account:
@@ -841,6 +856,36 @@ components:
                     type: string
                 index:
                     type: integer
+
+        TransitionStatuses:
+            type: object
+            properties:
+                block_num:
+                    type: number
+                transition_points:
+                    type: array
+                    items:
+                        $ref: "#/components/schemas/TransitionStatus"
+
+        TransitionStatus:
+            type: object
+            required:
+                - transition
+                - block_num
+                - blocks_until
+                - transitioned
+                - description
+            properties:
+                transition:
+                    type: string
+                block_num:
+                    type: number
+                blocks_until:
+                    type: number
+                transitioned:
+                    type: boolean
+                description:
+                    type: string
 
         TokenSupply:
             type: object
