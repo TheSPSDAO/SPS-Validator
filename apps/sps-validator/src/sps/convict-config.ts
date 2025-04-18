@@ -294,8 +294,8 @@ const schema = {
     dao_delegation_account: {
         doc: 'SPS dao delegation account',
         nullable: false,
-        default: 'spsdaodelegations ',
-        env: 'DAO_DELEGATIONS_ACCOUNT',
+        default: 'spsdaodelegation',
+        env: 'DAO_DELEGATION_ACCOUNT',
     },
     sl_hive_account: {
         doc: 'SPS sl-hive account',
