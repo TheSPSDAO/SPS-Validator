@@ -1,0 +1,30 @@
+name: Release
+
+# This workflow is triggered from a /prerelease comment on a PR
+
+on:
+    release:
+        types: [released]
+
+
+jobs:
+    build:
+        runs-on: ubuntu-latest
+        env:
+            GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        steps:
+            # get version from release tag
+            - name: Parse version
+              run: echo "RELEASE_VERSION=${GITHUB_REF#refs/tags/}" >> $GITHUB_ENV
+
+            # Check out the release branch
+            - uses: actions/checkout@v4
+              with:
+                ref: ${{ github.ref }}
+                fetch-tags: true
+
+            # Force tag vlatest to point to the latest release
+            - name: Force tag vlatest
+              run: |
+                git tag -f vlatest $RELEASE_VERSION
+                git push origin vlatest --force

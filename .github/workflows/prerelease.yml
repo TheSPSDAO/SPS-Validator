@@ -1,0 +1,69 @@
+name: Pre-release
+
+# This workflow is triggered from a /prerelease comment on a PR
+
+on:
+    issue_comment:
+        types: [created]
+
+
+jobs:
+    build:
+        if: github.event.issue.pull_request && startsWith(github.event.comment.body, '/prerelease')
+        runs-on: ubuntu-latest
+        env:
+            GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        steps:
+            # get version from branch name, e.g. "release-1.0.0" -> "1.0.0"
+            - name: Parse version
+              run: echo "RELEASE_VERSION=${GITHUB_BASE_REF#refs/heads/release-}" >> $GITHUB_ENV
+
+            # Make sure the PR is approved
+            - name: Check PR approval
+              run: |
+                APPROVED=$(gh pr view ${{ github.event.issue.number }} --json reviews --jq '.reviews | any(.state == "APPROVED")')
+                if [ "$APPROVED" != "true" ]; then
+                  echo "PR must be approved before running this workflow."
+                  exit 1
+                fi
+
+            # Complete the PR
+            - name: Complete PR
+              run: |
+                gh pr merge ${{ github.event.issue.number }} --squash --body "Merged PR #${{ github.event.issue.number }} for release $RELEASE_VERSION."
+
+            # Check out the release branch
+            - uses: actions/checkout@v4
+              with:
+                ref: ${{ github.base_ref }}
+
+            # Update the version in the code
+            - name: Update versions in code
+              run: |
+                # update the .version file used in docker compose
+                echo "VERSION=$RELEASE_VERSION" > .version
+                # update the VERSION= line in the install.sh script
+                sed -i "s/^VERSION=.*/VERSION=$RELEASE_VERSION/" install.sh
+                # update the package.json version
+                sed -i "s/\"version\": \".*\"/\"version\": \"$RELEASE_VERSION\"/" package.json
+
+            # Commit the changes
+            - name: Commit changes
+              run: |
+                git config --local user.name "GitHub Actions"
+                git config --local user.email "spsdao@gmail.com"
+                git add .version install.sh package.json
+                git commit -m "Update version to $RELEASE_VERSION"
+
+            # Push the changes
+            - name: Push changes
+              run: |
+                git push origin ${{ github.base_ref }}
+
+            # Create a release
+            - name: Create release
+              run: |
+                gh release create "v$RELEASE_VERSION" --title "Release v$RELEASE_VERSION" --target="$GITHUB_BASE_REF" --notes "Release $RELEASE_VERSION" --generate-notes --prerelease
+
+
+
