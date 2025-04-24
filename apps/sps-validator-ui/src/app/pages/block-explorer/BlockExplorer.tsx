@@ -10,15 +10,15 @@ import { listItemClickHandler } from './utils';
 export function BlockList({ className }: { className?: string }) {
     const [blockOffset] = React.useState<number | undefined>(undefined);
     const [limit] = React.useState(15);
-    const [autoRefresh, setAutoRefresh] = React.useState(true); // Added state for auto-refresh
+    const [autoRefresh, setAutoRefresh] = React.useState(true);
     const nav = useNavigate();
 
-    const refreshInterval = autoRefresh ? 3000 : 0; // Calculate interval based on state
+    const refreshInterval = autoRefresh ? 3000 : 0;
 
     const [blocks, isBlocksLoading, error] = usePromiseRefresh<Block[]>(() => DefaultService.getBlocks(limit, blockOffset), refreshInterval, [limit, blockOffset]); // Use calculated interval
 
     if (error) {
-        return <Typography color="red">Error loading blocks: {error.message}</Typography>; // Added error display
+        return <Typography color="red">Error loading blocks: {error.message}</Typography>;
     }
     if (isBlocksLoading && !blocks) {
         return <Spinner />;
@@ -30,16 +30,11 @@ export function BlockList({ className }: { className?: string }) {
     return (
         <Card className={className}>
             <CardBody>
-                <div className="flex justify-between items-center mb-2"> {/* Container for title and checkbox */}
+                <div className="flex justify-between items-center mb-2">
                     <Typography variant="h5" color="blue-gray">
                         Recent Blocks
                     </Typography>
-                    <Checkbox
-                        label="Auto-refresh"
-                        checked={autoRefresh}
-                        onChange={(e) => setAutoRefresh(e.target.checked)}
-                        crossOrigin={undefined} // Required prop for Material Tailwind v2+
-                    />
+                    <Checkbox label="Auto-refresh" checked={autoRefresh} onChange={(e) => setAutoRefresh(e.target.checked)} />
                 </div>
                 <List className="p-0 mt-4">
                     {blocks.map((block, i) => (

@@ -54,6 +54,6 @@ export function usePromiseRefresh<T>(fn: () => MaybeCancelablePromise<T>, interv
                 clearInterval(id);
             }
         };
-    }, [interval, reload]); // Added reload to dependency array
+    }, [interval, reload]);
     return [result, loading, error, reload];
 }
