@@ -43,10 +43,17 @@ export function usePromise<T>(fn: () => MaybeCancelablePromise<T>, deps?: Depend
 export function usePromiseRefresh<T>(fn: () => MaybeCancelablePromise<T>, interval: number, deps?: DependencyList): [T | null, boolean, Error | null, () => void] {
     const [result, loading, error, reload] = usePromise(fn, deps);
     useEffect(() => {
-        const id = setInterval(() => {
-            reload();
-        }, interval);
-        return () => clearInterval(id);
-    }, [interval]);
+        let id: NodeJS.Timeout | undefined;
+        if (interval > 0) {
+            id = setInterval(() => {
+                reload();
+            }, interval);
+        }
+        return () => {
+            if (id) {
+                clearInterval(id);
+            }
+        };
+    }, [interval, reload]); // Added reload to dependency array
     return [result, loading, error, reload];
 }

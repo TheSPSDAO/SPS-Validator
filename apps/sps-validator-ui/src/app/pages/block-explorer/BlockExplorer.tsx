@@ -1,4 +1,4 @@
-import { Card, CardBody, List, ListItem, Spinner, Tooltip, Typography } from '@material-tailwind/react';
+import { Card, CardBody, List, ListItem, Spinner, Tooltip, Typography, Checkbox } from '@material-tailwind/react'; // Added Checkbox
 import { DefaultService, Block } from '../../services/openapi';
 import React from 'react';
 import { usePromiseRefresh } from '../../hooks/Promise';
@@ -10,10 +10,16 @@ import { listItemClickHandler } from './utils';
 export function BlockList({ className }: { className?: string }) {
     const [blockOffset] = React.useState<number | undefined>(undefined);
     const [limit] = React.useState(15);
+    const [autoRefresh, setAutoRefresh] = React.useState(true); // Added state for auto-refresh
     const nav = useNavigate();
 
-    const [blocks, isBlocksLoading, error] = usePromiseRefresh<Block[]>(() => DefaultService.getBlocks(limit, blockOffset), 3000, [limit, blockOffset]);
+    const refreshInterval = autoRefresh ? 3000 : 0; // Calculate interval based on state
 
+    const [blocks, isBlocksLoading, error] = usePromiseRefresh<Block[]>(() => DefaultService.getBlocks(limit, blockOffset), refreshInterval, [limit, blockOffset]); // Use calculated interval
+
+    if (error) {
+        return <Typography color="red">Error loading blocks: {error.message}</Typography>; // Added error display
+    }
     if (isBlocksLoading && !blocks) {
         return <Spinner />;
     }
@@ -24,9 +30,17 @@ export function BlockList({ className }: { className?: string }) {
     return (
         <Card className={className}>
             <CardBody>
-                <Typography variant="h5" color="blue-gray" className="mb-2">
-                    Recent Blocks
-                </Typography>
+                <div className="flex justify-between items-center mb-2"> {/* Container for title and checkbox */}
+                    <Typography variant="h5" color="blue-gray">
+                        Recent Blocks
+                    </Typography>
+                    <Checkbox
+                        label="Auto-refresh"
+                        checked={autoRefresh}
+                        onChange={(e) => setAutoRefresh(e.target.checked)}
+                        crossOrigin={undefined} // Required prop for Material Tailwind v2+
+                    />
+                </div>
                 <List className="p-0 mt-4">
                     {blocks.map((block, i) => (
                         <React.Fragment key={block.block_num}>
