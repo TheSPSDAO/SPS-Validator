@@ -8,6 +8,17 @@ export type TransitionPoints = {
 };
 export const TransitionPoints: unique symbol = Symbol('TransitionPoints');
 export type TransitionPointName = keyof TransitionPoints['transition_points'];
+export type TransitionPointsStatuses = {
+    transition: TransitionPointName;
+    block_num: number;
+    blocks_until: number;
+    transitioned: boolean;
+    description: string;
+}[];
+
+export const TransitionPointDescriptions: Record<TransitionPointName, string> = {
+    fix_vote_weight: 'Transition point for fixing vote weights when unstaking SPS. This is a one-time transition point that is part of version 1.1.0.',
+};
 
 @singleton()
 export class TransitionManager implements VirtualPayloadSource {
@@ -22,6 +33,29 @@ export class TransitionManager implements VirtualPayloadSource {
     }
 
     constructor(@inject(PrefixOpts) private readonly cfg: PrefixOpts, @inject(TransitionPoints) private readonly transitionCfg: TransitionPoints) {}
+
+    /**
+     * Summarizes all transition points
+     */
+    getTransitionPointsStatusesAtBlock(block_num: number): TransitionPointsStatuses {
+        const statuses: TransitionPointsStatuses = [];
+        for (const name in this.transitionPoints) {
+            const transition_name = name as TransitionPointName;
+            const transition_point = this.transitionCfg.transition_points[transition_name] ?? 0;
+            const transitioned = transition_point <= block_num;
+            const blocks_until = transitioned ? 0 : transition_point - block_num;
+            statuses.push({
+                transition: transition_name,
+                block_num: transition_point,
+                blocks_until,
+                transitioned,
+                description: TransitionPointDescriptions[transition_name],
+            });
+        }
+        // sort descending by block_num
+        statuses.sort((a, b) => b.block_num - a.block_num);
+        return statuses;
+    }
 
     /**
      * Check if the block number is a transition point for the given name.

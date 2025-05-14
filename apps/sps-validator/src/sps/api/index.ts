@@ -19,6 +19,7 @@ import {
 import { utils } from 'splinterlands-dhive-sl';
 import { ManualDisposer } from '../manual-disposable';
 import { registerSpsRoutes } from './sps';
+import { registerTransitionRoutes } from './transition';
 
 // Each Middleware allows requests to read (cache) state from 'the world'. What this means is different for each type of middleware.
 
@@ -126,6 +127,7 @@ export class EnabledApiActivator implements ConditionalApiActivator {
 
         // must come after registerApiRoutes so we have the resolver
         registerSpsRoutes(app);
+        registerTransitionRoutes(app);
 
         return app;
     }

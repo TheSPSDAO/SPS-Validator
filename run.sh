@@ -133,9 +133,8 @@ _repartition_table() {
 
 rebuild_service() {
     echo "Rebuilding $DOCKER_NAME $1 service"
-    docker_compose down "$1"
-    docker_compose up -d --build "$1"
-    logs
+    docker_compose_wrapper down "$1"
+    docker_compose_wrapper up -d --build "$1"
 }
 
 start() {
@@ -246,6 +245,49 @@ _dl_snapshot() {
     fi
 }
 
+update() {
+    TO_VERSION=${1:-vlatest}
+    echo "Updating node to $TO_VERSION"
+
+    # ask for confirmation to stop the validator
+    read -p "Are you sure you want to update? This will stop the validator and checkout the latest update (y/n):" -n 1 -r
+    echo
+    if [[ $REPLY =~ ^[Yy]$ ]]
+    then
+        echo "Stopping validator"
+        stop validator
+        echo "Checking out latest update"
+        git fetch --all -f
+
+        if ! git checkout "$TO_VERSION"; then
+            echo "Error checking out $TO_VERSION. Please check the version and try again. If you have local changes, please stash them before updating."
+            echo "You can use the following command to stash your changes:"
+            echo "git stash"
+            echo "If you want to discard your changes, you can use the following command:"
+            echo "git reset --hard HEAD"
+            exit 1
+        fi
+
+        echo "Latest update checked out. Restarting node now."
+        rebuild_service validator
+
+        # ask if they want to rebuild the ui
+        read -p "Would you like to rebuild the UI? (y/n):" -n 1 -r
+        echo
+        if [[ $REPLY =~ ^[Yy]$ ]]
+        then
+            rebuild_service ui
+        fi
+
+        echo "Update complete. Please check the logs to ensure everything is working correctly."
+        echo "NOTE: If this is a version with a database migration, you may need to run the following command to apply the migration:"
+        echo "./run.sh build"
+        echo "Please check the release notes for more information."
+    else
+        echo "Update cancelled"
+    fi
+}
+
 preinstall() {
     sudo apt update
     sudo apt install -y curl git wget xz-utils
@@ -343,6 +385,7 @@ help() {
     echo "    status                        - checks your validator node status and registration status"
     echo "    repartition_tables            - helper command to repartition the partitioned database tables. only needed if upgrading a database from before v1.1.1 or if restoring a snapshot from before v1.1.1"
     echo "    psql [args]                   - runs psql with the given args. e.g. run.sh psql -c 'SELECT * FROM blocks'".
+    echo "    update                        - updates your validator node to the latest version"
     echo
     echo "Helpers:"
     echo "    install_docker - install docker"
@@ -396,6 +439,9 @@ case $1 in
     ;;
     psql)
         run_psql "${@:2}"
+    ;;
+    update)
+        update "$2"
     ;;
     *)
         echo "Invalid CMD"
