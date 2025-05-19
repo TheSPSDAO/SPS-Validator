@@ -13,7 +13,7 @@ services:
       - "postgres"
     restart: on-failure
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready", "-d", "${POSTGRES_DB:-postgres}"]
+      test: ["CMD-SHELL", "pg_isready", "-d", "$$POSTGRES_DB"]
       interval: 30s
       timeout: 60s
       retries: 5
@@ -21,6 +21,7 @@ services:
     environment:
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
       POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      PGUSER: ${POSTGRES_USER:-postgres}
       POSTGRES_DB: ${POSTGRES_DB:-postgres}
       VALIDATOR_DB: ${APP_DATABASE:-validator}
 

@@ -133,8 +133,8 @@ _repartition_table() {
 
 rebuild_service() {
     echo "Rebuilding $DOCKER_NAME $1 service"
-    docker_compose_wrapper down "$1"
-    docker_compose_wrapper up -d --build "$1"
+    docker_compose down "$1"
+    docker_compose up -d --build "$1"
 }
 
 start() {
