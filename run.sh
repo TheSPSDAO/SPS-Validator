@@ -31,9 +31,22 @@ if [[ ! $SNAPSHOT_URL ]]; then
     exit
 fi
 
-# wrapper around docker compose that passes the current git commit as an environment variable
-docker_compose_wrapper() {
+APP_SCHEMA=${APP_SCHEMA:-public}
+APP_DATABASE=${APP_DATABASE:-validator}
+APP_USER=${APP_USER:-validator}
+APP_PASSWORD=${APP_PASSWORD:-validator}
+
+docker_compose() {
+    # not really useful anymore but leaving it in case it is needed
     docker compose "$@"
+}
+
+run_psql() {
+    docker_compose exec pg psql -U "$APP_USER" -h 127.0.0.1 -d "$APP_DATABASE" "$@"
+}
+
+run_psql_quiet() {
+    docker_compose exec -e PGOPTIONS="--client-min-messages=warning" pg psql -U "$APP_USER" -h 127.0.0.1 -d "$APP_DATABASE" "$@"
 }
 
 snapshot() {
@@ -47,26 +60,23 @@ snapshot() {
     echo "Stopping validator"
     stop "validator"
 
-    # set app_database to default value
-    APP_DATABASE=${APP_DATABASE:-validator}
-
     echo "Creating snapshot"
     # connect to the database and run the freshsnapshot() function
-    docker_compose_wrapper exec pg psql -U postgres -h 127.0.0.1 -d "$APP_DATABASE" -c "SELECT snapshot.freshsnapshot(TRUE);"
+    run_psql -c "SELECT snapshot.freshsnapshot(TRUE);"
 
     # dump the snapshot to a file
     echo "Dumping snapshot to file"
-    docker_compose_wrapper exec -e PGPASSWORD="$POSTGRES_PASSWORD" pg pg_dump \
+    docker_compose exec -e PGPASSWORD="$APP_PASSWORD" pg pg_dump \
         --no-owner --no-acl \
         --no-comments --no-publications --no-security-labels \
         --schema snapshot \
         --no-subscriptions --no-tablespaces --data-only \
         --host "127.0.0.1" \
-        --username "${POSTGRES_USER:-postgres}" \
+        --username "$APP_USER" \
         "${APP_DATABASE}" > snapshot.sql
 
     # get the latest change from the sqitch.changes table with psql
-    CHANGE=$(docker_compose_wrapper exec pg psql -U postgres -h 127.0.0.1 -d "$APP_DATABASE" -t -c "SELECT change FROM sqitch.changes WHERE project = 'splinterlands-validator' ORDER BY committed_at DESC LIMIT 1")
+    CHANGE=$(run_psql -t -c "SELECT change FROM sqitch.changes WHERE project = 'splinterlands-validator' ORDER BY committed_at DESC LIMIT 1")
     # trim whitespace from the change
     CHANGE=$(echo "$CHANGE" | xargs echo -n)
     echo "Latest change: $CHANGE"
@@ -96,26 +106,50 @@ snapshot() {
     fi
 }
 
+repartition_tables() {
+    # confirm they want to do this
+    echo "Repartioning only has to be done if your database existed before version v1.1.1, or if you have restored a snapshot from before that version."
+    echo "Repartitioning will take a while and will lock the tables. It's not required, but you should stop your validator to be safe."
+    read -p "Are you sure you want to repartition the tables? (y/n)" -n 1 -r
+    echo    # (optional) move to a new line
+    if [[ ! $REPLY =~ ^[Yy]$ ]]; then
+        echo "Aborting repartition"
+        exit
+    fi
+
+    _repartition_table "blocks"
+    _repartition_table "validator_transactions"
+    _repartition_table "validator_transaction_players"
+
+    run_psql -q -c "CALL partman.run_maintenance_proc();"
+}
+
+_repartition_table() {
+    echo "Repartitioning table $1 in schema $APP_SCHEMA"
+    run_psql_quiet -q -c "CALL partman.partition_data_proc(p_parent_table := '$APP_SCHEMA'::text || '.$1'::text, p_interval := '432000'::text);"
+    run_psql_quiet -q -c "VACUUM ANALYZE $APP_SCHEMA.$1;"
+    echo "Repartitioned table $1 in schema $APP_SCHEMA"
+}
+
 rebuild_service() {
     echo "Rebuilding $DOCKER_NAME $1 service"
-    docker_compose_wrapper down "$1"
-    docker_compose_wrapper up -d --build "$1"
-    logs
+    docker_compose down "$1"
+    docker_compose up -d --build "$1"
 }
 
 start() {
     echo "Starting $DOCKER_NAME"
     if [[ $1 == "db" ]]; then
-        docker_compose_wrapper up -d pg
+        docker_compose up -d pg
     elif [[ $1 == "all" ]]; then
-        docker_compose_wrapper up -d
+        docker_compose up -d
         logs
     elif [[ $1 == "all-silent" ]]; then
-        docker_compose_wrapper up -d
+        docker_compose up -d
     elif [[ $1 == "validator-silent" ]]; then
-        docker_compose_wrapper up -d validator
+        docker_compose up -d validator
     else
-        docker_compose_wrapper up -d validator
+        docker_compose up -d validator
         logs
     fi
 }
@@ -123,9 +157,9 @@ start() {
 stop() {
     echo "Stopping & removing $DOCKER_NAME"
     if [[ -z $1 ]]; then
-        docker_compose_wrapper down
+        docker_compose down
     else
-        docker_compose_wrapper down "$1"
+        docker_compose down "$1"
     fi
 }
 
@@ -168,20 +202,20 @@ build() {
         echo "Skipping snapshot"
         echo "Running migrations. This could take several minutes..."
         if [[ $1 == "no-cache" ]] || [[ $2 == "no-cache" ]]; then
-            docker_compose_wrapper build --no-cache validator-sqitch
+            docker_compose build --no-cache validator-sqitch
         else
-            docker_compose_wrapper build validator-sqitch
+            docker_compose build validator-sqitch
         fi
     else
         dl_snapshot "$1"
         echo "Running migrations. This could take several minutes..."
         if [[ $1 == "no-cache" ]] || [[ $2 == "no-cache" ]]; then
-            docker_compose_wrapper build --build-arg snapshot="$SNAPSHOT_FILE" --no-cache validator-sqitch
+            docker_compose build --build-arg snapshot="$SNAPSHOT_FILE" --no-cache validator-sqitch
         else
-            docker_compose_wrapper build --build-arg snapshot="$SNAPSHOT_FILE" validator-sqitch
+            docker_compose build --build-arg snapshot="$SNAPSHOT_FILE" validator-sqitch
         fi
     fi
-    docker_compose_wrapper --profile cli -f "${COMPOSE_FILE}" run validator-sqitch
+    docker_compose --profile cli -f "${COMPOSE_FILE}" run validator-sqitch
 }
 
 dl_snapshot() {
@@ -208,6 +242,49 @@ _dl_snapshot() {
     else
         echo "missing curl or wget - install manually or run.sh preinstall"
         exit
+    fi
+}
+
+update() {
+    TO_VERSION=${1:-vlatest}
+    echo "Updating node to $TO_VERSION"
+
+    # ask for confirmation to stop the validator
+    read -p "Are you sure you want to update? This will stop the validator and checkout the latest update (y/n):" -n 1 -r
+    echo
+    if [[ $REPLY =~ ^[Yy]$ ]]
+    then
+        echo "Stopping validator"
+        stop validator
+        echo "Checking out latest update"
+        git fetch --all -f
+
+        if ! git checkout "$TO_VERSION"; then
+            echo "Error checking out $TO_VERSION. Please check the version and try again. If you have local changes, please stash them before updating."
+            echo "You can use the following command to stash your changes:"
+            echo "git stash"
+            echo "If you want to discard your changes, you can use the following command:"
+            echo "git reset --hard HEAD"
+            exit 1
+        fi
+
+        echo "Latest update checked out. Restarting node now."
+        rebuild_service validator
+
+        # ask if they want to rebuild the ui
+        read -p "Would you like to rebuild the UI? (y/n):" -n 1 -r
+        echo
+        if [[ $REPLY =~ ^[Yy]$ ]]
+        then
+            rebuild_service ui
+        fi
+
+        echo "Update complete. Please check the logs to ensure everything is working correctly."
+        echo "NOTE: If this is a version with a database migration, you may need to run the following command to apply the migration:"
+        echo "./run.sh build"
+        echo "Please check the release notes for more information."
+    else
+        echo "Update cancelled"
     fi
 }
 
@@ -239,7 +316,56 @@ container_exists() {
 
 logs() {
     echo "DOCKER LOGS: (press ctrl-c to exit) "
-    docker_compose_wrapper logs validator -f --tail 30
+    docker_compose logs validator -f --tail 30
+}
+
+status() {
+  echo "Checking validator status..."
+
+  VALIDATOR_ACC="$VALIDATOR_ACCOUNT"
+
+  if [ -z "$VALIDATOR_ACC" ]; then
+    echo "VALIDATOR_ACCOUNT not found in .env file"
+    return 1
+  fi
+
+  LOCAL_INFO=$(curl -s --connect-timeout 3 http://localhost:3333/status 2>/dev/null)
+  API_STATUS=$(echo "$LOCAL_INFO" | grep -o '"status":"[^"]*"' | cut -d':' -f2 | tr -d '"')
+
+  if [ "$API_STATUS" = "running" ]; then
+    LAST_BLOCK=$(echo "$LOCAL_INFO" | grep -o '"last_block":[0-9]*' | cut -d':' -f2)
+    echo "- Node status: RUNNING"
+    echo "- Last block: $LAST_BLOCK"
+    echo "Your Node is synchronized"
+    API_URL="http://localhost:3333"
+  else
+    echo "Your node isn't running properly. Using the external API instead."
+    API_URL="https://splinterlands-validator-api.splinterlands.com"
+  fi
+
+  echo ""
+  echo "Validator Account: $VALIDATOR_ACC"
+
+  VALIDATORS_RESPONSE=$(curl -s $API_URL/validators)
+  NODE_INFO=$(echo "$VALIDATORS_RESPONSE" | grep -o "{[^{]*\"account_name\":\"$VALIDATOR_ACC\"[^}]*}")
+
+  echo -n "Validator node status: "
+
+  if [[ $NODE_INFO == *'"is_active":true'* ]]; then
+    echo "ACTIVE"
+  elif [[ $NODE_INFO == *'"is_active":false'* ]]; then
+    echo "INACTIVE"
+  elif [ -z "$NODE_INFO" ]; then
+    echo "Not registered or not found"
+
+    if [ -z "$LOCAL_INFO" ]; then
+      echo "(Make sure your node is running with './run.sh start')"
+    else
+      echo "(If you've just registered, it might take some time for the registration to be recognized)"
+    fi
+  else
+    echo "Status unclear. Raw data: $NODE_INFO"
+  fi
 }
 
 help() {
@@ -256,6 +382,10 @@ help() {
     echo "    dl_snapshot                   - downloads snapshot if it doesn't exists locally"
     echo "    snapshot                      - creates a snapshot of the current database."
     echo "    logs                          - trails the last 30 lines of logs"
+    echo "    status                        - checks your validator node status and registration status"
+    echo "    repartition_tables            - helper command to repartition the partitioned database tables. only needed if upgrading a database from before v1.1.1 or if restoring a snapshot from before v1.1.1"
+    echo "    psql [args]                   - runs psql with the given args. e.g. run.sh psql -c 'SELECT * FROM blocks'".
+    echo "    update                        - updates your validator node to the latest version"
     echo
     echo "Helpers:"
     echo "    install_docker - install docker"
@@ -300,6 +430,18 @@ case $1 in
     ;;
     help)
         help
+    ;;
+    status)
+        status
+    ;;
+    repartition_tables)
+        repartition_tables
+    ;;
+    psql)
+        run_psql "${@:2}"
+    ;;
+    update)
+        update "$2"
     ;;
     *)
         echo "Invalid CMD"

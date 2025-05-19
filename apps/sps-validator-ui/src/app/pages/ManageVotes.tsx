@@ -1,5 +1,5 @@
-import { FormEvent, useEffect, useState } from 'react';
-import { Hive, HiveService } from '../services/hive';
+import { FormEvent, useState } from 'react';
+import { HiveService } from '../services/hive';
 import { Button, Card, CardBody, CardFooter, Dialog, DialogBody, DialogHeader, Input, Spinner, Typography } from '@material-tailwind/react';
 import { AuthorizedAccountWrapper } from '../components/AuthorizedAccountWrapper';
 import { usePromise } from '../hooks/Promise';
@@ -28,7 +28,7 @@ function VoteCard({
     const [progress, setProgress] = useState<boolean>(false);
     const [error, setError] = useState<string>('');
     const [page, setPage] = useState(0);
-    const [limit, setLimit] = useState(10); // TODO: Add a limit selector
+    const limit = 10;
     const [search, setSearch] = useState('');
     const [count, isLoadingCount] = usePromise(() => DefaultService.getValidators(0, 0), [search]);
     const [result, isLoading] = usePromise(() => DefaultService.getValidators(limit, page * limit, search), [search, limit, page]);
@@ -50,13 +50,17 @@ function VoteCard({
             if (broadcastResult.error || !broadcastResult.result) {
                 throw new Error(broadcastResult.error ?? 'There was an error broadcasting the transaction');
             }
-            const txResult = await TxLookupService.waitForTx(broadcastResult.result!.id);
+            const txId = broadcastResult.result.id;
+            if (!txId) {
+                throw new Error('Transaction ID not found in broadcast result');
+            }
+            const txResult = await TxLookupService.waitForTx(txId);
             if (!txResult.success) {
                 throw new Error(txResult.error ?? 'There was an error broadcasting the transaction');
             }
             reloadVotes();
         } catch (err) {
-            setError(err!.toString());
+            setError(String(err));
         } finally {
             setProgress(false);
         }
@@ -113,75 +117,77 @@ function VoteCard({
                     </Button>
                 </form>
 
-                <Table className="w-full mt-4 border-2 border-gray-200 ">
-                    <TableHead>
-                        <TableRow>
-                            <TableColumn>
-                                <Typography color="blue-gray" className="font-normal text-left">
-                                    Validator
-                                </Typography>
-                            </TableColumn>
-                            <TableColumn>
-                                <Typography color="blue-gray" className="font-normal text-left">
-                                    Last Version
-                                </Typography>
-                            </TableColumn>
-                            <TableColumn>
-                                <Typography color="blue-gray" className="font-normal text-left">
-                                    Active
-                                </Typography>
-                            </TableColumn>
-                            <TableColumn>
-                                <Typography color="blue-gray" className="font-normal text-left">
-                                    Missed Blocks
-                                </Typography>
-                            </TableColumn>
-                            <TableColumn>
-                                <Typography color="blue-gray" className="font-normal text-left">
-                                    Total Votes
-                                </Typography>
-                            </TableColumn>
-                            <TableColumn />
-                        </TableRow>
-                    </TableHead>
-                    <TableBody>
-                        {noValidators && (
+                <div className="overflow-x-auto">
+                    <Table className="w-full mt-4 border-2 border-gray-200 min-w-[800px]">
+                        <TableHead>
                             <TableRow>
-                                <TableCell colSpan={4}>
-                                    <Typography color="blue-gray" className="text-center">
-                                        No validators registered. You can register your validator{' '}
-                                        <Link to="/validator-nodes/manage" className="text-blue-600 underline">
-                                            here.
-                                        </Link>
+                                <TableColumn>
+                                    <Typography color="blue-gray" className="font-normal text-left">
+                                        Validator
                                     </Typography>
-                                </TableCell>
+                                </TableColumn>
+                                <TableColumn>
+                                    <Typography color="blue-gray" className="font-normal text-left">
+                                        Last Version
+                                    </Typography>
+                                </TableColumn>
+                                <TableColumn>
+                                    <Typography color="blue-gray" className="font-normal text-left">
+                                        Active
+                                    </Typography>
+                                </TableColumn>
+                                <TableColumn>
+                                    <Typography color="blue-gray" className="font-normal text-left">
+                                        Missed Blocks
+                                    </Typography>
+                                </TableColumn>
+                                <TableColumn>
+                                    <Typography color="blue-gray" className="font-normal text-left">
+                                        Total Votes
+                                    </Typography>
+                                </TableColumn>
+                                <TableColumn />
                             </TableRow>
-                        )}
-                        {result?.validators?.map((validator) => (
-                            <TableRow key={validator.account_name}>
-                                <TableCell>
-                                    <ValidatorName {...validator} link_to_validator={true} />
-                                </TableCell>
-                                <TableCell>{validator.last_version ?? 'unknown'}</TableCell>
-                                <TableCell>{validator.is_active ? 'Yes' : 'No'}</TableCell>
-                                <TableCell>{localeNumber(validator.missed_blocks, 0)}</TableCell>
-                                <TableCell>{localeNumber(validator.total_votes)}</TableCell>
-                                <TableCell>
-                                    <Button disabled={progress} onClick={() => onNodeSelected(validator.account_name)} size="sm" className="me-2">
-                                        View
-                                    </Button>
-                                    <Button
-                                        disabled={votes.some((v) => v.validator === validator.account_name) || progress}
-                                        onClick={() => voteFor(validator.account_name)}
-                                        size="sm"
-                                    >
-                                        Vote {votes.some((v) => v.validator === validator.account_name) && '(already voted)'}
-                                    </Button>
-                                </TableCell>
-                            </TableRow>
-                        ))}
-                    </TableBody>
-                </Table>
+                        </TableHead>
+                        <TableBody>
+                            {noValidators && (
+                                <TableRow>
+                                    <TableCell colSpan={4}>
+                                        <Typography color="blue-gray" className="text-center">
+                                            No validators registered. You can register your validator{' '}
+                                            <Link to="/validator-nodes/manage" className="text-blue-600 underline">
+                                                here.
+                                            </Link>
+                                        </Typography>
+                                    </TableCell>
+                                </TableRow>
+                            )}
+                            {result?.validators?.map((validator) => (
+                                <TableRow key={validator.account_name}>
+                                    <TableCell>
+                                        <ValidatorName {...validator} link_to_validator={true} />
+                                    </TableCell>
+                                    <TableCell>{validator.last_version ?? 'unknown'}</TableCell>
+                                    <TableCell>{validator.is_active ? 'Yes' : 'No'}</TableCell>
+                                    <TableCell>{localeNumber(validator.missed_blocks, 0)}</TableCell>
+                                    <TableCell>{localeNumber(validator.total_votes)}</TableCell>
+                                    <TableCell>
+                                        <Button disabled={progress} onClick={() => onNodeSelected(validator.account_name)} size="sm" className="me-2">
+                                            View
+                                        </Button>
+                                        <Button
+                                            disabled={votes.some((v) => v.validator === validator.account_name) || progress}
+                                            onClick={() => voteFor(validator.account_name)}
+                                            size="sm"
+                                        >
+                                            Vote {votes.some((v) => v.validator === validator.account_name) && '(already voted)'}
+                                        </Button>
+                                    </TableCell>
+                                </TableRow>
+                            ))}
+                        </TableBody>
+                    </Table>
+                </div>
                 {count?.count && <TablePager className="w-full justify-center mt-3" page={page} limit={limit} displayPageCount={2} onPageChange={setPage} count={count?.count} />}
             </CardBody>
         </Card>
@@ -213,13 +219,17 @@ function MyVotesCard({
             if (broadcastResult.error || !broadcastResult.result) {
                 throw new Error(broadcastResult.error ?? 'There was an error broadcasting the transaction');
             }
-            const txResult = await TxLookupService.waitForTx(broadcastResult.result!.id);
+            const txId = broadcastResult.result.id;
+            if (!txId) {
+                throw new Error('Transaction ID not found in broadcast result');
+            }
+            const txResult = await TxLookupService.waitForTx(txId);
             if (!txResult.success) {
                 throw new Error(txResult.error ?? 'There was an error broadcasting the transaction');
             }
             reloadVotes();
         } catch (err) {
-            setError(err!.toString());
+            setError(String(err));
         } finally {
             setProgress(false);
         }
@@ -240,34 +250,36 @@ function MyVotesCard({
                         </Typography>
                     )}
                 </div>
-                <Table className="w-full mt-4 border-2 border-gray-200">
-                    <TableHead>
-                        <TableRow>
-                            <TableColumn>Validator</TableColumn>
-                            <TableColumn>Vote Weight</TableColumn>
-                            <TableColumn />
-                        </TableRow>
-                    </TableHead>
-                    <TableBody>
-                        {votes.map((vote) => (
-                            <TableRow key={vote.validator}>
-                                <TableCell>{vote.validator}</TableCell>
-                                <TableCell>{localeNumber(vote.vote_weight)}</TableCell>
-                                <TableCell>
-                                    <Button disabled={progress} onClick={() => onNodeSelected(vote.validator)} size="sm" className="me-2">
-                                        View
-                                    </Button>
-                                    <Button size="sm" disabled={progress} onClick={() => removeVote(vote.validator)}>
-                                        <div className="flex flex-row items-center">
-                                            {progress && <Spinner className="me-3" width={16} height={16} />}
-                                            Remove Vote
-                                        </div>
-                                    </Button>
-                                </TableCell>
+                <div className="overflow-x-auto">
+                    <Table className="w-full mt-4 border-2 border-gray-200 min-w-[600px]">
+                        <TableHead>
+                            <TableRow>
+                                <TableColumn>Validator</TableColumn>
+                                <TableColumn>Vote Weight</TableColumn>
+                                <TableColumn />
                             </TableRow>
-                        ))}
-                    </TableBody>
-                </Table>
+                        </TableHead>
+                        <TableBody>
+                            {votes.map((vote) => (
+                                <TableRow key={vote.validator}>
+                                    <TableCell>{vote.validator}</TableCell>
+                                    <TableCell>{localeNumber(vote.vote_weight)}</TableCell>
+                                    <TableCell>
+                                        <Button disabled={progress} onClick={() => onNodeSelected(vote.validator)} size="sm" className="me-2">
+                                            View
+                                        </Button>
+                                        <Button size="sm" disabled={progress} onClick={() => removeVote(vote.validator)}>
+                                            <div className="flex flex-row items-center">
+                                                {progress && <Spinner className="me-3" width={16} height={16} />}
+                                                Remove Vote
+                                            </div>
+                                        </Button>
+                                    </TableCell>
+                                </TableRow>
+                            ))}
+                        </TableBody>
+                    </Table>
+                </div>
             </CardBody>
         </Card>
     );
@@ -275,7 +287,7 @@ function MyVotesCard({
 
 export function ManageVotes() {
     const [account, setAccount] = useState<string | undefined>();
-    const [votes, votesLoading, votesError, reloadVotes] = usePromise(() => (account ? DefaultService.getVotesByAccount(account!) : Promise.resolve([])), [account]);
+    const [votes, votesLoading, votesError, reloadVotes] = usePromise(() => (account ? DefaultService.getVotesByAccount(account) : Promise.resolve([])), [account]);
     const [validatorConfig, validatorConfigLoading, validatorConfigError, reloadConfig] = usePromise(() => DefaultService.getValidatorConfig(), []);
     const loaded = !votesLoading && !validatorConfigLoading && account && votes && validatorConfig;
     const error = (votesError || validatorConfigError)?.message;
@@ -328,13 +340,13 @@ export function ManageVotes() {
                                 <Typography variant="h6" color="blue-gray">
                                     Stats
                                 </Typography>
-                                <ValidatorStatsTable validator={selectedNode!} className="w-full mt-3" />
+                                <ValidatorStatsTable validator={selectedNode} className="w-full mt-3" />
                             </div>
                             <div>
                                 <Typography variant="h6" color="blue-gray">
                                     Votes
                                 </Typography>
-                                <ValidatorVotesTable account={selectedNode!} className="w-full mt-3" />
+                                <ValidatorVotesTable account={selectedNode} className="w-full mt-3" />
                             </div>
                         </div>
                     </DialogBody>
