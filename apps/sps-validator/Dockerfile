@@ -1,6 +1,7 @@
 FROM alpine:3.20 AS utils
 RUN apk add --no-cache dumb-init
 
+
 ######################################################################
 FROM node:23.3-alpine3.20 AS dev-dependencies
 ######################################################################
@@ -43,6 +44,8 @@ RUN rm -f .npmrc
 ######################################################################
 FROM node:23.3-alpine3.20 AS final
 ######################################################################
+ARG VERSION=development
+ENV VERSION=$VERSION
 COPY --from=utils /usr/bin/dumb-init /usr/bin/dumb-init
 WORKDIR /app
 ENV NODE_ENV=production
