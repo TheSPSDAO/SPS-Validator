@@ -257,7 +257,7 @@ update() {
         echo "Stopping validator"
         stop validator
         echo "Checking out latest update"
-        git fetch --all -f
+        git fetch --tags -f
 
         if ! git checkout "$TO_VERSION"; then
             echo "Error checking out $TO_VERSION. Please check the version and try again. If you have local changes, please stash them before updating."
