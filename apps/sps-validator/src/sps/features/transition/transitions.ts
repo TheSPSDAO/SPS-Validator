@@ -4,6 +4,7 @@ import { inject, singleton } from 'tsyringe';
 export type TransitionPoints = {
     transition_points: {
         fix_vote_weight: number;
+        bad_block_96950550: number;
     };
 };
 export const TransitionPoints: unique symbol = Symbol('TransitionPoints');
@@ -18,6 +19,8 @@ export type TransitionPointsStatuses = {
 
 export const TransitionPointDescriptions: Record<TransitionPointName, string> = {
     fix_vote_weight: 'Transition point for fixing vote weights when unstaking SPS. This is a one-time transition point that is part of version 1.1.0.',
+    bad_block_96950550:
+        'Transition point for skipping transactions in block 96950550 because of a splinterlands node issue. This is a one-time transition point that is part of version 1.1.3 to support replaying from initial snapshot.',
 };
 
 @singleton()

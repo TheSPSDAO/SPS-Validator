@@ -75,6 +75,7 @@ export { TransactionRepository_ } from './repositories/transactions';
 export { BlockRepository, LastBlockCache, TransactionRepository } from './entities/block';
 export { HiveAccountRepository } from './entities/account/hive_account';
 export type { BlockRef } from './entities/block';
+export { NBlock } from './entities/block';
 export type { BalanceEntry, GetTokenBalancesParams, GetTokenBalancesResult } from './entities/tokens/balance';
 export { BalanceRepository } from './entities/tokens/balance';
 export { BalanceHistoryRepository } from './entities/tokens/balance_history';

@@ -89,6 +89,7 @@ export class EntryPoint<T extends Resolver & Container, S extends Synchronisatio
                 const prev_block_hash = await this.getBlockHash(block_num - 1);
                 utils.log(`Processing block [${block_num}], Head Block: ${observer.headBlockNum}, Blocks to head: ${observer.headBlockNum - block_num}.`);
 
+                // NOTE: do not use this variable outside of passing it to the processor. it has the potential to get modified inside the processor.
                 const block = new NBlock(block_num, block_data, { l2_block_id: prev_block_hash as string });
                 const result = await this.processor.process(block, observer.headBlockNum);
                 block_hash = result.block_hash;

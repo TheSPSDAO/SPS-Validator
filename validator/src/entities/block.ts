@@ -177,7 +177,7 @@ type TransactionWithId = {
     id: string;
 };
 
-function prngFromBlock(block: SignedBlock): PRNG {
+function prngFromBlock(block: Pick<SignedBlock, 'block_id' | 'previous'>): PRNG {
     return seedrandom(`${block.block_id}${block.previous}`);
 }
 
@@ -189,7 +189,11 @@ export class NBlock implements BlockRef {
     public readonly prev_block_hash;
     public readonly prng: PRNG;
 
-    constructor(public readonly block_num: number, block: SignedBlock, previous_block: Pick<BlockEntity, 'l2_block_id'>) {
+    constructor(
+        public readonly block_num: number,
+        block: Pick<SignedBlock, 'timestamp' | 'transactions' | 'transaction_ids' | 'block_id' | 'previous'>,
+        previous_block: Pick<BlockEntity, 'l2_block_id'>,
+    ) {
         this.block_time = new Date(block.timestamp + 'Z');
         this.transactions = block.transactions.map((transaction, index) => {
             return { transaction, id: block.transaction_ids[index] };
