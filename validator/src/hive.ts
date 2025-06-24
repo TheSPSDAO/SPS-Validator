@@ -8,6 +8,7 @@ export type HiveOptions = {
     rpc_timeout?: number;
     logging_level: LogLevel;
     blocks_behind_head: number;
+    blocks_head_mode?: 'latest' | 'irreversible';
     replay_batch_size: number;
 
     hive_engine_rpc_nodes: string[];
@@ -26,7 +27,7 @@ export class HiveClient extends Client {
             // Our LogLevel happens to be compatible with dhive-sl's version.
             loggingLevel: cfg.logging_level.valueOf(),
             timeout: cfg.rpc_timeout,
-            stream: { blocksBehindHead: cfg.blocks_behind_head, replayBatchSize: cfg.replay_batch_size, mode: 'latest' },
+            stream: { blocksBehindHead: cfg.blocks_behind_head, replayBatchSize: cfg.replay_batch_size, mode: cfg.blocks_head_mode ?? 'irreversible' },
             skipTransactionQueue: true,
             engine: {
                 nodes: cfg.hive_engine_rpc_nodes,

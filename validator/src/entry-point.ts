@@ -166,6 +166,7 @@ export class EntryPoint<T extends Resolver & Container, S extends Synchronisatio
 
             // TODO: Clean this up.
             (async () => {
+                console.log('Streaming head block number in mode: ', this.stream.blockchainMode);
                 for await (const head of this.stream.streamHead()) {
                     headBlockObserver.headBlockNum = head;
                 }
