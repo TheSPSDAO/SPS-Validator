@@ -72,10 +72,10 @@ async function* dequeueGenerator<T>(queue: AsyncQueue<T>): AsyncGenerator<T, voi
  * A hive stream, attempts to fetch blocks as fast as we can process them.
  */
 export class HiveStream {
-    private readonly blockchainMode?: BlockchainMode;
+    public readonly blockchainMode: BlockchainMode;
 
     public constructor(private readonly client: Client, private readonly options: HiveStreamOptions) {
-        this.blockchainMode = client.options.stream?.mode;
+        this.blockchainMode = client.options.stream?.mode ?? 'irreversible';
     }
 
     public stream(from: number, observer: HeadBlockObserver): AsyncGenerator<NumberedSignedBlock, void, undefined> {

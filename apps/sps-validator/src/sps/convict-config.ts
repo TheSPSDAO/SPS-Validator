@@ -135,6 +135,12 @@ const schema = {
         default: 1,
         env: 'BLOCKS_BEHIND_HEAD',
     },
+    blocks_head_mode: {
+        doc: 'The mode to use for the blocks head',
+        format: ['latest', 'irreversible'],
+        default: 'irreversible',
+        env: 'BLOCKS_HEAD_MODE',
+    },
     rpc_nodes: {
         doc: 'The Hive RPC nodes to connect to, in failover order',
         format: 'stringy-array',
