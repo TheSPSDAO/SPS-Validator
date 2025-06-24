@@ -66,8 +66,8 @@ export class SpsBlockProcessor extends BlockProcessor<SpsSynchronisationConfig> 
                     timestamp: '2025-06-20T15:36:51.000',
                     transactions: [],
                     transaction_ids: [],
-                    block_id: block.block_id,
-                    previous: block.previous,
+                    block_id: '05c7591683e0102605a769a6935275a5e760353c',
+                    previous: '05c75915721349cfbd6c42ff962cf4d66ec2b05e',
                 },
                 { l2_block_id: block.prev_block_hash }, // previous block's l2_block_id
             );
