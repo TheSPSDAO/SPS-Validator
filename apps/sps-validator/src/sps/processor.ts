@@ -11,10 +11,10 @@ import {
     ValidatorOpts,
     ValidatorRepository,
     ValidatorWatch,
+    NBlock,
 } from '@steem-monsters/splinterlands-validator';
 import { inject, injectable } from 'tsyringe';
 import { SpsSynchronisationClosure, SpsSynchronisationConfig } from './sync';
-import { NBlock } from 'validator/src/entities/block';
 import { TransitionManager } from './features/transition';
 
 @injectable()
