@@ -482,6 +482,12 @@ const schema = {
             default: 95026480,
             env: 'FIX_VOTE_WEIGHT_TRANSITION_POINT',
         },
+        bad_block_96950550: {
+            doc: 'Block number for the bad_block_96950550 transition',
+            format: 'nat',
+            default: 96950550,
+            env: 'BAD_BLOCK_96950550_TRANSITION_POINT',
+        },
     },
 };
 

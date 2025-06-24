@@ -54,22 +54,23 @@ export class BlockProcessor<T extends SynchronisationConfig> {
 
     public async process(block: NBlock, headBlock: number): Promise<{ block_hash: string; event_logs: EventLog[] }> {
         const operations: Operation[] = [];
-        await this.sync.waitToProcessBlock(block.block_num);
+        const transformedBlock = this.transformBlock(block);
+        await this.sync.waitToProcessBlock(transformedBlock.block_num);
         const block_hash = await this.trxStarter.withTransaction(async (trx) => {
-            const reward = this.calculateBlockReward(block);
+            const reward = this.calculateBlockReward(transformedBlock);
             // TODO: procesVirtualOps
-            const wrappedPayloads = await this.topLevelVirtualPayloadSource.process(block, trx);
+            const wrappedPayloads = await this.topLevelVirtualPayloadSource.process(transformedBlock, trx);
             for (const wrappedPayload of wrappedPayloads) {
                 const { trx_id, payloads } = wrappedPayload;
                 for (let i = 0; i < payloads.length; i++) {
                     const data = payloads[i];
-                    const op = this.operationFactory.build(block, reward, data, trx_id, i, true);
+                    const op = this.operationFactory.build(transformedBlock, reward, data, trx_id, i, true);
                     operations.push(op);
                     await op.process(trx);
                 }
             }
 
-            for (const t of block.transactions) {
+            for (const t of transformedBlock.transactions) {
                 for (const [op_index, op] of t.transaction.operations.entries()) {
                     if (BlockProcessor.isAccountCreationOperation(op)) {
                         await this.hiveAccountRepository.upsert({ name: op[1].new_account_name, authority: {} });
@@ -81,16 +82,16 @@ export class BlockProcessor<T extends SynchronisationConfig> {
                         continue;
                     }
 
-                    const operation = this.operationFactory.build(block, reward, op, t.id, op_index);
+                    const operation = this.operationFactory.build(transformedBlock, reward, op, t.id, op_index);
                     operations.push(operation);
                     await operation.process(trx);
                 }
             }
 
             // Load the validator for this block
-            const validator = await this.validatorRepository.getBlockValidator(block, trx);
-            const { block_num, l2_block_id } = await this.blockRepository.insertProcessed(block, operations, validator, trx);
-            this.lastBlockCache.update(block);
+            const validator = await this.validatorRepository.getBlockValidator(transformedBlock, trx);
+            const { block_num, l2_block_id } = await this.blockRepository.insertProcessed(transformedBlock, operations, validator, trx);
+            this.lastBlockCache.update(transformedBlock);
 
             // If we are the validator chosen for this block, submit the block hash to validate it
             if (this.isChosenValidator(validator)) {
@@ -109,6 +110,14 @@ export class BlockProcessor<T extends SynchronisationConfig> {
             event_logs: operations.flatMap((x) => x.actions.flatMap((x) => x.result).filter(isDefined)),
             block_hash,
         };
+    }
+
+    /**
+     * Hook to modify the block data before processing.
+     * This is currently used to fix replay because of a microfork that the splinterlands node read
+     */
+    protected transformBlock(block: NBlock): NBlock {
+        return block;
     }
 
     private async trySubmitBlockValidation(block_num: number, l2_block_id: string, attempts = 5): Promise<void> {
