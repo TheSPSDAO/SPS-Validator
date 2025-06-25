@@ -151,7 +151,7 @@ You can find update guides for the different updates below. The type of update w
 
 block-hash-stable updates are updates that don't affect the block hash. These are normally additional API endpoints or install script improvements.
 
-#### Update command
+#### Update command (only available in v1.1.1+)
 - Run `./run.sh update` and follow the prompts.
 
 #### Manually updating

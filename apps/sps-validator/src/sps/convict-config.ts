@@ -135,6 +135,12 @@ const schema = {
         default: 1,
         env: 'BLOCKS_BEHIND_HEAD',
     },
+    blocks_head_mode: {
+        doc: 'The mode to use for the blocks head',
+        format: ['latest', 'irreversible'],
+        default: 'irreversible',
+        env: 'BLOCKS_HEAD_MODE',
+    },
     rpc_nodes: {
         doc: 'The Hive RPC nodes to connect to, in failover order',
         format: 'stringy-array',
@@ -475,6 +481,12 @@ const schema = {
             format: 'nat',
             default: 95026480,
             env: 'FIX_VOTE_WEIGHT_TRANSITION_POINT',
+        },
+        bad_block_96950550: {
+            doc: 'Block number for the bad_block_96950550 transition',
+            format: 'nat',
+            default: 96950550,
+            env: 'BAD_BLOCK_96950550_TRANSITION_POINT',
         },
     },
 };
