@@ -13,7 +13,7 @@ DOCKER_COMPOSE_NETWORK_DEFAULT=validator:postgres
 DOCKER_COMPOSE_NETWORK=${DOCKER_COMPOSE_NETWORK:-$DOCKER_COMPOSE_NETWORK_DEFAULT}
 
 warn_customized_network() {
-  if [[ "x$DOCKER_COMPOSE_NETWORK" != "x$DOCKER_COMPOSE_NETWORK_DEFAULT" ]]
+  if [[ "$DOCKER_COMPOSE_NETWORK" != "$DOCKER_COMPOSE_NETWORK_DEFAULT" ]]
   then
       >&2 echo "DOCKER_COMPOSE_NETWORK was manually tweaked. Consider following the documented procedures in README.md instead of this CI-specific script, as using this script prevents you from properly running a validator node without starting over with a fresh database."
   fi
