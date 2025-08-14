@@ -11,14 +11,13 @@ import {
     BalanceRepository,
     StakingConfiguration,
     token,
-    TokenSupport,
     ValidationError,
     ErrorType,
 } from '@steem-monsters/splinterlands-validator';
 import { transition_cleanup_lite_accounts } from '../schema';
 import { MakeActionFactory, MakeRouter } from '../utils';
 import { TransitionManager } from '../../features/transition';
-import { SUPPORTED_TOKENS, TOKENS } from '../../features/tokens';
+import { TOKENS } from '../../features/tokens';
 
 type LiteAccountSummary = {
     account: string;
