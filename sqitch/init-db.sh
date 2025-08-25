@@ -27,5 +27,5 @@ psql -Atx "${CONNECTION_STRING}" -c "SELECT 1 FROM pg_catalog.pg_namespace WHERE
 	grep -q 1 && psql -v "ON_ERROR_STOP=1" -Atx "${CONNECTION_STRING}" -c "GRANT ALL ON ALL TABLES IN SCHEMA sqitch TO ${APP_USER}"
 
 # if the snapshot schema already exists and the owner is not the app user then drop it
-psql -Atx "${CONNECTION_STRING}" -c "SELECT 1 FROM pg_catalog.pg_namespace WHERE nspname = 'snapshot' JOIN pg_catalog.pg_roles ON pg_catalog.pg_roles.oid = pg_catalog.pg_namespace.nspowner WHERE rolname != '${APP_USER}'" |
+psql -Atx "${CONNECTION_STRING}" -c "SELECT 1 FROM pg_catalog.pg_namespace JOIN pg_catalog.pg_roles ON pg_catalog.pg_roles.oid = pg_catalog.pg_namespace.nspowner WHERE pg_catalog.pg_namespace.nspname = 'snapshot' AND rolname != '${APP_USER}'" |
 	grep -q 1 && psql -v "ON_ERROR_STOP=1" -Atx "${CONNECTION_STRING}" -c "DROP SCHEMA snapshot CASCADE;"
