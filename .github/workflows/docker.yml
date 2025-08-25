@@ -22,7 +22,7 @@ jobs:
                 image:
                     - { image: sps-validator, path: ./apps/sps-validator/Dockerfile, context: '.' }
                     - { image: sps-validator-ui, path: ./apps/sps-validator-ui/Dockerfile, context: '.' }
-                    - { image: sps-sqitch, path: ./sqitch/Dockerfile, context: ./sqitch }
+                    - { image: sps-sqitch-dynamic-snapshot, path: ./sqitch/dynamic-snapshot.Dockerfile, context: ./sqitch }
 
                     # Add more image names here
         steps:
