@@ -1,6 +1,6 @@
 FROM sqitch/sqitch:v1.5.0
 USER root
-RUN apt-get -qq update && apt-get -qq install unzip && rm -rf /var/cache/apt/* /var/lib/apt/lists/*
+RUN apt-get -qq update && apt-get -qq install unzip && apt-get -qq install curl && rm -rf /var/cache/apt/* /var/lib/apt/lists/*
 
 WORKDIR /app
 COPY deploy ./deploy
