@@ -13,7 +13,19 @@ psql -Atx "${CONNECTION_STRING}" -c "SELECT 1 FROM pg_catalog.pg_roles WHERE rol
 	grep -q 1 ||
 	psql -v "ON_ERROR_STOP=1" -Atx "${CONNECTION_STRING}" -c "CREATE ROLE ${APP_USER} WITH LOGIN PASSWORD '${APP_PASSWORD}'" -c "GRANT ${APP_USER} TO ${PGUSER}"
 
-# Create the database if it does not exist
+# grant the user permission to create on the database if it exists
+psql -Atx "${CONNECTION_STRING}" -c "SELECT 1 FROM pg_database WHERE datname = '${APP_DATABASE}'" |
+	grep -q 1 && psql -v "ON_ERROR_STOP=1" -Atx "${CONNECTION_STRING}" -c "GRANT CREATE ON DATABASE ${APP_DATABASE} TO ${APP_USER};"
+
+# or, create the database if it does not exist
 psql -Atx "${CONNECTION_STRING}" -c "SELECT 1 FROM pg_database WHERE datname = '${APP_DATABASE}'" |
 	grep -q 1 ||
 	psql -v "ON_ERROR_STOP=1" -Atx "${CONNECTION_STRING}" -c "CREATE DATABASE ${APP_DATABASE} WITH OWNER ${APP_USER}"
+
+# if the sqitch schema already exists, grant permissions to the app user
+psql -Atx "${CONNECTION_STRING}" -c "SELECT 1 FROM pg_catalog.pg_namespace WHERE nspname = 'sqitch'" |
+	grep -q 1 && psql -v "ON_ERROR_STOP=1" -Atx "${CONNECTION_STRING}" -c "GRANT ALL ON ALL TABLES IN SCHEMA sqitch TO ${APP_USER}"
+
+# if the snapshot schema already exists, grant permissions to the app user
+psql -Atx "${CONNECTION_STRING}" -c "SELECT 1 FROM pg_catalog.pg_namespace WHERE nspname = 'snapshot'" |
+	grep -q 1 && psql -v "ON_ERROR_STOP=1" -Atx "${CONNECTION_STRING}" -c "GRANT ALL ON ALL TABLES IN SCHEMA snapshot TO ${APP_USER}"
