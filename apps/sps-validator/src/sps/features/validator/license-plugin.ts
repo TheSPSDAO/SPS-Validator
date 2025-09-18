@@ -31,7 +31,7 @@ export class ValidatorCheckInPlugin implements Plugin, Prime {
         private readonly validatorRepository: ValidatorRepository,
     ) {
         this.validatorAccount = config.validator_account;
-        this.checkInWatcher.addValidatorCheckInWatcher(this.CHANGE_KEY, (value) => {
+        this.checkInWatcher.addValidatorCheckInWatcher(this.CHANGE_KEY, () => {
             this.nextCheckInBlock = this.lastCheckInBlock ? this.getNextCheckInBlock(this.lastCheckInBlock) : undefined;
         });
     }

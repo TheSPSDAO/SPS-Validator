@@ -11,14 +11,11 @@ import {
     BalanceRepository,
     StakingConfiguration,
     token,
-    TokenSupport,
-    ValidationError,
-    ErrorType,
 } from '@steem-monsters/splinterlands-validator';
 import { transition_cleanup_lite_accounts } from '../schema';
 import { MakeActionFactory, MakeRouter } from '../utils';
 import { TransitionManager } from '../../features/transition';
-import { SUPPORTED_TOKENS, TOKENS } from '../../features/tokens';
+import { TOKENS } from '../../features/tokens';
 
 type LiteAccountSummary = {
     account: string;
@@ -76,7 +73,7 @@ export class CleanupLiteAccountsTransitionAction extends Action<typeof transitio
         op: OperationData,
         data: unknown,
         index: number,
-        private readonly handle: Handle,
+        handle: Handle,
         private readonly stakingConfiguration: StakingConfiguration,
         private readonly stakingRepository: StakingRewardsRepository,
         private readonly balanceRepository: BalanceRepository,
@@ -92,17 +89,10 @@ export class CleanupLiteAccountsTransitionAction extends Action<typeof transitio
     }
 
     async validate() {
-        if (!this.stakedToken) {
-            throw new ValidationError('Staking is not supported for the specified token.', this, ErrorType.NoStakingToken);
-        }
         return true;
     }
 
     async process(trx?: Trx): Promise<EventLog[]> {
-        if (!this.stakedToken) {
-            throw new ValidationError('Staking is not supported for the specified token.', this, ErrorType.NoStakingToken);
-        }
-
         const events: EventLog[] = [];
         const liteAccountsInitial = await this.cleanupRepository.getLiteAccounts(trx);
 

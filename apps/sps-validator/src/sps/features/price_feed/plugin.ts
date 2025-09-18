@@ -26,7 +26,7 @@ export class PriceFeedPlugin implements Plugin, Prime {
         @inject(ValidatorRepository) private readonly validatorRepository: ValidatorRepository,
         @injectAll(ExternalPriceFeed) private readonly feeds: ExternalPriceFeed[],
     ) {
-        this.priceFeedWatch.addPriceFeedWatcher(this.CHANGE_KEY, (config) => {
+        this.priceFeedWatch.addPriceFeedWatcher(this.CHANGE_KEY, () => {
             this.nextBlock = undefined;
         });
     }

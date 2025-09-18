@@ -106,7 +106,6 @@ export class BalanceRepository extends BaseRepository {
             throw new ActionError('Amount must always be greater than 0', action, ErrorType.AmountNotPositive);
         }
 
-        // Using Promise.all could lead to a deadlock because of starved connection pool.
         const from_balance = await this.getBalance(from, token, trx);
         const to_balance = await this.getBalance(to, token, trx);
 
