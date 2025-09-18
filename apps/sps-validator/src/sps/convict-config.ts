@@ -491,7 +491,7 @@ const schema = {
         validator_transition_cleanup: {
             doc: 'Block number for the validator_transition_cleanup transition',
             format: 'nat',
-            default: 97000000,
+            default: 99999196,
             env: 'VALIDATOR_TRANSITION_CLEANUP_TRANSITION_POINT',
         },
     },
