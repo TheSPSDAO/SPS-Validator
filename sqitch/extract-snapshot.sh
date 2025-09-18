@@ -8,8 +8,7 @@ TMP_TEMPLATE="${TMPDIR:-/tmp/}$(basename "$0").XXXXXXXXXXXX"
 function usage {
     echo "usage: $SCRIPT_NAME [-h] FILE [ENV]"
     echo "  -h      display help"
-    echo "  FILE    snapshot zip file"
-    echo "  [ENV]   output file for parsed LAST_BLOCK, in dotenv format"
+    echo "  FILE    snapshot zip file or http url"
     echo "  Required environment variables:"
     echo "    - SNAPSHOT - where to extract the snapshot SQL file."
 }
@@ -41,21 +40,30 @@ fi
 
 FILE="$1"
 
+DOWNLOADED="false"
+# if FILE starts with http:// or https://, download it to a temp dir then unzip it like normal (then delete it)
+# this only exists to support splinterlands QA environments at the moment.
+if [[ "$FILE" == http://* || "$FILE" == https://* ]]; then
+  echo "Downloading $FILE..."
+  FILE=$(mktemp "$TMP_TEMPLATE")
+  curl -sSL "$1" -o "$FILE"
+  DOWNLOADED="true"
+fi
+
 if [ ! -f "$FILE" ]; then
   echo "FILE $FILE does not seem to be a file"
   usage
   exit 1
 fi
 
-if [ -n "${2+x}" ]
-then
-  ENV="$2"
-fi
-
 unzip_dir=$(mktemp -d "$TMP_TEMPLATE")
 unzip "$FILE" -d "$unzip_dir"
 snapshot_file=$(find "$unzip_dir" -maxdepth 1 -type f -iname "*.sql" | head -n 1)
 
-
 mv "$snapshot_file" "$SNAPSHOT"
 rm -r "$unzip_dir"
+
+# if we downloaded the file, delete it
+if [ "$DOWNLOADED" == "true" ]; then
+  rm -f "$FILE"
+fi
