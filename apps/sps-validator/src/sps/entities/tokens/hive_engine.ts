@@ -12,6 +12,6 @@ export class HiveEngineRepository {
 
     async getBalance(account: string, token: string) {
         const resp = await this.client.engine.tokens.getAccountBalance(account, token);
-        return parseFloat(resp.balance);
+        return parseFloat(resp?.balance ?? '0');
     }
 }

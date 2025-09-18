@@ -131,7 +131,7 @@ import {
     SpsTopPriceFeedWrapper,
 } from './features/price_feed';
 import { SpsValidatorCheckInRepository } from './entities/validator/validator_check_in';
-import { SpsBscRepository, SpsEthRepository } from './entities/tokens/eth';
+import { SpsBscRepository, SpsEthRepository, SpsBaseRepository } from './entities/tokens/eth';
 import { HiveEngineRepository } from './entities/tokens/hive_engine';
 import { VIRTUAL_TOKENS_CONFIG, VirtualTokenConfig } from './features/tokens';
 import { TransitionManager, TransitionPoints } from './features/transition';
@@ -170,7 +170,11 @@ export class CompositionRoot extends null {
         container.register<ConfigType>(ConfigType, { useValue: cfg });
         container.register<EntryOptions>(EntryOptions, { useToken: ConfigType });
         container.register<PrefixOpts>(PrefixOpts, { useToken: ConfigType });
-        container.register<ApiOptions>(ApiOptions, { useToken: ConfigType });
+        container.registerInstance<ApiOptions>(ApiOptions, {
+            ...cfg.api,
+            db_block_retention: cfg.db_block_retention,
+            version: cfg.version,
+        });
         container.register<ValidatorOpts>(ValidatorOpts, { useToken: ConfigType });
         container.register<SocketOptions>(SocketOptions, { useToken: ConfigType });
         container.register<HiveStreamOptions>(HiveStreamOptions, { useToken: ConfigType });
@@ -189,6 +193,7 @@ export class CompositionRoot extends null {
         // External Chains
         container.registerInstance(SpsEthRepository, new SpsEthRepository(cfg.eth));
         container.registerInstance(SpsBscRepository, new SpsBscRepository(cfg.bsc));
+        container.registerInstance(SpsBaseRepository, new SpsBaseRepository(cfg.base));
         container.registerSingleton(HiveEngineRepository);
 
         // Socket
@@ -222,7 +227,7 @@ export class CompositionRoot extends null {
         container.register<ConditionalApiActivator>(ConditionalApiActivator, {
             useFactory: instanceCachingFactory((c) => {
                 const cfg = c.resolve<ConfigType>(ConfigType);
-                if (cfg.api_port) {
+                if (cfg.api.port) {
                     return c.resolve<EnabledApiActivator>(EnabledApiActivator);
                 } else {
                     return c.resolve<DisabledApiActivator>(DisabledApiActivator);
@@ -232,7 +237,7 @@ export class CompositionRoot extends null {
         container.register<Middleware>(Middleware, {
             useFactory: instanceCachingFactory((c) => {
                 const cfg = c.resolve<ConfigType>(ConfigType);
-                if (cfg.api_port) {
+                if (cfg.api.port) {
                     if (cfg.block_processing) {
                         return c.resolve<Middleware>(SnapshotMiddleware);
                     } else {
