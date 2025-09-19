@@ -1,8 +1,8 @@
-FROM node:23.3-alpine3.20 AS build
+FROM node:24.8-alpine3.21 AS build
 
 WORKDIR /app
 
-ENV PATH /app/node_modules/.bin:$PATH
+ENV PATH=/app/node_modules/.bin:$PATH
 
 COPY package.json package-lock.json ./
 RUN npm ci --silent
@@ -17,7 +17,7 @@ ENV VALIDATOR_PREFIX=$VALIDATOR_PREFIX
 
 RUN npx nx build sps-validator-ui --configuration=production
 
-FROM nginx:stable-alpine
+FROM nginx:stable-alpine-slim
 COPY --from=build /app/dist/apps/sps-validator-ui/ /usr/share/nginx/html
 COPY /apps/sps-validator-ui/nginx/nginx.conf /etc/nginx/conf.d/default.conf
 

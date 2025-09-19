@@ -36,9 +36,11 @@ APP_DATABASE=${APP_DATABASE:-validator}
 APP_USER=${APP_USER:-validator}
 APP_PASSWORD=${APP_PASSWORD:-validator}
 
+POSTGRES_RESTORE_JOBS=${POSTGRES_RESTORE_JOBS:-2}
+
 docker_compose() {
     # not really useful anymore but leaving it in case it is needed
-    docker compose "$@"
+    docker compose  --env-file .env  --env-file .env.pg "$@"
 }
 
 run_psql() {
@@ -62,10 +64,20 @@ snapshot() {
 
     echo "Creating snapshot"
     # connect to the database and run the freshsnapshot() function
-    run_psql -c "SELECT snapshot.freshsnapshot(TRUE);"
+    # run_psql -c "SELECT snapshot.freshsnapshot(TRUE);"
 
-    # dump the snapshot to a file
-    echo "Dumping snapshot to file"
+    # dump the snapshot to directory
+
+    # create a unique folder name with date and time
+    TIMESTAMP=$(date +"%Y%m%d%H%M%S")
+    CONTAINER_SNAPSHOT_DIR="/tmp/snapshot/$TIMESTAMP"
+    LOCAL_SNAPSHOT_DIR=$(realpath "./snapshot/$TIMESTAMP")
+    LOCAL_SNAPSHOT_FILE="$LOCAL_SNAPSHOT_DIR.tar.gz"
+    mkdir -p "$LOCAL_SNAPSHOT_DIR"
+
+    echo "Dumping snapshot to $LOCAL_SNAPSHOT_FILE"
+
+    # dump
     docker_compose exec -e PGPASSWORD="$APP_PASSWORD" pg pg_dump \
         --no-owner --no-acl \
         --no-comments --no-publications --no-security-labels \
@@ -73,31 +85,28 @@ snapshot() {
         --no-subscriptions --no-tablespaces --data-only \
         --host "127.0.0.1" \
         --username "$APP_USER" \
-        "${APP_DATABASE}" > snapshot.sql
+        --format directory \
+        --jobs "$POSTGRES_RESTORE_JOBS" \
+        --file "$CONTAINER_SNAPSHOT_DIR" \
+        "${APP_DATABASE}"
 
     # get the latest change from the sqitch.changes table with psql
     CHANGE=$(run_psql -t -c "SELECT change FROM sqitch.changes WHERE project = 'splinterlands-validator' ORDER BY committed_at DESC LIMIT 1")
     # trim whitespace from the change
     CHANGE=$(echo "$CHANGE" | xargs echo -n)
-    echo "Latest change: $CHANGE"
-    # add to the beginning of the snapshot.sql file like -- to_change:$CHANGE
-    sed -i "1s/^/-- to_change:$CHANGE\n/" snapshot.sql
+    echo "Adding latest change to snapshot: $CHANGE"
+    # add a .change file to the snapshot directory with the latest change
+    echo "$CHANGE" > "$LOCAL_SNAPSHOT_DIR/.change"
 
-    echo "Snapshot created. You can find it in snapshot.sql"
+    echo "Creating tar archive of snapshot"
+    # create a tar archive of the snapshot directory
+    tar -czf "$LOCAL_SNAPSHOT_FILE" -C "$LOCAL_SNAPSHOT_DIR" .
 
-    read -p "Would you like to zip the snapshot? (y/n)" -n 1 -r
-    echo    # (optional) move to a new line
-    if [[ $REPLY =~ ^[Yy]$ ]]; then
-        echo "Zipping snapshot"
-        zip snapshot.zip snapshot.sql
-        echo "Snapshot zipped. You can find it in snapshot.zip"
+    echo "Cleaning up"
+    # delete the unzipped folder
+    rm -rf "$LOCAL_SNAPSHOT_DIR"
 
-        read -p "Would you like to remove the snapshot.sql file? (y/n)" -n 1 -r
-        echo    # (optional) move to a new line
-        if [[ $REPLY =~ ^[Yy]$ ]]; then
-            rm snapshot.sql
-        fi
-    fi
+    echo "Snapshot created. You can find it at $LOCAL_SNAPSHOT_FILE"
 
     read -p "Would you like to start the validator again? (y/n)" -n 1 -r
     echo    # (optional) move to a new line
@@ -198,24 +207,42 @@ replay() {
 
 # skip-snapshot works technically, but will result in a broken build
 build() {
+    # Make sure the validator is stopped
+    read -p "Building requires the validator to be stopped. Stop the validator? (y/n)" -n 1 -r
+    echo    # (optional) move to a new line
+    if [[ ! $REPLY =~ ^[Yy]$ ]]; then
+        echo "Aborting build"
+        exit
+    fi
+    echo "Stopping validator"
+    stop validator
+
+    # Stop the database and so we can restart it with the .env.pg-restore variables
+    stop pg
+
     if [[ $1 == "skip-snapshot" ]] || [[ $2 == "skip-snapshot" ]]; then
         echo "Skipping snapshot"
         echo "Running migrations. This could take several minutes..."
         if [[ $1 == "no-cache" ]] || [[ $2 == "no-cache" ]]; then
-            docker_compose build --no-cache validator-sqitch
+            docker_compose --env-file .env.pg-restore build --no-cache validator-sqitch
         else
-            docker_compose build validator-sqitch
+            docker_compose --env-file .env.pg-restore build validator-sqitch
         fi
     else
         dl_snapshot "$1"
         echo "Running migrations. This could take several minutes..."
         if [[ $1 == "no-cache" ]] || [[ $2 == "no-cache" ]]; then
-            docker_compose build --build-arg snapshot="$SNAPSHOT_FILE" --no-cache validator-sqitch
+            docker_compose --env-file .env.pg-restore build --build-arg snapshot="$SNAPSHOT_FILE" --no-cache validator-sqitch
         else
-            docker_compose build --build-arg snapshot="$SNAPSHOT_FILE" validator-sqitch
+            docker_compose --env-file .env.pg-restore build --build-arg snapshot="$SNAPSHOT_FILE" validator-sqitch
         fi
     fi
-    docker_compose --profile cli -f "${COMPOSE_FILE}" run validator-sqitch
+
+    docker_compose --env-file .env.pg-restore --profile cli -f "${COMPOSE_FILE}" run validator-sqitch
+
+    echo "Build complete. Restarting pg with normal settings."
+    stop pg
+    docker_compose up -d pg
 }
 
 dl_snapshot() {
