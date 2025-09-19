@@ -50,3 +50,10 @@ export class SpsBscRepository extends BaseERC20Repository {
         super(opts);
     }
 }
+
+@injectable()
+export class SpsBaseRepository extends BaseERC20Repository {
+    constructor(opts: ERC20Opts) {
+        super(opts);
+    }
+}
