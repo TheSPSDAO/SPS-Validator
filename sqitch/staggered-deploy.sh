@@ -68,7 +68,7 @@ then
         echo "Restoring snapshot from $SNAPSHOT"
 
         echo "Clearing out snapshot tables for restore..."
-        PGPASSWORD="$APP_PASSWORD" psql -U "$APP_USER" -d "$APP_DATABASE" -c "SELECT snapshot.pre_snapshot_restore();" || true
+        PGPASSWORD="$APP_PASSWORD" psql -U "$APP_USER" -d "$APP_DATABASE" -c "BEGIN; SELECT snapshot.pre_snapshot_restore(); COMMIT;" || true
 
         echo "Setting snapshot tables to unlogged for faster restore..."
         # Before we restore, we switch all of the tables in the snapshot schema to unlogged (sqitch also does this, but we may be restoring an older snapshot on a new version)
@@ -92,7 +92,7 @@ then
         PGPASSWORD="$APP_PASSWORD" pg_restore -U "$APP_USER" -d "$APP_DATABASE" --jobs "$POSTGRES_RESTORE_JOBS" "$SNAPSHOT"
 
         echo "Restoring validator data from snapshot..."
-        PGPASSWORD="$APP_PASSWORD" psql -U "$APP_USER" -d "$APP_DATABASE" -c "SELECT snapshot.post_snapshot_restore();" || true
+        PGPASSWORD="$APP_PASSWORD" psql -U "$APP_USER" -d "$APP_DATABASE" -c "BEGIN; SELECT snapshot.post_snapshot_restore(); COMMIT;" || true
 
         # insert a row into sqitch.project to mark that we've restored the snapshot
         PGPASSWORD="$APP_PASSWORD" psql -U "$APP_USER" -d "$APP_DATABASE" -c "INSERT INTO sqitch.projects (project, uri, created_at, creator_name, creator_email) VALUES ('splinterlands-validator-snapshot', 'restored from $SNAPSHOT', NOW(), '$APP_USER', '$APP_USER');"
