@@ -4,15 +4,16 @@ services:
   pg:
     build:
       context: ./postgres
-      dockerfile: ./Dockerfile
+      dockerfile: ./Dockerfile-alpine-no-work
     ports:
       - "${PUBLISH_ADDRESS:-127.0.0.1}:${POSTGRES_PORT:-5432}:5432"
     volumes:
       - pgdata:/var/lib/postgresql/data
+      - ./snapshot:/tmp/snapshot:rw
     networks:
       - "postgres"
     restart: on-failure
-    shm_size: 256m
+    shm_size: ${POSTGRES_SHM_SIZE:-1gb}
     healthcheck:
       test: ["CMD-SHELL", "pg_isready", "-d", "$$POSTGRES_DB"]
       interval: 30s
@@ -25,6 +26,38 @@ services:
       PGUSER: ${POSTGRES_USER:-postgres}
       POSTGRES_DB: ${POSTGRES_DB:-postgres}
       VALIDATOR_DB: ${APP_DATABASE:-validator}
+      POSTGRES_SHARED_BUFFERS: ${POSTGRES_SHARED_BUFFERS:-512MB}
+      POSTGRES_MAINTENANCE_WORK_MEM: ${POSTGRES_MAINTENANCE_WORK_MEM:-128MB}
+      POSTGRES_WORK_MEM: ${POSTGRES_WORK_MEM:-16MB}
+      POSTGRES_AUTOVACUUM: ${POSTGRES_AUTOVACUUM:-on}
+      POSTGRES_MAX_WAL_SIZE: ${POSTGRES_MAX_WAL_SIZE:-1GB}
+      POSTGRES_SYNCHRONOUS_COMMIT: ${POSTGRES_SYNCHRONOUS_COMMIT:-on}
+      POSTGRES_FSYNC: ${POSTGRES_FSYNC:-on}
+
+  validator-sqitch:
+    profiles: ["cli"]
+    build:
+      context: ./sqitch
+      dockerfile: ./Dockerfile
+      args:
+        snapshot: "${SNAPSHOT_FILE}"
+    networks:
+      - "postgres"
+    depends_on:
+      pg:
+        condition: service_healthy
+    environment:
+      PGPASSWORD: ${POSTGRES_PASSWORD:-postgres}
+      PGUSER: ${POSTGRES_USER:-postgres}
+      PGDATABASE: ${POSTGRES_DB:-postgres}
+      PGHOST: pg
+      PGPORT: 5432
+      APP_PASSWORD: ${APP_PASSWORD:-validator}
+      APP_USER: ${APP_USER:-validator}
+      APP_DATABASE: ${APP_DATABASE:-validator}
+      APP_SCHEMA: ${APP_SCHEMA:-public}
+      DB_BLOCK_RETENTION: ${DB_BLOCK_RETENTION:-}
+      POSTGRES_RESTORE_JOBS: ${POSTGRES_RESTORE_JOBS:-2}
 
   validator:
     build:
@@ -69,30 +102,6 @@ services:
       KILL_BLOCK: ${KILL_BLOCK:-}
     depends_on:
       - pg
-
-  validator-sqitch:
-    profiles: ["cli"]
-    build:
-      context: ./sqitch
-      dockerfile: Dockerfile
-      args:
-        snapshot: "${SNAPSHOT_URL}"
-    networks:
-      - "postgres"
-    depends_on:
-      pg:
-        condition: service_healthy
-    environment:
-      PGPASSWORD: ${POSTGRES_PASSWORD:-postgres}
-      PGUSER: ${POSTGRES_USER:-postgres}
-      PGDATABASE: ${POSTGRES_DB:-postgres}
-      PGHOST: pg
-      PGPORT: 5432
-      APP_PASSWORD: ${APP_PASSWORD:-validator}
-      APP_USER: ${APP_USER:-validator}
-      APP_DATABASE: ${APP_DATABASE:-validator}
-      APP_SCHEMA: ${APP_SCHEMA:-public}
-      DB_BLOCK_RETENTION: ${DB_BLOCK_RETENTION:-}
 
   ui:
     build:

@@ -1,52 +1,31 @@
-# Description: Dockerfile for PostgreSQL 16.6 with pg_cron and pg_partman extensions installed
-# can't get pg cron building on alpine so we switched to bullseye
-FROM postgres:16.8-alpine AS build
+##
+## Original code from https://github.com/dbsystel/postgresql-partman-container
+## Licensed under the Apache License, Version 2.0
+##
+## Modified by the SPS DAO 2025
+##
 
-RUN apk add --no-cache --update \
-        build-base \
-        curl \
-        expat \
-        expat-dev \
-        git \
-        gnupg \
-        llvm \
-        llvm-dev \
-        make \
-        perl \
-        perl-app-cpanminus \
-        perl-dev \
-        perl-dbd-pg \
-        perl-dbi \
-        perl-xml-libxml \
-        perl-xml-parser \
-        perl-xml-simple \
-        postgresql16-dev
+ARG POSTGRESQL_VERSION="17"
 
-WORKDIR /var/lib/postgresql
-WORKDIR /usr/local/lib/postgresql
+FROM postgres:$POSTGRESQL_VERSION-alpine AS builder
+ARG PARTMAN_VERSION="v5.2.4"
+ARG PARTMAN_CHECKSUM="8328a00ce1a55a5c9173d4adbf251e784fed62413fb76bba89dd893749a720a5ecb25ee668eb0b826b8e1f2b89d9dd7da219fd797bfd9ab1a43d05f5b3ac494f"
+USER root
 
-RUN echo $(which pg_config)
-RUN chown -R $(whoami) /usr/local/lib/postgresql
+RUN apk add --no-cache wget gcc make musl-dev postgresql-dev $DOCKER_PG_LLVM_DEPS
 
-RUN git clone --depth 1 --branch "v1.6.4" https://github.com/citusdata/pg_cron.git \
-    && cd pg_cron \
-    && export PATH=/usr/local/bin/:$PATH \
-    && make && PATH=$PATH make install
+RUN wget "https://github.com/pgpartman/pg_partman/archive/refs/tags/${PARTMAN_VERSION}.tar.gz" \
+    && echo "${PARTMAN_CHECKSUM}  ${PARTMAN_VERSION}.tar.gz" | sha512sum -c \
+    && tar zxf ${PARTMAN_VERSION}.tar.gz && cd pg_partman-${PARTMAN_VERSION#v}\
+    && make \
+    && make install
 
-RUN git clone --depth 1 --branch "v5.2.4" https://github.com/pgpartman/pg_partman.git \
-    && cd pg_partman \
-    && export PATH=/usr/local/bin/:$PATH \
-    && make && PATH=$PATH make install
+FROM postgres:$POSTGRESQL_VERSION-alpine
 
-FROM postgres:16.8-alpine
-
-ENV POSTGRES_DB ""
-ENV POSTGRES_USER ""
-ENV POSTGRES_PASSWORD ""
-ENV VALIDATOR_DB ""
-
-COPY --from=build /usr/lib/postgresql16/pg_cron.so /usr/local/lib/postgresql/
-COPY --from=build /usr/lib/postgresql16/pg_partman_bgw.so /usr/local/lib/postgresql/
-COPY --from=build /usr/share/postgresql16/extension/* /usr/local/share/postgresql/extension/
+COPY --from=builder /usr/local/share/postgresql/extension/pg_partman* /usr/local/share/postgresql/extension/
+COPY --from=builder /usr/local/lib/postgresql/pg_partman_bgw.so /usr/local/lib/postgresql/
+COPY --from=builder pg_partman-*/bin/common/* /usr/local/bin/
 
 COPY ./setup-preload.sh /docker-entrypoint-initdb.d/
+
+USER postgres

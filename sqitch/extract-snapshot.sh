@@ -8,7 +8,7 @@ TMP_TEMPLATE="${TMPDIR:-/tmp/}$(basename "$0").XXXXXXXXXXXX"
 function usage {
     echo "usage: $SCRIPT_NAME [-h] FILE [ENV]"
     echo "  -h      display help"
-    echo "  FILE    snapshot zip file or http url"
+    echo "  FILE    snapshot file or http url"
     echo "  Required environment variables:"
     echo "    - SNAPSHOT - where to extract the snapshot SQL file."
 }
@@ -50,18 +50,25 @@ if [[ "$FILE" == http://* || "$FILE" == https://* ]]; then
   DOWNLOADED="true"
 fi
 
-if [ ! -f "$FILE" ]; then
-  echo "FILE $FILE does not seem to be a file"
+if [ ! -f "$FILE" ] && [ ! -d "$FILE" ]; then
+  echo "FILE $FILE does not seem to be a file or directory"
   usage
   exit 1
 fi
 
 unzip_dir=$(mktemp -d "$TMP_TEMPLATE")
-unzip "$FILE" -d "$unzip_dir"
-snapshot_file=$(find "$unzip_dir" -maxdepth 1 -type f -iname "*.sql" | head -n 1)
-
-mv "$snapshot_file" "$SNAPSHOT"
-rm -r "$unzip_dir"
+# if the file is a directory, assume its already an extracted new version snapshot
+if [ -d "$FILE" ]; then
+    echo "Using existing directory $FILE as snapshot..."
+    mv "$FILE" "$SNAPSHOT"
+else
+    # otherwise assume its a zip file (old snapshot)
+    echo "Unzipping $FILE..."
+    unzip "$FILE" -d "$unzip_dir"
+    snapshot_file=$(find "$unzip_dir" -maxdepth 1 -type f -iname "*.sql" | head -n 1)
+    mv "$snapshot_file" "$SNAPSHOT"
+    rm -r "$unzip_dir"
+fi
 
 # if we downloaded the file, delete it
 if [ "$DOWNLOADED" == "true" ]; then

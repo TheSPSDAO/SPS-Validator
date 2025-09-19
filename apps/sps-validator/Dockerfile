@@ -1,9 +1,9 @@
-FROM alpine:3.20 AS utils
+FROM alpine:3.21 AS utils
 RUN apk add --no-cache dumb-init
 
 
 ######################################################################
-FROM node:23.3-alpine3.20 AS dev-dependencies
+FROM node:24.8-alpine3.21 AS dev-dependencies
 ######################################################################
 WORKDIR /app
 # Required to compile secp256k1 C++
@@ -16,7 +16,7 @@ RUN npm ci --silent
 RUN rm -f .npmrc
 
 ######################################################################
-FROM node:23.3-alpine3.20 AS builder
+FROM node:24.8-alpine3.21 AS builder
 ######################################################################
 WORKDIR /app
 COPY --from=dev-dependencies /app /app
@@ -28,7 +28,7 @@ COPY apps/sps-validator ./apps/sps-validator
 RUN npx nx run sps-validator:build:production
 
 ######################################################################
-FROM node:23.3-alpine3.20 AS prod-dependencies
+FROM node:24.8-alpine3.21 AS prod-dependencies
 ######################################################################
 WORKDIR /app
 # Required to compile secp256k1 C++
@@ -42,7 +42,7 @@ RUN npm ci --silent --omit=dev
 RUN rm -f .npmrc
 
 ######################################################################
-FROM node:23.3-alpine3.20 AS final
+FROM node:24.8-alpine3.21 AS final
 ######################################################################
 ARG VERSION=development
 ENV VERSION=$VERSION
