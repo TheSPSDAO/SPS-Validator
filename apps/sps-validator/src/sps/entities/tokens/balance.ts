@@ -327,7 +327,7 @@ export class SpsBalanceRepository extends BalanceRepository {
 
         return {
             token: TOKENS.SPS,
-            minted: Math.floor(totalSupplySps + combinedNullSps + rewardPoolSupply),
+            minted: totalSupplySps + combinedNullSps + rewardPoolSupply,
             burned: combinedNullSps,
             total_staked: totalStaked,
             total_supply: totalSupplySps + rewardPoolSupply,
@@ -341,7 +341,7 @@ export class SpsBalanceRepository extends BalanceRepository {
                 total: combinedDaoSps + daoReserveSps + daoDelegationSps + totalBridgeAccountBalances,
                 [this.supplyOpts.dao_account]: combinedDaoSps,
                 [this.supplyOpts.dao_reserve_account]: daoReserveSps,
-                [this.supplyOpts.dao_delegation_account]: totalStaked,
+                [this.supplyOpts.dao_delegation_account]: daoDelegationSps,
                 ...Object.fromEntries(bridgeAccountBalances.map((b) => [`${b.chain}_bridges`, b.balance])),
             },
             bridges: Object.fromEntries(bridgeAccountBalances.map((b) => [b.chain, b.byAccount])),
