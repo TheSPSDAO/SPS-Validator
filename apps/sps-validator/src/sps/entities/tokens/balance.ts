@@ -327,7 +327,7 @@ export class SpsBalanceRepository extends BalanceRepository {
 
         return {
             token: TOKENS.SPS,
-            minted: totalSupplySps + combinedNullSps + rewardPoolSupply,
+            minted: Math.floor(totalSupplySps + combinedNullSps + rewardPoolSupply),
             burned: combinedNullSps,
             total_staked: totalStaked,
             total_supply: totalSupplySps + rewardPoolSupply,
