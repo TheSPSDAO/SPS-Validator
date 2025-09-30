@@ -341,7 +341,7 @@ export class SpsBalanceRepository extends BalanceRepository {
                 total: combinedDaoSps + daoReserveSps + daoDelegationSps + totalBridgeAccountBalances,
                 [this.supplyOpts.dao_account]: combinedDaoSps,
                 [this.supplyOpts.dao_reserve_account]: daoReserveSps,
-                [this.supplyOpts.dao_delegation_account]: totalStaked,
+                [this.supplyOpts.dao_delegation_account]: daoDelegationSps,
                 ...Object.fromEntries(bridgeAccountBalances.map((b) => [`${b.chain}_bridges`, b.balance])),
             },
             bridges: Object.fromEntries(bridgeAccountBalances.map((b) => [b.chain, b.byAccount])),

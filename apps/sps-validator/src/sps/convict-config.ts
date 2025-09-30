@@ -496,7 +496,7 @@ const schema = {
             hive_accounts: {
                 doc: 'Hive accounts that hold SPS bridged from Base',
                 format: 'stringy-array',
-                default: ['spsonbase'],
+                default: ['spsonbase', 'deconbase'],
                 env: 'BASE_BRIDGE_HIVE_ACCOUNTS',
             },
             excluded_addresses: {
@@ -516,7 +516,7 @@ const schema = {
             excluded_addresses: {
                 doc: 'Accounts to exclude from the circulating supply calculation',
                 format: 'stringy-array',
-                default: ['steemmonsters'],
+                default: ['steemmonsters', 'sl-hive'],
                 env: 'HIVE_BRIDGE_EXCLUDED_ACCOUNTS',
             },
         },
