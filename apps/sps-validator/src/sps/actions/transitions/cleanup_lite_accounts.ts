@@ -43,6 +43,7 @@ class CleanupLiteAccountsRepository extends BaseRepository {
                         balances
                     WHERE
                         player LIKE '%\\_%'
+                        AND player NOT LIKE '$%'
                         AND token IN ('SPS', 'SPSP')
                         AND balance > 0
                 ) AS accounts
