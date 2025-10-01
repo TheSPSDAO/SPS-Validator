@@ -40,6 +40,8 @@ import { Router as CompletePromiseRouter } from './promises/complete_promise';
 import { Router as ExpirePromisesRouter } from './promises/expire_promises';
 import { Router as UpdateMissedBlocksRouter } from './validator/update_missed_blocks';
 import { Router as FixVoteWeightRouter } from './transitions/fix_vote_weight';
+import { Router as CleanupLiteAccountsRouter } from './transitions/cleanup_lite_accounts';
+import { Router as BalanceTokenStakingAccountRouter } from './transitions/balance_token_staking_account';
 import { MakeMultiRouter, MakeVirtualPayloadSource } from './utils';
 import { SpsValidatorLicenseManager } from '../features/validator';
 import { SpsClearBurnedTokensSource } from './burn';
@@ -91,6 +93,8 @@ export const VirtualRouterImpl = MakeMultiRouter(
     ExpireCheckInsRouter,
     UpdateMissedBlocksRouter,
     FixVoteWeightRouter,
+    CleanupLiteAccountsRouter,
+    BalanceTokenStakingAccountRouter,
 );
 export type VirtualRouterImpl = InstanceType<typeof VirtualRouterImpl>;
 

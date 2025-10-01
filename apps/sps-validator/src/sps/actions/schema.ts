@@ -417,6 +417,20 @@ const transition_fix_vote_weight = new Schema.Schema(
     }),
 );
 
+const transition_cleanup_lite_accounts = new Schema.Schema(
+    'transition_cleanup_lite_accounts',
+    object({
+        block_num: number().integer().positive().required(),
+    }),
+);
+
+const transition_balance_token_staking_spsp = new Schema.Schema(
+    'transition_balance_token_staking_spsp',
+    object({
+        block_num: number().integer().positive().required(),
+    }),
+);
+
 export {
     token_award,
     token_transfer,
@@ -460,4 +474,6 @@ export {
     return_tokens,
     update_missed_blocks,
     transition_fix_vote_weight,
+    transition_cleanup_lite_accounts,
+    transition_balance_token_staking_spsp,
 };

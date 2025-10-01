@@ -84,24 +84,13 @@ export class EnabledApiActivator implements ConditionalApiActivator {
         @inject(Middleware) private readonly middleware: Middleware,
         @inject(Resolver) private readonly resolver: Resolver,
     ) {
-        if (this.cfg.api_port === null) {
+        if (this.cfg.port === null) {
             throw new Error(`Attempting to enable API while it is supposed to be disabled`);
         }
     }
 
     perhapsEnableApi() {
         const app = express();
-
-        app.use(function (error, req, res, next) {
-            if (error) {
-                utils.log(`API Error: ${error}`);
-                res.status(500).json({
-                    message: 'An error occurred during the request.',
-                });
-            } else {
-                next();
-            }
-        } as ErrorRequestHandler);
 
         //  secures API - see: https://www.securecoding.com/blog/using-helmetjs
         if (this.cfg.helmetjs) {
@@ -115,7 +104,7 @@ export class EnabledApiActivator implements ConditionalApiActivator {
             next();
         });
 
-        app.listen(this.cfg.api_port, () => utils.log(`API running on port: ${this.cfg.api_port}`));
+        app.listen(this.cfg.port, () => utils.log(`API running on port: ${this.cfg.port}`));
         app.set('trust proxy', true);
         registerApiRoutes(app, {
             health_checker: this.cfg.health_checker,
@@ -128,6 +117,31 @@ export class EnabledApiActivator implements ConditionalApiActivator {
         // must come after registerApiRoutes so we have the resolver
         registerSpsRoutes(app);
         registerTransitionRoutes(app);
+
+        const detailedErrors = this.cfg.detailed_errors ?? false;
+        if (detailedErrors) {
+            utils.log(`API detailed errors enabled`);
+        }
+
+        // This is a global error handler that will catch any errors not handled in the routes.
+        app.use(function (error, req, res, next) {
+            if (error instanceof Error) {
+                utils.log(`API Error: ${error}`);
+                if (detailedErrors) {
+                    res.status(500).json({
+                        message: error.message,
+                        stack: error.stack?.split('\n'),
+                    });
+                    return;
+                } else {
+                    res.status(500).json({
+                        message: 'An error occurred during the request.',
+                    });
+                }
+            } else {
+                next();
+            }
+        } as ErrorRequestHandler);
 
         return app;
     }

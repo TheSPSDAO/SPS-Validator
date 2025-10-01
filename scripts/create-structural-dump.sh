@@ -14,5 +14,7 @@ pg_dump --schema-only --no-owner --no-acl --disable-triggers \
   --username "${POSTGRES_USER:-postgres}" \
   "${POSTGRES_DB:-postgres}" | \
   # remove the CREATE EXTENSION lines
-  sed '/^CREATE EXTENSION/d'
+  sed '/^CREATE EXTENSION/d' | \
+  # remove the \restrict abcdef and \unrestrict lines. postgres is adding this maybe?
+  sed '/^\\restrict/d; /^\\unrestrict/d'
 
