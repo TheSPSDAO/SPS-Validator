@@ -37,7 +37,7 @@ services:
       - "validator"
     restart: on-failure
     environment:
-      VERSION: "${VERSION:-1.1.3}"
+      VERSION: "${VERSION:-1.2.0}"
       API_PORT: "3333"
       API_DETAILED_ERRORS: ${API_DETAILED_ERRORS:-false}
       POSTGRES_PASSWORD: ${APP_PASSWORD:-validator}
