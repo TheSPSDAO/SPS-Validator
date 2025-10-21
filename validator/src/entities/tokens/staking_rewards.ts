@@ -181,7 +181,7 @@ export class StakingRewardsRepository extends BaseRepository {
              *  - Y   = Reward Pool Balance
              */
             const blocks_per_month = 864000;
-            // This is the remaining balance in the reward pool - the outstanding rewards that have not been claimed yet
+            // This is the remaining balance in the reward pool minus the outstanding rewards that have not been claimed yet
             const reward_pool_balance = await this.getPoolBalance(pool.name, trx);
             // This is the number of blocks since we last rewarded this pool
             const num_blocks = block_num - last_reward_block;
