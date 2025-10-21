@@ -174,7 +174,6 @@ export class StakingRewardsRepository extends BaseRepository {
         }
         if (params.type === 'per_block_capped') {
             /**
-             *  - .05 = 5% reduction cap cap
              *  - Z   = MAX(X*0.7, MIN(Y*0.05, X*0.9))
              *  - Z   = New Monthly Reward Allocation
              *  - X   = Current Monthly Reward Allocation (See table below for reference.)
