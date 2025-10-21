@@ -1,4 +1,4 @@
-import { AwardPool, PoolProps, Pools, PoolSettings, PoolWatch } from '../../config';
+import { AwardPool, PoolPerBlockSettings, PoolProps, Pools, PoolSettings, PoolWatch } from '../../config';
 import { IAction } from '../../actions/action';
 import { BalanceRepository } from './balance';
 import { EventLog, EventTypes } from '../event_log';
@@ -142,8 +142,7 @@ export class StakingRewardsRepository extends BaseRepository {
         }
 
         const rewardBlock = stop_block === undefined ? block_num : Math.min(stop_block, block_num);
-
-        const contribution = this.getPoolContribution(rewardBlock, last_reward_block, pool_settings);
+        const contribution = await this.getPoolContribution(rewardBlock, last_reward_block, pool_settings, pool, trx);
         if (contribution <= 0) {
             return results;
         }
@@ -153,28 +152,86 @@ export class StakingRewardsRepository extends BaseRepository {
         const total_staked = -1 * (await this.balanceRepository.getBalance(this.stakingConfiguration.staking_account, pool.stake, trx));
 
         results.push(...(await this.poolUpdater.updateLastRewardBlock(pool_name, rewardBlock, trx)));
-        if (total_staked !== 0 && pool_settings.tokens_per_block !== 0) {
+        if (total_staked !== 0 && this.poolAmountsValid(pool_settings)) {
             acc_tokens_per_share += contribution / total_staked;
             results.push(...(await this.poolUpdater.updateAccTokensPerShare(pool_name, acc_tokens_per_share, trx)));
         }
         return results;
     }
 
-    private getPoolContribution(block_num: number, last_reward_block: number, params: PoolSettings): number {
+    private poolAmountsValid(params: PoolSettings): boolean {
+        if (params.type === 'per_block' || params.type === undefined) {
+            return params.tokens_per_block !== 0;
+        } else if (params.type === 'per_block_capped') {
+            return params.tokens_per_block !== 0;
+        }
+        return false;
+    }
+
+    private async getPoolContribution(block_num: number, last_reward_block: number, params: PoolSettings, pool: AwardPool<string>, trx?: Trx): Promise<number> {
         if (block_num <= last_reward_block) {
             return 0;
         }
-        const total_decline = this.getPoolDecline(block_num, params);
-        return (block_num - last_reward_block) * params.tokens_per_block * total_decline;
+        if (params.type === 'per_block_capped') {
+            /**
+             *  - .05 = 5% reduction cap cap
+             *  - Z   = MAX(X*0.7, MIN(Y*0.05, X*0.9))
+             *  - Z   = New Monthly Reward Allocation
+             *  - X   = Current Monthly Reward Allocation (See table below for reference.)
+             *  - Y   = Reward Pool Balance
+             */
+            const blocks_per_month = 864000;
+            // This is the remaining balance in the reward pool - the outstanding rewards that have not been claimed yet
+            const reward_pool_balance = await this.getPoolBalance(pool.name, trx);
+            // This is the number of blocks since we last rewarded this pool
+            const num_blocks = block_num - last_reward_block;
+            // We divide the reward pool balance by blocks per month to convert it to a per-block value
+            const Y = (reward_pool_balance / blocks_per_month) * num_blocks;
+            // tokens_per_block * num_blocks gives us the "current monthly reward allocation" converted to the number of blocks since we last rewarded this pool
+            const X = params.tokens_per_block * num_blocks;
+            // Now we can apply the cap formula to get the new reward allocation
+            const Z = Math.max(X * 0.7, Math.min(Y * 0.05, X * 0.9));
+            return Z;
+        } else if (params.type === 'per_block' || params.type === undefined) {
+            const total_decline = this.getPoolDecline(block_num, params);
+            return (block_num - last_reward_block) * params.tokens_per_block * total_decline;
+        } else {
+            return 0;
+        }
     }
 
-    private getPoolDecline(block_num: number, params: PoolSettings): number {
+    async getPoolBalance<T extends string>(pool_name: T, trx?: Trx): Promise<number> {
+        const pool = this.pools.find((p) => p.name === pool_name);
+        if (!pool) {
+            utils.log(`Attempting to retrieve pool balance for unknown pool ${pool_name}, ignoring.`, LogLevel.Error);
+            return Promise.resolve(0);
+        }
+        // we need to get the current balance of the reward account for this pool
+        const balance = await this.balanceRepository.getBalance(pool.reward_account, pool.token, trx);
+        // we also need to get the outstanding rewards that have not been claimed yet
+        const total_staked = -1 * (await this.balanceRepository.getBalance(this.stakingConfiguration.staking_account, pool.stake, trx));
+        const acc_tokens_per_share = this.watcher.pools?.[`${pool_name}_acc_tokens_per_share`] || 0;
+
+        let outstanding_rewards = 0;
+        if (total_staked > 0) {
+            const total_reward_debt = await this.getTotalRewardDebt(pool_name, trx);
+            outstanding_rewards = total_staked * acc_tokens_per_share - total_reward_debt;
+        }
+        return balance - outstanding_rewards;
+    }
+
+    private getPoolDecline(block_num: number, params: PoolPerBlockSettings): number {
         if (!params.reduction_pct || !params.reduction_blocks) {
             return 1;
         }
         const total_reductions = Math.trunc((block_num - params.start_block) / params.reduction_blocks);
         const reduction_pct = 1 - params.reduction_pct / 100;
         return reduction_pct ** total_reductions;
+    }
+
+    async getTotalRewardDebt<T extends string>(pool_name: T, trx?: Trx): Promise<number> {
+        const record = await this.query(StakingPoolRewardDebtEntity, trx).where('pool_name', pool_name).sum('reward_debt', 'reward_debt_sum').getFirst();
+        return record ? parseFloat(record.reward_debt_sum) : 0;
     }
 
     async getRewardDebt<T extends string>(pool_name: T, player: string, trx?: Trx): Promise<number> {
@@ -213,64 +270,11 @@ export class StakingRewardsRepository extends BaseRepository {
         const acc_tokens_per_share = pools[`${pool_name}_acc_tokens_per_share`];
         const total_staked = -1 * (await this.balanceRepository.getBalance(this.stakingConfiguration.staking_account, pool.stake, trx));
         return {
-            tokens_per_block: pool_settings.tokens_per_block,
-            start_block: pool_settings.start_block,
-            stop_block: pool_settings.stop_block,
-            stop_date_utc: pool_settings.stop_date_utc,
-            reduction_blocks: pool_settings.reduction_blocks,
-            reduction_pct: pool_settings.reduction_pct,
+            ...pool_settings,
             acc_tokens_per_share,
             last_reward_block,
             total_staked: { token: pool.stake, amount: total_staked },
         };
-    }
-
-    async getClaimableRewards<T extends string>(player: string, pool: Pick<AwardPool<T>, 'name' | 'stake'>, trx?: Trx): Promise<number> {
-        const block_num = await this.blockRepository.getLatestBlockNum(trx);
-        if (!block_num) {
-            utils.log(`Attempting to get claimable rewards but unable to get latest block number.`, LogLevel.Error);
-            return 0;
-        }
-        const block = await this.blockRepository.getByBlockNum(block_num, trx);
-        if (!block) {
-            utils.log(`Attempting to get claimable rewards but unable to get latest block.`, LogLevel.Error);
-            return 0;
-        }
-        const { block_time } = block;
-        const pools = this.watcher.pools;
-        if (!pools) {
-            utils.log(`Attempting to get claimable rewards while having misconfigured staking settings.`, LogLevel.Error);
-            return 0;
-        }
-
-        const pool_name = pool.name;
-        const pool_settings = pools[pool_name];
-        const last_reward_block = pools[`${pool_name}_last_reward_block`] || pool_settings.start_block;
-        const stop_date_utc = pool_settings.stop_date_utc;
-        let stop_block = pool_settings.stop_block;
-        const stoppedByBlock = stop_block && block_num > stop_block;
-        const stopDate = typeof stop_date_utc === 'string' ? new Date(stop_date_utc) : stop_date_utc;
-
-        if (stopDate && stopDate < block_time && !stoppedByBlock) {
-            const lastBlock = await this.blockRepository.getLastBlockNumBefore(stopDate, trx);
-            if (lastBlock === null) {
-                stop_block = last_reward_block;
-            } else {
-                stop_block = lastBlock;
-            }
-        }
-
-        const rewardBlock = stop_block === undefined ? block_num : Math.min(stop_block, block_num);
-
-        const contribution = this.getPoolContribution(rewardBlock, last_reward_block, pool_settings);
-        const total_staked = -1 * (await this.balanceRepository.getBalance(this.stakingConfiguration.staking_account, pool.stake, trx));
-
-        const acc_tokens_per_share = (pools[`${pool_name}_acc_tokens_per_share`] || 0) + contribution / total_staked;
-
-        const staked = await this.balanceRepository.getBalance(player, pool.stake, trx);
-        const reward_debt = await this.getRewardDebt(pool_name, player, trx);
-        const claim_amount = +(staked * acc_tokens_per_share - reward_debt).toFixed(3);
-        return claim_amount;
     }
 
     public async stakeTokens(action: IAction, fromPlayer: string, toPlayer: string, token: string, stakedToken: string, qty: number, actionName: string, trx?: Trx) {
