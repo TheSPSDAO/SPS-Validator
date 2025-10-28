@@ -46,6 +46,21 @@ class StakingRewardsClaim {
     amount!: number;
 }
 
+class StakingRewardsClaimV2 extends StakingRewardsClaim {
+    /**
+     * The total outstanding rewards in the pool at the time of claim (before the claim is applied)
+     */
+    total_outstanding_rewards_before_claim!: number;
+    /**
+     * The amount of tokens before we adjust it with the reward debt
+     */
+    raw_amount!: number;
+    /**
+     * The reward debt at the time of claim
+     */
+    reward_debt!: number;
+}
+
 export class StakingRewardsRepository extends BaseRepository {
     constructor(
         handle: Handle,
@@ -61,6 +76,10 @@ export class StakingRewardsRepository extends BaseRepository {
 
     private static from(entry: StakingPoolRewardDebtEntry): StakingPoolRewardDebtEntity {
         return { ...entry, reward_debt: String(entry.reward_debt) };
+    }
+
+    enableV2ClaimRewardsLog(block_num: number): boolean {
+        return false;
     }
 
     async claimAll(player: string, staking_increase: StakingIncrease, action: IAction, trx?: Trx): Promise<EventLog[]> {
@@ -86,8 +105,11 @@ export class StakingRewardsRepository extends BaseRepository {
 
         if (staked > 0) {
             // Get the player's "reward debt" balance (this represents all rewards from before the player entered the pool or that they already claimed)
+            const claimRewardsV2Log = this.enableV2ClaimRewardsLog(action.op.block_num);
             const reward_debt = await this.getRewardDebt(pool_name, player, trx);
-            const claim_amount = +(staked * acc_tokens_per_share - reward_debt).toFixed(3);
+            const raw_amount = staked * acc_tokens_per_share;
+            const claim_amount = +(raw_amount - reward_debt).toFixed(3);
+            const total_outstanding_rewards_before_claim = claimRewardsV2Log ? await this.getOutstandingRewards(pool_name, trx) : undefined;
 
             if (claim_amount > 0) {
                 result.push(
@@ -95,13 +117,31 @@ export class StakingRewardsRepository extends BaseRepository {
                 );
 
                 // a record of the claim amount for bridges
-                result.push(
-                    new EventLog(
-                        EventTypes.INSERT,
-                        { table: StakingRewardsClaim.table },
-                        { player, pool_name: pool_name as string, token: pool.token, amount: claim_amount, pool: pool_name },
-                    ),
-                );
+                if (claimRewardsV2Log) {
+                    // new format so we can still calculate VOUCHER rewards with the new reward algorithm
+                    result.push(
+                        new EventLog(EventTypes.INSERT, { table: StakingRewardsClaimV2.table }, {
+                            player,
+                            pool_name: pool_name as string,
+                            token: pool.token,
+                            amount: claim_amount,
+                            raw_amount,
+                            reward_debt,
+                            total_outstanding_rewards_before_claim,
+                        } as StakingRewardsClaimV2),
+                    );
+                } else {
+                    // old format
+                    result.push(
+                        new EventLog(EventTypes.INSERT, { table: StakingRewardsClaim.table }, {
+                            player,
+                            pool_name: pool_name as string,
+                            token: pool.token,
+                            amount: claim_amount,
+                            pool: pool_name,
+                        } as StakingRewardsClaim),
+                    );
+                }
             }
         }
 
@@ -204,20 +244,31 @@ export class StakingRewardsRepository extends BaseRepository {
         const pool = this.pools.find((p) => p.name === pool_name);
         if (!pool) {
             utils.log(`Attempting to retrieve pool balance for unknown pool ${pool_name}, ignoring.`, LogLevel.Error);
-            return Promise.resolve(0);
+            return 0;
         }
         // we need to get the current balance of the reward account for this pool
         const balance = await this.balanceRepository.getBalance(pool.reward_account, pool.token, trx);
         // we also need to get the outstanding rewards that have not been claimed yet
+        const outstanding_rewards = await this.getOutstandingRewards(pool_name, trx);
+
+        return balance - outstanding_rewards;
+    }
+
+    async getOutstandingRewards<T extends string>(pool_name: T, trx?: Trx): Promise<number> {
+        const pool = this.pools.find((p) => p.name === pool_name);
+        if (!pool) {
+            utils.log(`Attempting to retrieve outstanding rewards for unknown pool ${pool_name}, ignoring.`, LogLevel.Error);
+            return 0;
+        }
         const total_staked = -1 * (await this.balanceRepository.getBalance(this.stakingConfiguration.staking_account, pool.stake, trx));
         const acc_tokens_per_share = this.watcher.pools?.[`${pool_name}_acc_tokens_per_share`] || 0;
 
-        let outstanding_rewards = 0;
-        if (total_staked > 0) {
-            const total_reward_debt = await this.getTotalRewardDebt(pool_name, trx);
-            outstanding_rewards = total_staked * acc_tokens_per_share - total_reward_debt;
+        if (total_staked <= 0) {
+            return 0;
         }
-        return balance - outstanding_rewards;
+
+        const total_reward_debt = await this.getTotalRewardDebt(pool_name, trx);
+        return total_staked * acc_tokens_per_share - total_reward_debt;
     }
 
     private getPoolDecline(block_num: number, params: PoolPerBlockSettings): number {

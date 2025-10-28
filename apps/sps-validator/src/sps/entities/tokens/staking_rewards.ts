@@ -1,5 +1,6 @@
 import { inject, injectable } from 'tsyringe';
 import { BalanceRepository, Handle, StakingRewardsRepository, Pools, PoolWatch, PoolUpdater, StakingConfiguration, BlockRepository } from '@steem-monsters/splinterlands-validator';
+import { TransitionManager } from '../../features/transition';
 
 @injectable()
 export class SpsStakingRewardsRepository extends StakingRewardsRepository {
@@ -11,7 +12,12 @@ export class SpsStakingRewardsRepository extends StakingRewardsRepository {
         @inject(Pools) pools: Pools,
         @inject(StakingConfiguration) stakingConfiguration: StakingConfiguration,
         @inject(BlockRepository) blockRepository: BlockRepository,
+        @inject(TransitionManager) private transitionManager: TransitionManager,
     ) {
         super(handle, poolUpdater, watcher, balanceRepository, pools, stakingConfiguration, blockRepository);
+    }
+
+    override enableV2ClaimRewardsLog(block_num: number): boolean {
+        return this.transitionManager.isTransitioned('token_distribution_strategy', block_num);
     }
 }
