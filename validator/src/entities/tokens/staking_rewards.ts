@@ -24,6 +24,8 @@ type AccountStakedInfo = {
 };
 
 type PoolTotals = {
+    reward_account_balance: number;
+    outstanding_rewards: number;
     pool_balance: number;
     total_staked: {
         token: string;
@@ -222,11 +224,11 @@ export class StakingRewardsRepository extends BaseRepository {
              */
             const blocks_per_month = 864000;
             // This is the remaining balance in the reward pool minus the outstanding rewards that have not been claimed yet
-            const reward_pool_balance = await this.getPoolBalance(pool.name, trx);
+            const { pool_balance } = await this.getPoolBalance(pool.name, trx);
             // This is the number of blocks since we last rewarded this pool
             const num_blocks = block_num - last_reward_block;
             // We divide the reward pool balance by blocks per month to convert it to a per-block value
-            const Y = (reward_pool_balance / blocks_per_month) * num_blocks;
+            const Y = (pool_balance / blocks_per_month) * num_blocks;
             // tokens_per_block * num_blocks gives us the "current monthly reward allocation" converted to the number of blocks since we last rewarded this pool
             const X = params.tokens_per_block * num_blocks;
             // Now we can apply the cap formula to get the new reward allocation
@@ -240,18 +242,22 @@ export class StakingRewardsRepository extends BaseRepository {
         }
     }
 
-    async getPoolBalance<T extends string>(pool_name: T, trx?: Trx): Promise<number> {
+    async getPoolBalance<T extends string>(pool_name: T, trx?: Trx) {
         const pool = this.pools.find((p) => p.name === pool_name);
         if (!pool) {
             utils.log(`Attempting to retrieve pool balance for unknown pool ${pool_name}, ignoring.`, LogLevel.Error);
-            return 0;
+            return { reward_account_balance: 0, outstanding_rewards: 0, pool_balance: 0 };
         }
         // we need to get the current balance of the reward account for this pool
         const balance = await this.balanceRepository.getBalance(pool.reward_account, pool.token, trx);
         // we also need to get the outstanding rewards that have not been claimed yet
         const outstanding_rewards = await this.getOutstandingRewards(pool_name, trx);
 
-        return balance - outstanding_rewards;
+        return {
+            reward_account_balance: balance,
+            outstanding_rewards,
+            pool_balance: balance - outstanding_rewards,
+        };
     }
 
     async getOutstandingRewards<T extends string>(pool_name: T, trx?: Trx): Promise<number> {
@@ -320,11 +326,13 @@ export class StakingRewardsRepository extends BaseRepository {
         const last_reward_block = pools[`${pool_name}_last_reward_block`] || pool_settings.start_block;
         const acc_tokens_per_share = pools[`${pool_name}_acc_tokens_per_share`];
         const total_staked = -1 * (await this.balanceRepository.getBalance(this.stakingConfiguration.staking_account, pool.stake, trx));
-        const pool_balance = await this.getPoolBalance(pool_name, trx);
+        const { pool_balance, reward_account_balance, outstanding_rewards } = await this.getPoolBalance(pool_name, trx);
         return {
             ...pool_settings,
             acc_tokens_per_share,
             last_reward_block,
+            reward_account_balance,
+            outstanding_rewards,
             pool_balance,
             total_staked: { token: pool.stake, amount: total_staked },
         };
