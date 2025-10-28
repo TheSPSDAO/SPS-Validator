@@ -23,7 +23,8 @@ type AccountStakedInfo = {
     reward_debt: number;
 };
 
-type StakedPoolTotal = {
+type PoolTotals = {
+    pool_balance: number;
     total_staked: {
         token: string;
         amount: number;
@@ -33,7 +34,7 @@ type StakedPoolTotal = {
 type MappedPoolProps = {
     [key in PoolProps]: number;
 } & PoolSettings &
-    StakedPoolTotal;
+    PoolTotals;
 
 export type StakingIncrease = [number, string] | 0; // [amount, token], or just 0 for a claimAll
 
@@ -268,10 +269,12 @@ export class StakingRewardsRepository extends BaseRepository {
         const last_reward_block = pools[`${pool_name}_last_reward_block`] || pool_settings.start_block;
         const acc_tokens_per_share = pools[`${pool_name}_acc_tokens_per_share`];
         const total_staked = -1 * (await this.balanceRepository.getBalance(this.stakingConfiguration.staking_account, pool.stake, trx));
+        const pool_balance = await this.getPoolBalance(pool_name, trx);
         return {
             ...pool_settings,
             acc_tokens_per_share,
             last_reward_block,
+            pool_balance,
             total_staked: { token: pool.stake, amount: total_staked },
         };
     }
