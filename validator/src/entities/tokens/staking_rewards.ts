@@ -49,14 +49,11 @@ class StakingRewardsClaim {
 }
 
 class StakingRewardsClaimV2 extends StakingRewardsClaim {
-    /**
-     * The total outstanding rewards in the pool at the time of claim (before the claim is applied)
-     */
-    total_outstanding_rewards_before_claim!: number;
+    version!: 2;
     /**
      * The amount of tokens before we adjust it with the reward debt
      */
-    raw_amount!: number;
+    accumulated_amount!: number;
     /**
      * The reward debt at the time of claim
      */
@@ -109,9 +106,8 @@ export class StakingRewardsRepository extends BaseRepository {
             // Get the player's "reward debt" balance (this represents all rewards from before the player entered the pool or that they already claimed)
             const claimRewardsV2Log = this.enableV2ClaimRewardsLog(action.op.block_num);
             const reward_debt = await this.getRewardDebt(pool_name, player, trx);
-            const raw_amount = staked * acc_tokens_per_share;
-            const claim_amount = +(raw_amount - reward_debt).toFixed(3);
-            const total_outstanding_rewards_before_claim = claimRewardsV2Log ? await this.getOutstandingRewards(pool_name, trx) : undefined;
+            const accumulated_amount = staked * acc_tokens_per_share;
+            const claim_amount = +(accumulated_amount - reward_debt).toFixed(3);
 
             if (claim_amount > 0) {
                 result.push(
@@ -121,15 +117,18 @@ export class StakingRewardsRepository extends BaseRepository {
                 // a record of the claim amount for bridges
                 if (claimRewardsV2Log) {
                     // new format so we can still calculate VOUCHER rewards with the new reward algorithm
+
+                    const total_staked = -1 * (await this.balanceRepository.getBalance(this.stakingConfiguration.staking_account, pool.stake, trx));
                     result.push(
                         new EventLog(EventTypes.INSERT, { table: StakingRewardsClaimV2.table }, {
+                            version: 2,
                             player,
                             pool_name: pool_name as string,
                             token: pool.token,
                             amount: claim_amount,
-                            raw_amount,
+                            accumulated_amount,
                             reward_debt,
-                            total_outstanding_rewards_before_claim,
+                            total_staked,
                         } as StakingRewardsClaimV2),
                     );
                 } else {
