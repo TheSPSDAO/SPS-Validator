@@ -191,7 +191,7 @@ const config_update = new Schema.Schema(
                 object({
                     group_name: string().strict().required(),
                     name: string().strict().required(),
-                    value: string().strict().required(),
+                    value: mixed().required(),
                 }).unknown(true),
             )
             .required(),

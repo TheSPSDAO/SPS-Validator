@@ -138,6 +138,6 @@ export interface ConfigLoader {
     readonly value: ConfigType;
     load(trx?: Trx): Promise<void>;
     updateConfig(group_name: string, name: string, value: ConfigData, trx?: Trx): Promise<EventLog>;
-    validateUpdateConfig(group_name: string, name: string, value: string, trx?: Trx): Promise<Result<void, string[]>>;
-    reloadingUpdateConfig(group_name: string, name: string, value: string, trx?: Trx): Promise<EventLog>;
+    validateUpdateConfig(group_name: string, name: string, value: ConfigData, trx?: Trx): Promise<Result<void, string[]>>;
+    reloadingUpdateConfig(group_name: string, name: string, value: ConfigData, trx?: Trx): Promise<EventLog>;
 }
