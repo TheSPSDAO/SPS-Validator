@@ -7,7 +7,7 @@ export type BasePoolSettings = {
 };
 
 export type PoolPerBlockSettings = BasePoolSettings & {
-    type: 'per_block' | undefined;
+    type?: 'per_block';
     tokens_per_block: number;
     reduction_pct?: number;
     reduction_blocks?: number;
@@ -56,7 +56,10 @@ const per_block_capped_pool_settings_schema = object({
     stop_block: number().integer().positive().optional(), // Can be used directly, or can be calculated from stop_date_utc once the moment rolls over.
 });
 
-const pool_settings_schema = mixed().oneOf([per_block_pool_settings_schema, per_block_capped_pool_settings_schema]);
+const pool_settings_schema = mixed().test('is-pool-settings', 'Must be a valid PoolSettings object', (value): value is PoolSettings => {
+    const schemas = [per_block_pool_settings_schema, per_block_capped_pool_settings_schema];
+    return schemas.some((schema) => schema.isValidSync(value));
+});
 
 export type AwardPool<T extends string> = {
     name: T;
