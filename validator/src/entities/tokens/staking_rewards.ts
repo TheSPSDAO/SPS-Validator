@@ -231,7 +231,9 @@ export class StakingRewardsRepository extends BaseRepository {
             // tokens_per_block * num_blocks gives us the "current monthly reward allocation" converted to the number of blocks since we last rewarded this pool
             const X = params.tokens_per_block * num_blocks;
             // Now we can apply the cap formula to get the new reward allocation
-            const Z = Math.max(X * 0.7, Math.min(Y * 0.05, X * 0.9));
+            const o1 = X * 0.7;
+            const o2 = Math.min(Y * 0.05, X * 0.9);
+            const Z = Math.max(o1, o2);
             return Z;
         } else if (params.type === 'per_block' || params.type === undefined) {
             const total_decline = this.getPoolDecline(block_num, params);

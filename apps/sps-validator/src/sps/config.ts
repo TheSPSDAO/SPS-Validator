@@ -95,13 +95,13 @@ export class SpsConfigLoader
             unstaking_interval_seconds: 1,
             unstaking_periods: 1,
             staking_rewards_acc_tokens_per_share: 1,
-            staking_rewards_last_reward_block: 1,
+            staking_rewards_last_reward_block: 0,
             staking_rewards: {
                 start_block: 1,
                 tokens_per_block: 1,
             },
             validator_rewards_acc_tokens_per_share: 1,
-            validator_rewards_last_reward_block: 1,
+            validator_rewards_last_reward_block: 0,
             validator_rewards: {
                 start_block: 1,
                 tokens_per_block: 1,
