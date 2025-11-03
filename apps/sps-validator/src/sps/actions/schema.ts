@@ -431,6 +431,13 @@ const transition_balance_token_staking_spsp = new Schema.Schema(
     }),
 );
 
+const transition_adjust_token_distribution_strategy = new Schema.Schema(
+    'transition_adjust_token_distribution_strategy',
+    object({
+        block_num: number().integer().positive().required(),
+    }),
+);
+
 export {
     token_award,
     token_transfer,
@@ -476,4 +483,5 @@ export {
     transition_fix_vote_weight,
     transition_cleanup_lite_accounts,
     transition_balance_token_staking_spsp,
+    transition_adjust_token_distribution_strategy,
 };

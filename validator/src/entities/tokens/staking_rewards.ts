@@ -117,7 +117,6 @@ export class StakingRewardsRepository extends BaseRepository {
                 // a record of the claim amount for bridges
                 if (claimRewardsV2Log) {
                     // new format so we can still calculate VOUCHER rewards with the new reward algorithm
-
                     const total_staked = -1 * (await this.balanceRepository.getBalance(this.stakingConfiguration.staking_account, pool.stake, trx));
                     result.push(
                         new EventLog(EventTypes.INSERT, { table: StakingRewardsClaimV2.table }, {

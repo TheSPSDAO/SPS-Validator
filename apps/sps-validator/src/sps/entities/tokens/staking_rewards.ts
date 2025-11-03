@@ -18,6 +18,6 @@ export class SpsStakingRewardsRepository extends StakingRewardsRepository {
     }
 
     override enableV2ClaimRewardsLog(block_num: number): boolean {
-        return this.transitionManager.isTransitioned('token_distribution_strategy', block_num);
+        return this.transitionManager.isTransitioned('adjust_token_distribution_strategy', block_num);
     }
 }

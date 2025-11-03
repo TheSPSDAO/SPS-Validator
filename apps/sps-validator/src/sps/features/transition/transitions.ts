@@ -6,7 +6,7 @@ type MakeTransitionPoints<TPoints extends string> = {
 };
 
 export type TransitionPoints = {
-    transition_points: MakeTransitionPoints<'fix_vote_weight' | 'bad_block_96950550' | 'validator_transition_cleanup' | 'token_distribution_strategy'>;
+    transition_points: MakeTransitionPoints<'fix_vote_weight' | 'bad_block_96950550' | 'validator_transition_cleanup' | 'adjust_token_distribution_strategy'>;
 };
 export const TransitionPointDescriptions: Record<TransitionPointName, string> = {
     fix_vote_weight: 'Transition point for fixing vote weights when unstaking SPS. This is a one-time transition point that is part of version 1.1.0.',
@@ -14,8 +14,8 @@ export const TransitionPointDescriptions: Record<TransitionPointName, string> = 
         'Transition point for skipping transactions in block 96950550 because of a splinterlands node issue. This is a one-time transition point that is part of version 1.1.3 to support replaying from initial snapshot.',
     validator_transition_cleanup:
         'Transition point for cleaning up validator state after the splinterlands -> validator transition. This is a one-time transition point that is part of version 1.2.0. Please see https://peakd.com/spsproposal/@clayboyn/sps-governance-proposal-sps-validator-transition-cleanup',
-    token_distribution_strategy:
-        'Transition point for changing the SPS staking reward algorithm. This is a one-time transition point that is part of version 1.3.0. Please see https://peakd.com/spsproposal/@clayboyn/sps-governance-proposal-adjust-token-distribution-strategy',
+    adjust_token_distribution_strategy:
+        'Transition point for changing the SPS staking reward algorithm and adjusting reward pool balances. This is a one-time transition point that is part of version 1.3.0. Please see https://peakd.com/spsproposal/@clayboyn/sps-governance-proposal-adjust-token-distribution-strategy',
 };
 
 export const TransitionPoints: unique symbol = Symbol('TransitionPoints');
@@ -130,6 +130,23 @@ export class TransitionManager implements VirtualPayloadSource {
                         id: this.cfg.custom_json_id,
                         json: {
                             action: 'transition_balance_token_staking_spsp',
+                            params: {
+                                block_num: block.block_num,
+                            },
+                        },
+                    },
+                ],
+            ]);
+        } else if (this.isTransitionPoint('adjust_token_distribution_strategy', block.block_num)) {
+            return Promise.resolve([
+                [
+                    'custom_json',
+                    {
+                        required_auths: [this.transitionAccount],
+                        required_posting_auths: [],
+                        id: this.cfg.custom_json_id,
+                        json: {
+                            action: 'transition_adjust_token_distribution_strategy',
                             params: {
                                 block_num: block.block_num,
                             },
