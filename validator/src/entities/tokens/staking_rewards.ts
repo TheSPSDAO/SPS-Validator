@@ -50,6 +50,7 @@ class StakingRewardsClaim {
 
 class StakingRewardsClaimV2 extends StakingRewardsClaim {
     version!: 2;
+    staked_amount!: number;
     /**
      * The amount of tokens before we adjust it with the reward debt
      */
@@ -125,6 +126,7 @@ export class StakingRewardsRepository extends BaseRepository {
                             pool_name: pool_name as string,
                             token: pool.token,
                             amount: claim_amount,
+                            staked_amount: staked,
                             accumulated_amount,
                             reward_debt,
                             total_staked,
