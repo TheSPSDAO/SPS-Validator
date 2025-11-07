@@ -19,7 +19,7 @@ import { payout } from './utilities/token_support';
 import { SynchronisationConfig } from './sync/type';
 import { EventLog } from './entities/event_log';
 import { isDefined } from './libs/guards';
-import { Trx } from './lib';
+import { BalanceRepository, Trx } from './lib';
 
 export type ValidatorOpts = {
     validator_account: string | null;
@@ -35,6 +35,10 @@ export type PostProcessor = {
 type UnionAccountCreation = AccountCreateOperation | AccountCreateWithDelegationOperation | CreateClaimedAccountOperation;
 
 export class BlockProcessor<T extends SynchronisationConfig> {
+    get validateBlockRewardAccount(): string | null {
+        return null;
+    }
+
     public constructor(
         // TODO: way too many params/responsibilities
         private readonly trxStarter: TransactionStarter,
@@ -46,6 +50,7 @@ export class BlockProcessor<T extends SynchronisationConfig> {
         private readonly validatorOpts: ValidatorOpts,
         private readonly watcher: ValidatorWatch,
         private readonly hiveAccountRepository: HiveAccountRepository,
+        private readonly balanceRepository: BalanceRepository,
         private readonly hive: HiveClient,
         public readonly lastBlockCache: LastBlockCache,
         private readonly sync: SynchronisationClosure<T>,
@@ -57,7 +62,7 @@ export class BlockProcessor<T extends SynchronisationConfig> {
         const transformedBlock = this.transformBlock(block);
         await this.sync.waitToProcessBlock(transformedBlock.block_num);
         const block_hash = await this.trxStarter.withTransaction(async (trx) => {
-            const reward = this.calculateBlockReward(transformedBlock);
+            const reward = await this.calculateBlockReward(transformedBlock);
             // TODO: procesVirtualOps
             const wrappedPayloads = await this.topLevelVirtualPayloadSource.process(transformedBlock, trx);
             for (const wrappedPayload of wrappedPayloads) {
@@ -162,19 +167,43 @@ export class BlockProcessor<T extends SynchronisationConfig> {
         return op[1].id === this.prefix.custom_json_id || op[1].id.startsWith(this.prefix.custom_json_prefix);
     }
 
-    private calculateBlockReward(block: NBlock): payout {
+    private async calculateBlockReward(block: NBlock, trx?: Trx): Promise<payout> {
         const validator = this.watcher.validator;
         // No block rewards for broken blocks!
         if (validator === undefined) {
             return 0;
         }
+
         const elapsed_blocks = block.block_num - validator.reward_start_block;
         // Return 0 if rewards haven't started yet
         if (elapsed_blocks < 0) return 0;
 
-        const token = validator.reward_token;
-        // Reduce the validator block rewards by {reduction_pct}% every {reduction_blocks} blocks (1% per month)
-        const reward = +(validator.tokens_per_block * (1 - (parseInt(`${elapsed_blocks / validator.reduction_blocks}`) * validator.reduction_pct) / 100)).toFixed(3);
-        return [reward, token];
+        if (validator.reward_version === 'per_block_capped') {
+            const blocks_per_month = 864000;
+            const rewardAccount = this.validateBlockRewardAccount;
+            if (!rewardAccount) {
+                console.warn('No validate block reward account configured, cannot calculate dynamic block reward.');
+                return 0;
+            }
+            const token = validator.reward_token;
+            // This is the remaining balance in the reward pool minus the outstanding rewards that have not been claimed yet
+            const balance = await this.balanceRepository.getBalance(rewardAccount, token, trx);
+            // This is the number of blocks since we last rewarded this pool
+            const num_blocks = 1;
+            // We divide the reward pool balance by blocks per month to convert it to a per-block value
+            const Y = (balance / blocks_per_month) * num_blocks;
+            // tokens_per_block * num_blocks gives us the "current monthly reward allocation" converted to the number of blocks since we last rewarded this pool
+            const X = validator.tokens_per_block * num_blocks;
+            // Now we can apply the cap formula to get the new reward allocation
+            const o1 = X * 0.7;
+            const o2 = Math.min(Y * 0.05, X * 0.9);
+            const Z = Math.max(o1, o2);
+            return [Z, token];
+        } else {
+            const token = validator.reward_token;
+            // Reduce the validator block rewards by {reduction_pct}% every {reduction_blocks} blocks (1% per month)
+            const reward = +(validator.tokens_per_block * (1 - (parseInt(`${elapsed_blocks / validator.reduction_blocks}`) * validator.reduction_pct) / 100)).toFixed(3);
+            return [reward, token];
+        }
     }
 }

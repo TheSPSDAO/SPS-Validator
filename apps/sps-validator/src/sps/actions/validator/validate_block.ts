@@ -13,6 +13,9 @@ import {
 import { validate_block } from '../schema';
 import { MakeActionFactory, MakeRouter } from '../utils';
 
+// TODO: this should be in the config
+export const VALIDATE_BLOCK_REWARD_ACCOUNT = '$VALIDATOR_REWARDS';
+
 export class ValidateBlockAction extends Action<typeof validate_block.actionSchema> {
     constructor(
         op: OperationData,
@@ -75,7 +78,7 @@ export class ValidateBlockAction extends Action<typeof validate_block.actionSche
         if (reward !== 0) {
             const [amount, token] = reward;
             if (amount > 0) {
-                results.push(...(await this.balanceRepository.updateBalance(this, '$VALIDATOR_REWARDS', reward_account, token, amount, this.action_name, trx)));
+                results.push(...(await this.balanceRepository.updateBalance(this, VALIDATE_BLOCK_REWARD_ACCOUNT, reward_account, token, amount, this.action_name, trx)));
             }
         }
 

@@ -61,6 +61,7 @@ export class AdjustTokenDistributionStrategyAction extends Action<typeof transit
         events.push(
             await this.configLoader.reloadingUpdateConfig('sps', 'staking_rewards', SPS_STAKING_CONFIG, trx),
             await this.configLoader.reloadingUpdateConfig('sps', 'validator_rewards', SPS_VALIDATOR_REWARDS_CONFIG, trx),
+            await this.configLoader.reloadingInsertConfig('validator', 'reward_version', 'per_block_capped', trx),
         );
 
         return events;

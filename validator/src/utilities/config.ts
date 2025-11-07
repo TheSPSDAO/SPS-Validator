@@ -151,4 +151,13 @@ export class ConfigRepository extends BaseRepository {
         // TODO - this throws if the item doesn't exist. it shouldn't?
         return this.query(Config_, trx).where('group_name', payload.group_name).andWhere('name', payload.name).updateItemWithReturning({ value: payload.value });
     }
+
+    public insertReturning(payload: ConfigUpdate, index: number, trx?: Trx): Promise<Config_> {
+        return this.query(Config_, trx).insertItemWithReturning({
+            group_name: payload.group_name,
+            name: payload.name,
+            value: payload.value,
+            index: index,
+        });
+    }
 }

@@ -10,6 +10,7 @@ export * from './pools';
 export * from './updater';
 
 export type ValidatorConfig = {
+    reward_version?: 'per_block' | 'per_block_capped';
     reward_start_block: number;
     tokens_per_block: number;
     paused_until_block: number;
@@ -39,6 +40,7 @@ export const token_schema = object({
 type _sps = type_check<TokenConfig, InferType<typeof token_schema>>;
 
 export const validator_schema = object({
+    reward_version: string().oneOf(['per_block', 'per_block_capped']).optional(),
     reward_start_block: number().integer().positive().required(),
     paused_until_block: number().integer().required(),
     tokens_per_block: number().min(0).required(),
@@ -140,4 +142,5 @@ export interface ConfigLoader {
     updateConfig(group_name: string, name: string, value: ConfigData, trx?: Trx): Promise<EventLog>;
     validateUpdateConfig(group_name: string, name: string, value: ConfigData, trx?: Trx): Promise<Result<void, string[]>>;
     reloadingUpdateConfig(group_name: string, name: string, value: ConfigData, trx?: Trx): Promise<EventLog>;
+    reloadingInsertConfig(group_name: string, name: string, value: ConfigData, trx?: Trx): Promise<EventLog>;
 }
