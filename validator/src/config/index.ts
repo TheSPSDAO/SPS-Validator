@@ -60,7 +60,8 @@ export interface ValidatorUpdater {
 export const ValidatorUpdater: unique symbol = Symbol('ValidatorUpdater');
 
 // Only to assert types. Can be replaced by const discount_schema: ObjectSchema<DiscountEntry> = ...
-type _validator = type_check<ValidatorConfig, InferType<typeof validator_schema>>;
+// yup doesnt handle enums well it seems.
+type _validator = type_check<ValidatorConfig, Omit<InferType<typeof validator_schema>, 'reward_version'> & { reward_version?: 'per_block' | 'per_block_capped' }>;
 
 // TODO: there must be a tidier way to manage this
 export type ShopConfig = {
