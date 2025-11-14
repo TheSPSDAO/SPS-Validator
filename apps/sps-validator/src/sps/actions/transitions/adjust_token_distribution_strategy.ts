@@ -15,6 +15,7 @@ export const TRANSFERS = [
     ['$TOURNAMENTS_DISTRIBUTION', 20_000_000],
 ] as const;
 
+// 4600k per month
 export const SPS_STAKING_CONFIG = {
     type: 'per_block_capped',
     tokens_per_block: 5.32407,
@@ -23,11 +24,15 @@ export const SPS_STAKING_CONFIG = {
     unstaking_interval_seconds: 604800,
 };
 
+// 2280k per month
 export const SPS_VALIDATOR_REWARDS_CONFIG = {
     type: 'per_block_capped',
-    tokens_per_block: 2.6388,
+    tokens_per_block: 2.63888,
     start_block: 67857521,
 };
+
+// 350k per month
+export const SPS_BLOCK_VALIDATION_TOKENS_PER_BLOCK = 0.40509;
 
 export class AdjustTokenDistributionStrategyAction extends Action<typeof transition_adjust_token_distribution_strategy.actionSchema> {
     constructor(
@@ -62,6 +67,7 @@ export class AdjustTokenDistributionStrategyAction extends Action<typeof transit
             await this.configLoader.reloadingUpdateConfig('sps', 'staking_rewards', SPS_STAKING_CONFIG, trx),
             await this.configLoader.reloadingUpdateConfig('sps', 'validator_rewards', SPS_VALIDATOR_REWARDS_CONFIG, trx),
             await this.configLoader.reloadingInsertConfig('validator', 'reward_version', 'per_block_capped', trx),
+            await this.configLoader.reloadingInsertConfig('validator', 'tokens_per_block', SPS_BLOCK_VALIDATION_TOKENS_PER_BLOCK, trx),
         );
 
         return events;

@@ -2,7 +2,6 @@ import { Fixture as BaseFixture } from '../../../__tests__/action-fixture';
 import { inject, injectable } from 'tsyringe';
 import { container } from '../../../__tests__/test-composition-root';
 import { ConfigEntity, StakingRewardsRepository } from '@steem-monsters/splinterlands-validator';
-import { TOKENS } from '../../features/tokens';
 import { SpsPool } from '../../pools';
 
 const start_block = 56186000;
@@ -42,19 +41,6 @@ beforeEach(async () => {
 afterAll(async () => {
     await fixture.dispose();
 });
-
-// test.dbOnly('claim_staking_rewards operation with new pool type (early).', async () => {
-//     await fixture.testHelper.setLiquidSPSBalance('steemmonsters', 150);
-//     await fixture.testHelper.setLiquidSPSBalance(SpsPool.reward_account, 124_000_000);
-//     await fixture.opsHelper.processOp('stake_tokens', 'steemmonsters', { token: 'SPS', qty: 150 }, { block_num: start_block + 1 });
-
-//     // 100 blocks of rewards at 8.56164 per block = 856.164 SPS, but we only get 70% of that at this point
-//     await fixture.opsHelper.processOp('claim_staking_rewards', 'steemmonsters', {}, { block_num: start_block + 100 });
-//     const staked = await fixture.testHelper.getDummyToken('steemmonsters', TOKENS.SPSP);
-//     const balance = await fixture.testHelper.getDummyToken('steemmonsters');
-//     expect(staked?.balance).toBe(150);
-//     expect(balance?.balance).toBeCloseTo(847.60236 * 0.7);
-// });
 
 test.dbOnly('claim_staking_rewards operation with new pool type calculates rewards correctly over the lifetime of the pool.', async () => {
     await fixture.testHelper.setLiquidSPSBalance('steemmonsters', 150);
