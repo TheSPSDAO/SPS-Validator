@@ -15,7 +15,7 @@ export class ConfigUpdateAction extends AdminAction<typeof config_update.actionS
 
         const errors: string[] = [];
         for (const update of this.params.updates) {
-            const result = await this.#configLoader.validateUpdateConfig(update.group_name, update.name, update.value);
+            const result = await this.#configLoader.validateUpdateConfig(update.group_name, update.name, update.value, trx);
             if (Result.isErr(result)) {
                 errors.push(...result.error);
             }

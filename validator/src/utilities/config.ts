@@ -1,6 +1,7 @@
 import * as utils from '../utils';
 import { LogLevel } from '../utils';
 import { BaseRepository, Handle, ConfigEntity as Config_, Trx } from '../db/tables';
+import { Result } from '@steem-monsters/lib-monad';
 
 // TODO: Convert config type to be something useful, at the moment it's just random strings in a database.
 type ConfigEntries = { [key: string]: unknown };
@@ -46,6 +47,15 @@ export class ConfigRepository extends BaseRepository {
         } catch (err: any) {
             utils.log(`Error parsing config value: ${value} of type ${type}. Error: ${err && err.message ? err.message : err}`, LogLevel.Error);
             return value;
+        }
+    }
+
+    public static unparse_value_safe(value: ConfigData): Result<string, Error> {
+        try {
+            const unparsed = ConfigRepository.unparse_value(value);
+            return Result.Ok(unparsed);
+        } catch (error) {
+            return Result.Err(error instanceof Error ? error : new Error(String(error)));
         }
     }
 
@@ -140,5 +150,14 @@ export class ConfigRepository extends BaseRepository {
     public updateReturning(payload: ConfigUpdate, trx?: Trx): Promise<Config_> {
         // TODO - this throws if the item doesn't exist. it shouldn't?
         return this.query(Config_, trx).where('group_name', payload.group_name).andWhere('name', payload.name).updateItemWithReturning({ value: payload.value });
+    }
+
+    public insertReturning(payload: ConfigUpdate, index: number, trx?: Trx): Promise<Config_> {
+        return this.query(Config_, trx).insertItemWithReturning({
+            group_name: payload.group_name,
+            name: payload.name,
+            value: payload.value,
+            index: index,
+        });
     }
 }

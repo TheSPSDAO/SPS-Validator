@@ -12,13 +12,19 @@ import {
     ValidatorRepository,
     ValidatorWatch,
     NBlock,
+    BalanceRepository,
 } from '@steem-monsters/splinterlands-validator';
 import { inject, injectable } from 'tsyringe';
 import { SpsSynchronisationClosure, SpsSynchronisationConfig } from './sync';
 import { TransitionManager } from './features/transition';
+import { VALIDATE_BLOCK_REWARD_ACCOUNT } from './actions/validator/validate_block';
 
 @injectable()
 export class SpsBlockProcessor extends BlockProcessor<SpsSynchronisationConfig> {
+    public get validateBlockRewardAccount(): string | null {
+        return VALIDATE_BLOCK_REWARD_ACCOUNT;
+    }
+
     public constructor(
         @inject(TransactionStarter) trxStarter: TransactionStarter,
         @inject(TopLevelVirtualPayloadSource) topLevelVirtualPayloadSource: TopLevelVirtualPayloadSource,
@@ -29,6 +35,7 @@ export class SpsBlockProcessor extends BlockProcessor<SpsSynchronisationConfig> 
         @inject(ValidatorOpts) validatorOpts: ValidatorOpts,
         @inject(ValidatorWatch) watcher: ValidatorWatch,
         @inject(HiveAccountRepository) hiveAccountRepository: HiveAccountRepository,
+        @inject(BalanceRepository) balanceRepository: BalanceRepository,
         @inject(HiveClient) hive: HiveClient,
         @inject(LastBlockCache) lastBlockCache: LastBlockCache,
         @inject(SpsSynchronisationClosure) sync: SpsSynchronisationClosure,
@@ -44,6 +51,7 @@ export class SpsBlockProcessor extends BlockProcessor<SpsSynchronisationConfig> 
             validatorOpts,
             watcher,
             hiveAccountRepository,
+            balanceRepository,
             hive,
             lastBlockCache,
             sync,

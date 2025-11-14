@@ -42,6 +42,7 @@ import { Router as UpdateMissedBlocksRouter } from './validator/update_missed_bl
 import { Router as FixVoteWeightRouter } from './transitions/fix_vote_weight';
 import { Router as CleanupLiteAccountsRouter } from './transitions/cleanup_lite_accounts';
 import { Router as BalanceTokenStakingAccountRouter } from './transitions/balance_token_staking_account';
+import { Router as AdjustTokenDistributionStrategyRouter } from './transitions/adjust_token_distribution_strategy';
 import { MakeMultiRouter, MakeVirtualPayloadSource } from './utils';
 import { SpsValidatorLicenseManager } from '../features/validator';
 import { SpsClearBurnedTokensSource } from './burn';
@@ -95,6 +96,7 @@ export const VirtualRouterImpl = MakeMultiRouter(
     FixVoteWeightRouter,
     CleanupLiteAccountsRouter,
     BalanceTokenStakingAccountRouter,
+    AdjustTokenDistributionStrategyRouter,
 );
 export type VirtualRouterImpl = InstanceType<typeof VirtualRouterImpl>;
 

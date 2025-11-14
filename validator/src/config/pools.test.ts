@@ -29,6 +29,7 @@ describe('Pool validation tests', () => {
     const x: AwardPool<'x'> = { name: 'x', reward_account: '$TOKEN_STAKING_REWARDS', token: 'xtoken', stake: 'xtoken' };
     const xpool: ValidatedPool<'x'> = {
         x: {
+            type: 'per_block',
             start_block: 1,
             tokens_per_block: 1,
         },
