@@ -90,6 +90,7 @@ export class SpsConfigLoader
             max_votes: 10,
             num_top_validators: 10,
             reward_token: TOKENS.SPS,
+            consecutive_missed_blocks_threshold: 5,
         },
         sps: {
             unstaking_interval_seconds: 1,
@@ -454,9 +455,10 @@ export class SpsConfigLoader
      * Inserts a new configuration entry into the database.
      * @return a record of the updated configuration record.
      */
-    async reloadingInsertConfig(group_name: string, name: string, value: ConfigData, trx?: Trx): Promise<EventLog> {
+    async reloadingUpsertConfig(group_name: string, group_type: string, name: string, value: ConfigData, trx?: Trx): Promise<EventLog> {
         const unparsed_value = ConfigRepository.unparse_value(value);
-        const result = await this.configRepository.insertReturning({ group_name, name, value: unparsed_value }, 0, trx);
+        const value_type = ConfigRepository.value_type(value);
+        const result = await this.configRepository.upsertReturning({ group_name, group_type, name, value: unparsed_value, value_type }, 0, trx);
         if (result) {
             log(`Inserted config value [${group_name}.${name}] to ${value}, reloading database.`, LogLevel.Info);
             await this.load(trx);

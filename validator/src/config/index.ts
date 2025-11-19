@@ -22,6 +22,7 @@ export type ValidatorConfig = {
     max_votes: number;
     num_top_validators: number;
     last_checked_block: number;
+    consecutive_missed_blocks_threshold?: number;
 };
 
 export type TokenConfig = {
@@ -52,6 +53,7 @@ export const validator_schema = object({
     max_votes: number().positive().required(),
     num_top_validators: number().positive().required(),
     last_checked_block: number().integer().positive().required(),
+    consecutive_missed_blocks_threshold: number().integer().min(0).optional(),
 });
 
 export interface ValidatorUpdater {
@@ -143,5 +145,5 @@ export interface ConfigLoader {
     updateConfig(group_name: string, name: string, value: ConfigData, trx?: Trx): Promise<EventLog>;
     validateUpdateConfig(group_name: string, name: string, value: ConfigData, trx?: Trx): Promise<Result<void, string[]>>;
     reloadingUpdateConfig(group_name: string, name: string, value: ConfigData, trx?: Trx): Promise<EventLog>;
-    reloadingInsertConfig(group_name: string, name: string, value: ConfigData, trx?: Trx): Promise<EventLog>;
+    reloadingUpsertConfig(group_name: string, group_type: string, name: string, value: ConfigData, trx?: Trx): Promise<EventLog>;
 }

@@ -10,6 +10,13 @@ type ConfigUpdate = {
     name: string;
     value: null | string;
 };
+type ConfigUpsert = {
+    group_name: string;
+    group_type: string;
+    name: string;
+    value: null | string;
+    value_type: string;
+};
 
 export type ConfigData = number | Date | object | Array<unknown> | string | boolean;
 
@@ -77,6 +84,27 @@ export class ConfigRepository extends BaseRepository {
                 return JSON.stringify(value);
             default:
                 throw Error('Config for db cannot be unparsed');
+        }
+    }
+
+    public static value_type(value: ConfigData): string {
+        switch (typeof value) {
+            case 'string':
+                return 'string';
+            case 'number':
+                return 'number';
+            case 'object':
+                if (Array.isArray(value)) {
+                    return 'array';
+                } else if (value instanceof Date) {
+                    return 'date';
+                } else {
+                    return 'object';
+                }
+            case 'boolean':
+                return 'boolean';
+            default:
+                throw Error('Config for db has unsupported type');
         }
     }
 
@@ -152,12 +180,25 @@ export class ConfigRepository extends BaseRepository {
         return this.query(Config_, trx).where('group_name', payload.group_name).andWhere('name', payload.name).updateItemWithReturning({ value: payload.value });
     }
 
-    public insertReturning(payload: ConfigUpdate, index: number, trx?: Trx): Promise<Config_> {
-        return this.query(Config_, trx).insertItemWithReturning({
-            group_name: payload.group_name,
-            name: payload.name,
-            value: payload.value,
-            index: index,
-        });
+    public upsertReturning(payload: ConfigUpsert, index: number, trx?: Trx): Promise<Config_> {
+        return this.query(Config_, trx)
+            .useKnexQueryBuilder((query) =>
+                query
+                    .insert({
+                        group_name: payload.group_name,
+                        group_type: payload.group_type,
+                        name: payload.name,
+                        value: payload.value,
+                        value_type: payload.value_type,
+                        index: index,
+                    })
+                    .onConflict(['group_name', 'name'])
+                    .merge({
+                        value: payload.value,
+                        value_type: payload.value_type,
+                    })
+                    .returning('*'),
+            )
+            .getFirst();
     }
 }

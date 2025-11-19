@@ -25,7 +25,7 @@ export const SPS_STAKING_CONFIG = {
 };
 
 // 2280k per month
-export const SPS_VALIDATOR_REWARDS_CONFIG = {
+export const SPS_LICENSE_REWARDS_CONFIG = {
     type: 'per_block_capped',
     tokens_per_block: 2.63888,
     start_block: 67857521,
@@ -33,6 +33,7 @@ export const SPS_VALIDATOR_REWARDS_CONFIG = {
 
 // 350k per month
 export const SPS_BLOCK_VALIDATION_TOKENS_PER_BLOCK = 0.40509;
+export const BLOCK_VALIDATION_CONSEUTIVE_MISSED_BLOCKS_THRESHOLD = 5;
 
 export class AdjustTokenDistributionStrategyAction extends Action<typeof transition_adjust_token_distribution_strategy.actionSchema> {
     constructor(
@@ -65,9 +66,10 @@ export class AdjustTokenDistributionStrategyAction extends Action<typeof transit
         // Update the sps staking and license reward pool configs to use the new calculation method
         events.push(
             await this.configLoader.reloadingUpdateConfig('sps', 'staking_rewards', SPS_STAKING_CONFIG, trx),
-            await this.configLoader.reloadingUpdateConfig('sps', 'validator_rewards', SPS_VALIDATOR_REWARDS_CONFIG, trx),
-            await this.configLoader.reloadingInsertConfig('validator', 'reward_version', 'per_block_capped', trx),
-            await this.configLoader.reloadingInsertConfig('validator', 'tokens_per_block', SPS_BLOCK_VALIDATION_TOKENS_PER_BLOCK, trx),
+            await this.configLoader.reloadingUpdateConfig('sps', 'validator_rewards', SPS_LICENSE_REWARDS_CONFIG, trx),
+            await this.configLoader.reloadingUpdateConfig('validator', 'tokens_per_block', SPS_BLOCK_VALIDATION_TOKENS_PER_BLOCK, trx),
+            await this.configLoader.reloadingUpsertConfig('validator', 'object', 'reward_version', 'per_block_capped', trx),
+            await this.configLoader.reloadingUpsertConfig('validator', 'object', 'consecutive_missed_blocks_threshold', BLOCK_VALIDATION_CONSEUTIVE_MISSED_BLOCKS_THRESHOLD, trx),
         );
 
         return events;

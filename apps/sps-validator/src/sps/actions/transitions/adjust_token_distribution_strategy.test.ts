@@ -2,7 +2,13 @@ import { emoji_payload, garbage_payload } from '../../../__tests__/db-helpers';
 import { container } from '../../../__tests__/test-composition-root';
 import { Fixture } from '../../../__tests__/action-fixture';
 import { TransitionPoints } from '../../features/transition';
-import { SPS_STAKING_CONFIG, SPS_VALIDATOR_REWARDS_CONFIG, TRANSFERS } from './adjust_token_distribution_strategy';
+import {
+    SPS_BLOCK_VALIDATION_TOKENS_PER_BLOCK,
+    SPS_STAKING_CONFIG,
+    SPS_LICENSE_REWARDS_CONFIG,
+    TRANSFERS,
+    BLOCK_VALIDATION_CONSEUTIVE_MISSED_BLOCKS_THRESHOLD,
+} from './adjust_token_distribution_strategy';
 import { TOKENS } from '../../features/tokens';
 
 const fixture = container.resolve(Fixture);
@@ -71,5 +77,9 @@ test.dbOnly('transition_adjust_token_distribution_strategy works on block num', 
     }
 
     expect(fixture.loader.pools?.['staking_rewards']).toMatchObject(SPS_STAKING_CONFIG);
-    expect(fixture.loader.pools?.['validator_rewards']).toMatchObject(SPS_VALIDATOR_REWARDS_CONFIG);
+    expect(fixture.loader.pools?.['validator_rewards']).toMatchObject(SPS_LICENSE_REWARDS_CONFIG);
+
+    expect(fixture.loader.validator?.tokens_per_block).toBe(SPS_BLOCK_VALIDATION_TOKENS_PER_BLOCK);
+    expect(fixture.loader.validator?.reward_version).toBe('per_block_capped');
+    expect(fixture.loader.validator?.consecutive_missed_blocks_threshold).toBe(BLOCK_VALIDATION_CONSEUTIVE_MISSED_BLOCKS_THRESHOLD);
 });

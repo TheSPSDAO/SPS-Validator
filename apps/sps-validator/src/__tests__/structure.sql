@@ -2,8 +2,9 @@
 -- PostgreSQL database dump
 --
 
+
 -- Dumped from database version 16.8 (Debian 16.8-1.pgdg110+1)
--- Dumped by pg_dump version 16.9 (Ubuntu 16.9-1.pgdg22.04+1)
+-- Dumped by pg_dump version 18.1 (Ubuntu 18.1-1.pgdg22.04+2)
 
 SET statement_timeout = 0;
 SET lock_timeout = 0;
@@ -403,7 +404,8 @@ CREATE TABLE public.validators (
     total_votes numeric(12,3) DEFAULT 0 NOT NULL,
     missed_blocks integer DEFAULT 0 NOT NULL,
     api_url text,
-    last_version text
+    last_version text,
+    consecutive_missed_blocks integer DEFAULT 0 NOT NULL
 );
 
 
@@ -812,4 +814,5 @@ ALTER INDEX public.validator_transactions_type_player_idx ATTACH PARTITION publi
 --
 -- PostgreSQL database dump complete
 --
+
 

@@ -2,8 +2,10 @@ import { emoji_payload, garbage_payload } from '../../../__tests__/db-helpers';
 import { Fixture } from '../../../__tests__/action-fixture';
 import { container } from '../../../__tests__/test-composition-root';
 import { ConfigEntity } from '@steem-monsters/splinterlands-validator';
+import { TransitionPoints } from '../../features/transition';
 
 const fixture = container.resolve(Fixture);
+let transitionPoints: TransitionPoints | null = null;
 
 beforeAll(async () => {
     await fixture.init();
@@ -16,10 +18,12 @@ beforeEach(async () => {
     await fixture.testHelper.setHiveAccount('steemmonsters2');
     await fixture.testHelper.insertDummyValidator('steemmonsters', true, 100, 'steemmonsters2');
     await fixture.testHelper.insertDummyValidator('steemmonsters2', true, 100);
+    await fixture.testHelper.insertDummyValidator('steemmonsters3', true, 100, undefined, 6);
     await fixture.handle.query(ConfigEntity).where('group_name', 'validator').andWhere('name', 'max_block_age').updateItem({ value: '100' });
     await fixture.handle.query(ConfigEntity).where('group_name', 'validator').andWhere('name', 'paused_until_block').updateItem({ value: '10' });
     await fixture.handle.query(ConfigEntity).where('group_name', 'validator').andWhere('name', 'min_validators').updateItem({ value: '1' });
     await fixture.loader.load();
+    transitionPoints = container.resolve(TransitionPoints);
 });
 
 afterAll(async () => {
@@ -57,6 +61,27 @@ test.dbOnly('Existing block works', async () => {
     );
     const result = await fixture.testHelper.blockForBlockNumber(11);
     expect(result?.validation_tx).toEqual('proper_validate_block');
+});
+
+test.dbOnly('Existing block resets consecutive missed blocks', async () => {
+    const blockNum = transitionPoints!.transition_points.adjust_token_distribution_strategy + 10;
+    await fixture.testHelper.insertDummyBlock(blockNum, 'my-hash', 'steemmonsters3');
+    await fixture.opsHelper.processOp(
+        'validate_block',
+        'steemmonsters3',
+        {
+            block_num: blockNum,
+            hash: 'my-hash',
+            version: 'abc',
+        },
+        { transaction: 'proper_validate_block', block_num: blockNum + 10 },
+    );
+    const result = await fixture.testHelper.blockForBlockNumber(blockNum);
+    expect(result?.validation_tx).toEqual('proper_validate_block');
+
+    const validator = await fixture.testHelper.validator('steemmonsters3');
+    expect(validator?.missed_blocks).toBe(6);
+    expect(validator?.consecutive_missed_blocks).toBe(0);
 });
 
 test.dbOnly('Existing block pays out', async () => {
