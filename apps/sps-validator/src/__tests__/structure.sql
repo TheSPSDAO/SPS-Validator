@@ -2,8 +2,9 @@
 -- PostgreSQL database dump
 --
 
+
 -- Dumped from database version 16.8 (Debian 16.8-1.pgdg110+1)
--- Dumped by pg_dump version 16.9 (Ubuntu 16.9-1.pgdg22.04+1)
+-- Dumped by pg_dump version 18.1 (Ubuntu 18.1-1.pgdg22.04+2)
 
 SET statement_timeout = 0;
 SET lock_timeout = 0;
@@ -258,6 +259,19 @@ CREATE TABLE public.staking_pool_reward_debt (
     player character varying(50) NOT NULL,
     pool_name character varying(50) NOT NULL,
     reward_debt numeric(15,3) DEFAULT 0 NOT NULL
+);
+
+
+--
+-- Name: token_transfer_keys; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.token_transfer_keys (
+    account character varying(20) NOT NULL,
+    key character varying(64) NOT NULL,
+    trx_id text NOT NULL,
+    block_num integer NOT NULL,
+    block_time timestamp without time zone NOT NULL
 );
 
 
@@ -520,6 +534,14 @@ ALTER TABLE ONLY public.promise
 
 ALTER TABLE ONLY public.staking_pool_reward_debt
     ADD CONSTRAINT staking_pool_reward_debt_pkey PRIMARY KEY (player, pool_name);
+
+
+--
+-- Name: token_transfer_keys token_transfer_keys_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.token_transfer_keys
+    ADD CONSTRAINT token_transfer_keys_pkey PRIMARY KEY (account, key);
 
 
 --
@@ -812,4 +834,5 @@ ALTER INDEX public.validator_transactions_type_player_idx ATTACH PARTITION publi
 --
 -- PostgreSQL database dump complete
 --
+
 

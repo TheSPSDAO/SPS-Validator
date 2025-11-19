@@ -78,6 +78,15 @@ export class BalanceEntity {
     @Column() public balance = '0'; // numeric(15, 3)
 }
 
+@Table('token_transfer_keys')
+export class TokenTransferKeyEntity {
+    @Column() public account!: string;
+    @Column() public key!: string;
+    @Column() public block_num!: number;
+    @Column() public block_time!: Date;
+    @Column() public trx_id!: string;
+}
+
 @Table('balance_history')
 export class BalanceHistoryEntity {
     @Column() public player!: string;
