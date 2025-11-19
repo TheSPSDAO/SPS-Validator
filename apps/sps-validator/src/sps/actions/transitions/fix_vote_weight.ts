@@ -73,7 +73,7 @@ export class FixVoteWeightTransitionAction extends Action<typeof transition_fix_
         const invalidVoteWeights = await new FixVoteWeightRepository(this.handle).getInvalidVoteWeights(trx);
         const events: EventLog[] = [];
         for (const invalidVoteWeight of invalidVoteWeights) {
-            const setEvents = await this.voteRepository.setVoteWeight(invalidVoteWeight.voter, invalidVoteWeight.balance, trx);
+            const setEvents = await this.voteRepository.setVoteWeight(invalidVoteWeight.voter, invalidVoteWeight.balance, this.op.block_num, trx);
             events.push(...setEvents);
         }
         return events;

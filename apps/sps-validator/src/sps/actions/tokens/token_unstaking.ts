@@ -84,7 +84,7 @@ export class TokenUnstakingAction extends Action<typeof token_unstaking.actionSc
             const checkStakedToken = this.transitionManager.isTransitioned('fix_vote_weight', this.op.block_num) ? TOKENS.SPSP : TOKENS.SPS;
             if (this.params.token === TOKENS.SPS && this.stakedToken === checkStakedToken) {
                 // Update the total votes for all validators voted on by this player now that their staked SPS has decreased
-                results.push(...(await this.validatorVoteRepository.incrementVoteWeight(this.params.player, unstake_amount * -1, trx)));
+                results.push(...(await this.validatorVoteRepository.incrementVoteWeight(this.params.player, unstake_amount * -1, this.op.block_num, trx)));
             }
         }
 

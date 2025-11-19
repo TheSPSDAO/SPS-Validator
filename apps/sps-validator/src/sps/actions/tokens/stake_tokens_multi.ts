@@ -83,7 +83,7 @@ export class StakeTokensMultiAction extends AdminAction<typeof stake_tokens_mult
                 )),
             );
         }
-        logs.push(...(await this.validatorVoteRepository.incrementVoteWeight(this.params.to_player!, totalQty, trx)));
+        logs.push(...(await this.validatorVoteRepository.incrementVoteWeight(this.params.to_player!, totalQty, this.op.block_num, trx)));
         return logs;
     }
 }

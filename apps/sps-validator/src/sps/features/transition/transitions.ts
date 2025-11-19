@@ -15,7 +15,7 @@ export const TransitionPointDescriptions: Record<TransitionPointName, string> = 
     validator_transition_cleanup:
         'Transition point for cleaning up validator state after the splinterlands -> validator transition. This is a one-time transition point that is part of version 1.2.0. Please see https://peakd.com/spsproposal/@clayboyn/sps-governance-proposal-sps-validator-transition-cleanup',
     adjust_token_distribution_strategy:
-        'Transition point for changing the SPS staking reward algorithm and adjusting reward pool balances. This is a one-time transition point that is part of version 1.3.0. Please see https://peakd.com/spsproposal/@clayboyn/sps-governance-proposal-adjust-token-distribution-strategy',
+        'Transition point for changing the SPS staking reward algorithm and adjusting reward pool balances. This update also adds consecutive missed block tracking and double spend protection in token_transfer and token_transfer_multi ops. This is a one-time transition point that is part of version 1.3.0. Please see https://peakd.com/spsproposal/@clayboyn/sps-governance-proposal-adjust-token-distribution-strategy',
 };
 
 export const TransitionPoints: unique symbol = Symbol('TransitionPoints');
