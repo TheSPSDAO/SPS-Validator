@@ -20,6 +20,8 @@ export enum ErrorType {
     NoMultiTokenTransfer = 114,
     MismatchedAccount = 115,
     DuplicateAccount = 116,
+    DuplicateTransferKey = 117,
+    InvalidTransferKey = 118,
     ActiveUnstaking = 132,
     NoStakingToken = 141,
     NoActiveUnstaking = 142,

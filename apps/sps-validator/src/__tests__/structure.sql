@@ -263,6 +263,19 @@ CREATE TABLE public.staking_pool_reward_debt (
 
 
 --
+-- Name: token_transfer_keys; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.token_transfer_keys (
+    account character varying(20) NOT NULL,
+    key character varying(64) NOT NULL,
+    trx_id text NOT NULL,
+    block_num integer NOT NULL,
+    block_time timestamp without time zone NOT NULL
+);
+
+
+--
 -- Name: token_unstaking; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -522,6 +535,14 @@ ALTER TABLE ONLY public.promise
 
 ALTER TABLE ONLY public.staking_pool_reward_debt
     ADD CONSTRAINT staking_pool_reward_debt_pkey PRIMARY KEY (player, pool_name);
+
+
+--
+-- Name: token_transfer_keys token_transfer_keys_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.token_transfer_keys
+    ADD CONSTRAINT token_transfer_keys_pkey PRIMARY KEY (account, key);
 
 
 --
