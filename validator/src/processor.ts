@@ -57,11 +57,11 @@ export class BlockProcessor<T extends SynchronisationConfig> {
         private readonly special_ops: Map<string, string> = new Map(),
     ) {}
 
-    public async process(block: NBlock, headBlock: number): Promise<{ block_hash: string; event_logs: EventLog[] }> {
+    public async process(block: NBlock, headBlock: number): Promise<{ block_hash: string; event_logs: EventLog[]; reward: payout }> {
         const operations: Operation[] = [];
         const transformedBlock = this.transformBlock(block);
         await this.sync.waitToProcessBlock(transformedBlock.block_num);
-        const block_hash = await this.trxStarter.withTransaction(async (trx) => {
+        const { block_hash, reward } = await this.trxStarter.withTransaction(async (trx) => {
             const reward = await this.calculateBlockReward(transformedBlock);
             // TODO: procesVirtualOps
             const wrappedPayloads = await this.topLevelVirtualPayloadSource.process(transformedBlock, trx);
@@ -108,12 +108,13 @@ export class BlockProcessor<T extends SynchronisationConfig> {
                 }
             }
 
-            return l2_block_id;
+            return { block_hash: l2_block_id, reward };
         });
 
         return {
             event_logs: operations.flatMap((x) => x.actions.flatMap((x) => x.result).filter(isDefined)),
             block_hash,
+            reward,
         };
     }
 
