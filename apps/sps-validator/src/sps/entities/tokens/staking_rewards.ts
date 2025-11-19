@@ -12,7 +12,7 @@ export class SpsStakingRewardsRepository extends StakingRewardsRepository {
         @inject(Pools) pools: Pools,
         @inject(StakingConfiguration) stakingConfiguration: StakingConfiguration,
         @inject(BlockRepository) blockRepository: BlockRepository,
-        @inject(TransitionManager) private transitionManager: TransitionManager,
+        @inject(TransitionManager) private readonly transitionManager: TransitionManager,
     ) {
         super(handle, poolUpdater, watcher, balanceRepository, pools, stakingConfiguration, blockRepository);
     }

@@ -463,7 +463,7 @@ export class SpsConfigLoader
             log(`Inserted config value [${group_name}.${name}] to ${value}, reloading database.`, LogLevel.Info);
             await this.load(trx);
         }
-        return new EventLog(EventTypes.UPDATE, ConfigEntity, result);
+        return new EventLog(EventTypes.UPSERT, ConfigEntity, result);
     }
 
     /**
