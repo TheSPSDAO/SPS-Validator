@@ -28,16 +28,18 @@ async function streamBlocksIntoQueue(
     // block to actually be "from - 1", which I guess works out nicely for our case here as well.
     let lastSuccessfullyFetchedBlockNum = from;
 
+    await client.loadNodes();
+
     // we need at least 3 for safe mode
     const nodesRequiredForConsensus = 3;
     // we just need 2/3 of the nodes to agree for consensus, so we can calculate that here.
     // we could just hardcode it to 2, but this way it will work even if we have more nodes in the future.
     const nodesAgreeingForConsensus = Math.ceil((nodesRequiredForConsensus * 2) / 3);
     let clients = [client];
-    const clientNodes = client.options.nodes;
+    const clientNodes = client.fetch.hive.nodes;
     if (Array.isArray(clientNodes) && clientNodes.length >= nodesRequiredForConsensus && options.stream_safe_mode) {
         utils.log(`Safe mode enabled, using multiple nodes for streaming: ${clientNodes.join(', ')}`, LogLevel.Info);
-        clients = clientNodes.map((node) => new Client({ ...client.options, nodes: [node] }));
+        clients = clientNodes.map((node) => new Client({ ...client.options, nodes: [node.endpoint] }));
     } else if (options.stream_safe_mode) {
         utils.log(`Safe mode enabled, but not enough nodes provided for streaming. Safe mode requires at least 3 nodes to be effective.`, LogLevel.Warning);
     }
