@@ -205,4 +205,11 @@ export class ValidatorRepository extends BaseRepository {
             return valid_validators[i];
         }
     }
+
+    public async resetMissedBlocksForAllValidators(action: IAction, trx?: Trx) {
+        const records = await this.query(Validator_, trx)
+            .useKnexQueryBuilder((query) => query.update({ consecutive_missed_blocks: 0, missed_blocks: 0 }).returning('*'))
+            .getMany();
+        return records.map((record) => new EventLog(EventTypes.UPDATE, this, ValidatorRepository.into(record, this.validatorEntryVersion(action.op.block_num))));
+    }
 }

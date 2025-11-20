@@ -1,5 +1,5 @@
 //$UNCLAIMED_UNISWAP_REWARDS
-import { OperationData, Action, EventLog, Trx, BalanceRepository, ConfigLoader } from '@steem-monsters/splinterlands-validator';
+import { OperationData, Action, EventLog, Trx, BalanceRepository, ConfigLoader, ValidatorRepository } from '@steem-monsters/splinterlands-validator';
 import { transition_adjust_token_distribution_strategy } from '../schema';
 import { MakeActionFactory, MakeRouter } from '../utils';
 import { TransitionManager } from '../../features/transition';
@@ -42,6 +42,7 @@ export class AdjustTokenDistributionStrategyAction extends Action<typeof transit
         index: number,
         private readonly balanceRepository: BalanceRepository,
         private readonly configLoader: ConfigLoader,
+        private readonly validatorRepository: ValidatorRepository,
         private readonly transitionManager: TransitionManager,
     ) {
         super(transition_adjust_token_distribution_strategy, op, data, index);
@@ -72,9 +73,12 @@ export class AdjustTokenDistributionStrategyAction extends Action<typeof transit
             await this.configLoader.reloadingUpsertConfig('validator', 'object', 'consecutive_missed_blocks_threshold', BLOCK_VALIDATION_CONSEUTIVE_MISSED_BLOCKS_THRESHOLD, trx),
         );
 
+        // Reset missed blocks for all validators to 0
+        events.push(...(await this.validatorRepository.resetMissedBlocksForAllValidators(this, trx)));
+
         return events;
     }
 }
 
-const Builder = MakeActionFactory(AdjustTokenDistributionStrategyAction, BalanceRepository, ConfigLoader, TransitionManager);
+const Builder = MakeActionFactory(AdjustTokenDistributionStrategyAction, BalanceRepository, ConfigLoader, ValidatorRepository, TransitionManager);
 export const Router = MakeRouter(transition_adjust_token_distribution_strategy.action_name, Builder);
