@@ -56,6 +56,9 @@ services:
       BASE_RPC_NODE: ${BASE_RPC_NODE:-https://mainnet.base.org}
       RPC_TIMEOUT: ${RPC_TIMEOUT:-5000}
       REPLAY_BATCH_SIZE: ${REPLAY_BATCH_SIZE:-25}
+      STREAM_SAFE_MODE: ${STREAM_SAFE_MODE:-false}
+      STREAM_SAFE_MODE_RETRY_ATTEMPTS: ${STREAM_SAFE_MODE_RETRY_ATTEMPTS:-5}
+      STREAM_SAFE_MODE_RETRY_DELAY_MS: ${STREAM_SAFE_MODE_RETRY_DELAY_MS:-1500}
       DB: '{ "host": "pg", "port": 5432, "database": "${APP_DATABASE:-validator}", "user": "${APP_USER:-validator}", "password": "${APP_PASSWORD:-validator}" }'
       VALIDATOR_ACCOUNT: ${VALIDATOR_ACCOUNT:-}
       VALIDATOR_KEY: ${VALIDATOR_KEY:-}

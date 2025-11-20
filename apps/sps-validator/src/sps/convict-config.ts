@@ -176,6 +176,24 @@ const schema = {
         default: 25,
         env: 'REPLAY_BATCH_SIZE',
     },
+    stream_safe_mode: {
+        doc: 'Enable safe mode for streaming blocks',
+        format: Boolean,
+        default: false,
+        env: 'STREAM_SAFE_MODE',
+    },
+    stream_safe_mode_retry_attempts: {
+        doc: 'Number of retry attempts in safe mode for streaming blocks',
+        format: 'nat',
+        default: 5,
+        env: 'STREAM_SAFE_MODE_RETRY_ATTEMPTS',
+    },
+    stream_safe_mode_retry_delay_ms: {
+        doc: 'Delay in milliseconds between retry attempts in safe mode for streaming blocks',
+        format: 'nat',
+        default: 1500,
+        env: 'STREAM_SAFE_MODE_RETRY_DELAY_MS',
+    },
     validator_account: {
         format: String,
         nullable: true,
