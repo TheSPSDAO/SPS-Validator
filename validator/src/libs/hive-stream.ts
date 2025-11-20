@@ -28,15 +28,16 @@ async function streamBlocksIntoQueue(
     // block to actually be "from - 1", which I guess works out nicely for our case here as well.
     let lastSuccessfullyFetchedBlockNum = from;
 
-    let consesusCount = 1;
+    // we need at least 3 for safe mode
+    const nodesRequiredForConsensus = 3;
+    // we just need 2/3 of the nodes to agree for consensus, so we can calculate that here.
+    // we could just hardcode it to 2, but this way it will work even if we have more nodes in the future.
+    const nodesAgreeingForConsensus = Math.ceil((nodesRequiredForConsensus * 2) / 3);
     let clients = [client];
     const clientNodes = client.options.nodes;
-    if (Array.isArray(clientNodes) && clientNodes.length >= 3 && options.stream_safe_mode) {
+    if (Array.isArray(clientNodes) && clientNodes.length >= nodesRequiredForConsensus && options.stream_safe_mode) {
         utils.log(`Safe mode enabled, using multiple nodes for streaming: ${clientNodes.join(', ')}`, LogLevel.Info);
         clients = clientNodes.map((node) => new Client({ ...client.options, nodes: [node] }));
-        // we want at least a ratio of 2/3 of the nodes to agree on a block before we consider it valid.
-        consesusCount = Math.ceil((clients.length * 2) / 3);
-        utils.log(`Safe mode enabled, using consensus count of ${consesusCount} out of ${clients.length} nodes`, LogLevel.Info);
     } else if (options.stream_safe_mode) {
         utils.log(`Safe mode enabled, but not enough nodes provided for streaming. Safe mode requires at least 3 nodes to be effective.`, LogLevel.Warning);
     }
@@ -61,8 +62,20 @@ async function streamBlocksIntoQueue(
             // Effectively lastSuccessfullyFetchedBlockNum++, but then without modifying the original value.
             .map((x, i) => x + i)
             .map(async (x) => {
+                if (!options.stream_safe_mode) {
+                    return { num: x, block: await client.database.getBlock(x) };
+                }
+
+                // we only fetch from a random subset of nodes to prevent overloading any single node, because we also need to send transactions to the nodes for validation.
+                // todo: should we filter these clients to only those that are healthy?
+                const randomThreeNodes = clients.sort(() => 0.5 - Math.random()).slice(0, nodesRequiredForConsensus);
+                if (randomThreeNodes.length < nodesRequiredForConsensus) {
+                    throw new Error(
+                        `Safe mode enabled, but not enough nodes provided for streaming. Safe mode requires at least ${nodesRequiredForConsensus} nodes to be effective.`,
+                    );
+                }
                 const blockResults = await Promise.all(
-                    clients.map(async (c) => {
+                    randomThreeNodes.map(async (c) => {
                         for (let attempt = 0; attempt < options.stream_safe_mode_retry_attempts; attempt++) {
                             try {
                                 return await c.database.getBlock(x);
@@ -80,9 +93,9 @@ async function streamBlocksIntoQueue(
                 );
                 const validBlocks = blockResults.filter((b) => b !== null);
                 // first make sure we have enough non-null blocks.
-                if (validBlocks.length < consesusCount) {
+                if (validBlocks.length < nodesAgreeingForConsensus) {
                     utils.log(
-                        `Failed to fetch block ${x} from ${clients.length} nodes, only ${validBlocks.length} nodes returned a block. Required ${consesusCount} for consensus. Retrying...`,
+                        `Failed to fetch block ${x} from ${clients.length} nodes, only ${validBlocks.length} nodes returned a block. Required ${nodesAgreeingForConsensus} for consensus. Retrying...`,
                         LogLevel.Warning,
                     );
                     throw new Error(`Failed to fetch block ${x} from enough nodes`);
@@ -92,7 +105,7 @@ async function streamBlocksIntoQueue(
                     acc[block.block_id] = (acc[block.block_id] || 0) + 1;
                     return acc;
                 }, {} as Record<string, number>);
-                const consensusBlockId = Object.entries(blockIdCounts).find(([_, count]) => count >= consesusCount)?.[0];
+                const consensusBlockId = Object.entries(blockIdCounts).find(([_, count]) => count >= nodesAgreeingForConsensus)?.[0];
                 if (!consensusBlockId) {
                     utils.log(
                         `Failed to fetch block ${x} from ${clients.length} nodes, no block_id had enough consensus. Block IDs: ${Object.keys(blockIdCounts).join(
