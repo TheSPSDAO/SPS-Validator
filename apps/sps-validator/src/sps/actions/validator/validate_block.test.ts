@@ -2,10 +2,10 @@ import { emoji_payload, garbage_payload } from '../../../__tests__/db-helpers';
 import { Fixture } from '../../../__tests__/action-fixture';
 import { container } from '../../../__tests__/test-composition-root';
 import { ConfigEntity } from '@steem-monsters/splinterlands-validator';
-import { TransitionPoints } from '../../features/transition';
+import { TransitionCfg } from '../../features/transition';
 
 const fixture = container.resolve(Fixture);
-let transitionPoints: TransitionPoints | null = null;
+let transitionPoints: TransitionCfg | null = null;
 
 beforeAll(async () => {
     await fixture.init();
@@ -23,7 +23,7 @@ beforeEach(async () => {
     await fixture.handle.query(ConfigEntity).where('group_name', 'validator').andWhere('name', 'paused_until_block').updateItem({ value: '10' });
     await fixture.handle.query(ConfigEntity).where('group_name', 'validator').andWhere('name', 'min_validators').updateItem({ value: '1' });
     await fixture.loader.load();
-    transitionPoints = container.resolve(TransitionPoints);
+    transitionPoints = container.resolve(TransitionCfg);
 });
 
 afterAll(async () => {

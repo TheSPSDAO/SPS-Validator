@@ -1,13 +1,13 @@
 import { container } from '../__tests__/test-composition-root';
 import { Fixture } from '../__tests__/action-fixture';
 import { SpsBlockProcessor } from './processor';
-import { TransitionPoints } from './features/transition';
+import { TransitionCfg } from './features/transition';
 import { TOKENS } from './features/tokens';
 import { NBlock } from '@steem-monsters/splinterlands-validator';
 import { SPS_BLOCK_VALIDATION_TOKENS_PER_BLOCK } from './actions/transitions/adjust_token_distribution_strategy';
 
 const fixture = container.resolve(Fixture);
-let transitionPoints: TransitionPoints | null = null;
+let transitionPoints: TransitionCfg | null = null;
 let processor: SpsBlockProcessor | null = null;
 
 beforeAll(async () => {
@@ -18,7 +18,7 @@ beforeEach(async () => {
     await fixture.restore();
     await fixture.testHelper.insertDefaultConfiguration();
     await fixture.loader.load();
-    transitionPoints = container.resolve(TransitionPoints);
+    transitionPoints = container.resolve(TransitionCfg);
     processor = container.resolve(SpsBlockProcessor);
 });
 

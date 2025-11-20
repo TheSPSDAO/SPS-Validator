@@ -2,10 +2,10 @@ import { container } from '../../../__tests__/test-composition-root';
 import { emoji_payload, garbage_payload } from '../../../__tests__/db-helpers';
 import { Fixture } from '../../../__tests__/action-fixture';
 import { TOKENS } from '../../features/tokens';
-import { TransitionPoints } from '../../features/transition';
+import { TransitionCfg } from '../../features/transition';
 
 const fixture = container.resolve(Fixture);
-let transitionPoints: TransitionPoints = null!;
+let transitionPoints: TransitionCfg = null!;
 
 beforeAll(async () => {
     await fixture.init();
@@ -14,7 +14,7 @@ beforeAll(async () => {
 beforeEach(async () => {
     await fixture.restore();
     await fixture.loader.load();
-    transitionPoints = container.resolve(TransitionPoints);
+    transitionPoints = container.resolve(TransitionCfg);
 });
 
 afterAll(async () => {

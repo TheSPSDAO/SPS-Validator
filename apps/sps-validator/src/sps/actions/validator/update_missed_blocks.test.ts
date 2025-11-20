@@ -2,10 +2,10 @@ import { emoji_payload, garbage_payload } from '../../../__tests__/db-helpers';
 import { Fixture } from '../../../__tests__/action-fixture';
 import { container } from '../../../__tests__/test-composition-root';
 import { ConfigEntity } from '@steem-monsters/splinterlands-validator';
-import { TransitionPoints } from '../../features/transition';
+import { TransitionCfg } from '../../features/transition';
 
 const fixture = container.resolve(Fixture);
-let transitionPoints: TransitionPoints | null = null;
+let transitionPoints: TransitionCfg | null = null;
 
 const MISSED_BLOCKS_ACCOUNT = '$MISSED_BLOCKS';
 
@@ -24,7 +24,7 @@ beforeEach(async () => {
     await fixture.testHelper.insertDummyValidator('steemmonsters2', true, 100);
     await fixture.testHelper.insertDummyValidator('steemmonsters3', true, 100, null, 0);
     await fixture.loader.load();
-    transitionPoints = container.resolve(TransitionPoints);
+    transitionPoints = container.resolve(TransitionCfg);
 });
 
 afterAll(async () => {

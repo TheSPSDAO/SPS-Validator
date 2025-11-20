@@ -1,25 +1,27 @@
 import { BlockRef, PrefixOpts, ProcessResult, VirtualPayloadSource } from '@steem-monsters/splinterlands-validator';
 import { inject, singleton } from 'tsyringe';
 
-type MakeTransitionPoints<TPoints extends string> = {
-    [K in TPoints]: number;
-};
-
-export type TransitionPoints = {
-    transition_points: MakeTransitionPoints<'fix_vote_weight' | 'bad_block_96950550' | 'validator_transition_cleanup' | 'adjust_token_distribution_strategy'>;
-};
-export const TransitionPointDescriptions: Record<TransitionPointName, string> = {
+export const TransitionPointDescriptions = {
     fix_vote_weight: 'Transition point for fixing vote weights when unstaking SPS. This is a one-time transition point that is part of version 1.1.0.',
     bad_block_96950550:
         'Transition point for skipping transactions in block 96950550 because of a splinterlands node issue. This is a one-time transition point that is part of version 1.1.3 to support replaying from initial snapshot.',
     validator_transition_cleanup:
         'Transition point for cleaning up validator state after the splinterlands -> validator transition. This is a one-time transition point that is part of version 1.2.0. Please see https://peakd.com/spsproposal/@clayboyn/sps-governance-proposal-sps-validator-transition-cleanup',
+    bad_block_101201159:
+        'Transition point for skipping transactions in block 101201159 because of a hive node issue. This is a one-time transition point that is part of version 1.3.0 to support replaying from initial snapshot.',
     adjust_token_distribution_strategy:
         'Transition point for changing the SPS staking reward algorithm and adjusting reward pool balances. This update also adds consecutive missed block tracking and double spend protection in token_transfer and token_transfer_multi ops. This is a one-time transition point that is part of version 1.3.0. Please see https://peakd.com/spsproposal/@clayboyn/sps-governance-proposal-adjust-token-distribution-strategy',
-};
+} as const;
 
-export const TransitionPoints: unique symbol = Symbol('TransitionPoints');
-export type TransitionPointName = keyof TransitionPoints['transition_points'];
+export type TransitionPoints = {
+    [K in keyof typeof TransitionPointDescriptions]: number;
+};
+export type TransitionCfg = {
+    transition_points: TransitionPoints;
+};
+export const TransitionCfg: unique symbol = Symbol('TransitionCfg');
+
+export type TransitionPointName = keyof TransitionPoints;
 export type TransitionPointsStatuses = {
     transition: TransitionPointName;
     block_num: number;
@@ -37,10 +39,10 @@ export class TransitionManager implements VirtualPayloadSource {
     }
 
     get transitionPoints() {
-        return this.transitionCfg.transition_points as Readonly<TransitionPoints['transition_points']>;
+        return this.transitionCfg.transition_points as Readonly<TransitionPoints>;
     }
 
-    constructor(@inject(PrefixOpts) private readonly cfg: PrefixOpts, @inject(TransitionPoints) private readonly transitionCfg: TransitionPoints) {}
+    constructor(@inject(PrefixOpts) private readonly cfg: PrefixOpts, @inject(TransitionCfg) private readonly transitionCfg: TransitionCfg) {}
 
     /**
      * Summarizes all transition points

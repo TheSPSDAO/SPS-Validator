@@ -61,10 +61,7 @@ export class SpsBlockProcessor extends BlockProcessor<SpsSynchronisationConfig> 
         );
     }
 
-    // Override the process method if you need to add custom logic for SPS processing
     protected override transformBlock(block: NBlock): NBlock {
-        // Custom transformation logic for SPS blocks can be added here
-        // For now, we just call the parent method
         if (this.transitionManager.isTransitionPoint('bad_block_96950550', block.block_num)) {
             // Skip transactions in block 96950550 due to a hive node microfork that the splinterlands node read.
             // This is a one-time transition point that is part of version 1.1.3 to support replaying from initial snapshot.
@@ -76,6 +73,20 @@ export class SpsBlockProcessor extends BlockProcessor<SpsSynchronisationConfig> 
                     transaction_ids: [],
                     block_id: '05c7591683e0102605a769a6935275a5e760353c',
                     previous: '05c75915721349cfbd6c42ff962cf4d66ec2b05e',
+                },
+                { l2_block_id: block.prev_block_hash }, // previous block's l2_block_id
+            );
+        } else if (this.transitionManager.isTransitionPoint('bad_block_101201159', block.block_num)) {
+            // Skip transactions in block 101201159 due to a hive node microfork that many validator nodes read
+            // during the Hive fork. This is a one-time transition point that is part of version 1.3.0 to support replaying from initial snapshot.
+            return new NBlock(
+                block.block_num,
+                {
+                    timestamp: '2025-11-15T09:55:21.000Z',
+                    transactions: [],
+                    transaction_ids: [],
+                    block_id: '06083507a197f20ccb1863411d94d3c7d69657c7',
+                    previous: '0608350699812e651235fec8b7249a3ed178d4b0',
                 },
                 { l2_block_id: block.prev_block_hash }, // previous block's l2_block_id
             );

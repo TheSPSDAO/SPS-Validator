@@ -1,7 +1,7 @@
 import { emoji_payload, garbage_payload } from '../../../__tests__/db-helpers';
 import { container } from '../../../__tests__/test-composition-root';
 import { Fixture } from '../../../__tests__/action-fixture';
-import { TransitionPoints } from '../../features/transition';
+import { TransitionCfg } from '../../features/transition';
 import {
     SPS_BLOCK_VALIDATION_TOKENS_PER_BLOCK,
     SPS_STAKING_CONFIG,
@@ -12,7 +12,7 @@ import {
 import { TOKENS } from '../../features/tokens';
 
 const fixture = container.resolve(Fixture);
-let transitionPoints: TransitionPoints | null = null;
+let transitionPoints: TransitionCfg | null = null;
 
 beforeAll(async () => {
     await fixture.init();
@@ -22,7 +22,7 @@ beforeEach(async () => {
     await fixture.restore();
     await fixture.testHelper.insertDefaultConfiguration();
     await fixture.loader.load();
-    transitionPoints = container.resolve(TransitionPoints);
+    transitionPoints = container.resolve(TransitionCfg);
 });
 
 afterAll(async () => {
