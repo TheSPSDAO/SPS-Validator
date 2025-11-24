@@ -3,6 +3,7 @@ import { LogLevel } from '../utils';
 import { AsyncQueue, waitForEvent } from './async-queue';
 import { HeadBlockObserver } from './head-block-observer';
 import { BlockchainMode, Client, SignedBlock } from 'splinterlands-dhive-sl';
+import fetch from 'node-fetch';
 
 export type HiveStreamOptions = {
     replay_batch_size: number;
@@ -22,9 +23,6 @@ type NumberedSignedBlock = {
  * in this case (safe mode)
  */
 async function fetchBlock(nodeUrl: string, blockNum: number): Promise<SignedBlock> {
-    const headers = new Headers();
-    headers.append('Content-Type', 'application/json');
-
     const raw = JSON.stringify({
         jsonrpc: '2.0',
         method: 'block_api.get_block',
@@ -36,7 +34,9 @@ async function fetchBlock(nodeUrl: string, blockNum: number): Promise<SignedBloc
 
     const requestOptions = {
         method: 'POST',
-        headers: headers,
+        headers: {
+            'Content-Type': 'application/json',
+        },
         body: raw,
     };
 
