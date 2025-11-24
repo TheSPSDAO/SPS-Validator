@@ -17,6 +17,34 @@ type NumberedSignedBlock = {
     block: SignedBlock;
 };
 
+/**
+ * We make the call ourselves because dhive ALWAYS loads nodes from the beacon, and we only ever want to use one specific node
+ * in this case (safe mode)
+ */
+async function fetchBlock(nodeUrl: string, blockNum: number): Promise<SignedBlock> {
+    const headers = new Headers();
+    headers.append('Content-Type', 'application/json');
+
+    const raw = JSON.stringify({
+        jsonrpc: '2.0',
+        method: 'block_api.get_block',
+        params: {
+            block_num: blockNum,
+        },
+        id: 1,
+    });
+
+    const requestOptions = {
+        method: 'POST',
+        headers: headers,
+        body: raw,
+    };
+
+    const response = await fetch(nodeUrl, requestOptions);
+    const data = await response.json();
+    return data.result as SignedBlock;
+}
+
 async function streamBlocksIntoQueue(
     options: HiveStreamOptions,
     client: Client,
@@ -35,11 +63,11 @@ async function streamBlocksIntoQueue(
     // we just need 2/3 of the nodes to agree for consensus, so we can calculate that here.
     // we could just hardcode it to 2, but this way it will work even if we have more nodes in the future.
     const nodesAgreeingForConsensus = Math.ceil((nodesRequiredForConsensus * 2) / 3);
-    let clients = [client];
+    let safeModeRpcNodes: string[] = [];
     const clientNodes = client.fetch.hive.nodes;
     if (Array.isArray(clientNodes) && clientNodes.length >= nodesRequiredForConsensus && options.stream_safe_mode) {
         utils.log(`Safe mode enabled, using multiple nodes for streaming: ${clientNodes.join(', ')}`, LogLevel.Info);
-        clients = clientNodes.map((node) => new Client({ ...client.options, nodes: [node.endpoint] }));
+        safeModeRpcNodes = clientNodes.map((node) => node.endpoint);
     } else if (options.stream_safe_mode) {
         utils.log(`Safe mode enabled, but not enough nodes provided for streaming. Safe mode requires at least 3 nodes to be effective.`, LogLevel.Warning);
     }
@@ -70,20 +98,19 @@ async function streamBlocksIntoQueue(
 
                 // we only fetch from a random subset of nodes to prevent overloading any single node, because we also need to send transactions to the nodes for validation.
                 // todo: should we filter these clients to only those that are healthy?
-                const randomThreeNodes = clients.sort(() => 0.5 - Math.random()).slice(0, nodesRequiredForConsensus);
+                const randomThreeNodes = safeModeRpcNodes.sort(() => 0.5 - Math.random()).slice(0, nodesRequiredForConsensus);
                 if (randomThreeNodes.length < nodesRequiredForConsensus) {
                     throw new Error(
                         `Safe mode enabled, but not enough nodes provided for streaming. Safe mode requires at least ${nodesRequiredForConsensus} nodes to be effective.`,
                     );
                 }
                 const blockResults = await Promise.all(
-                    randomThreeNodes.map(async (c) => {
+                    randomThreeNodes.map(async (nodeUrl) => {
                         for (let attempt = 0; attempt < options.stream_safe_mode_retry_attempts; attempt++) {
                             try {
-                                return await c.database.getBlock(x);
+                                return await fetchBlock(nodeUrl, x);
                             } catch (e) {
-                                const node = Array.isArray(c.options.nodes) ? c.options.nodes[0] : c.options.nodes;
-                                utils.log(`Failed to fetch block ${x} from node ${node} on attempt ${attempt + 1}: ${e}`, LogLevel.Warning);
+                                utils.log(`Failed to fetch block ${x} from node ${nodeUrl} on attempt ${attempt + 1}: ${e}`, LogLevel.Warning);
                                 if (attempt === options.stream_safe_mode_retry_attempts - 1) {
                                     return null;
                                 }
@@ -97,7 +124,7 @@ async function streamBlocksIntoQueue(
                 // first make sure we have enough non-null blocks.
                 if (validBlocks.length < nodesAgreeingForConsensus) {
                     utils.log(
-                        `Failed to fetch block ${x} from ${clients.length} nodes, only ${validBlocks.length} nodes returned a block. Required ${nodesAgreeingForConsensus} for consensus. Retrying...`,
+                        `Failed to fetch block ${x} from ${safeModeRpcNodes.length} nodes, only ${validBlocks.length} nodes returned a block. Required ${nodesAgreeingForConsensus} for consensus. Retrying...`,
                         LogLevel.Warning,
                     );
                     throw new Error(`Failed to fetch block ${x} from enough nodes`);
@@ -110,7 +137,7 @@ async function streamBlocksIntoQueue(
                 const consensusBlockId = Object.entries(blockIdCounts).find(([_, count]) => count >= nodesAgreeingForConsensus)?.[0];
                 if (!consensusBlockId) {
                     utils.log(
-                        `Failed to fetch block ${x} from ${clients.length} nodes, no block_id had enough consensus. Block IDs: ${Object.keys(blockIdCounts).join(
+                        `Failed to fetch block ${x} from ${safeModeRpcNodes.length} nodes, no block_id had enough consensus. Block IDs: ${Object.keys(blockIdCounts).join(
                             ', ',
                         )}. Retrying...`,
                         LogLevel.Warning,
