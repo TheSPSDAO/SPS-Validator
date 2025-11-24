@@ -210,6 +210,7 @@ export class ValidatorRepository extends BaseRepository {
         const records = await this.query(Validator_, trx)
             .useKnexQueryBuilder((query) => query.update({ consecutive_missed_blocks: 0, missed_blocks: 0 }).returning('*'))
             .getMany();
-        return records.map((record) => new EventLog(EventTypes.UPDATE, this, ValidatorRepository.into(record, this.validatorEntryVersion(action.op.block_num))));
+        const sortedRecords = records.sort((a, b) => a.account_name.localeCompare(b.account_name));
+        return sortedRecords.map((record) => new EventLog(EventTypes.UPDATE, this, ValidatorRepository.into(record, this.validatorEntryVersion(action.op.block_num))));
     }
 }
