@@ -82,7 +82,7 @@ export class SpsBlockProcessor extends BlockProcessor<SpsSynchronisationConfig> 
             return new NBlock(
                 block.block_num,
                 {
-                    timestamp: '2025-11-15T09:55:21.000Z',
+                    timestamp: '2025-11-15T09:55:21.000',
                     transactions: [],
                     transaction_ids: [],
                     block_id: '06083507a197f20ccb1863411d94d3c7d69657c7',
