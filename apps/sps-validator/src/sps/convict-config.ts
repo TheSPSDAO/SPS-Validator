@@ -132,7 +132,7 @@ const schema = {
     blocks_behind_head: {
         doc: 'The amount of blocks to lag behind HEAD',
         format: 'nat',
-        default: 1,
+        default: 5,
         env: 'BLOCKS_BEHIND_HEAD',
     },
     blocks_head_mode: {
