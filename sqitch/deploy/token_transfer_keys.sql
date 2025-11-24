@@ -18,8 +18,6 @@ CREATE TABLE IF NOT EXISTS snapshot.token_transfer_keys (
     block_time timestamp without time zone NOT NULL
 );
 
-BEGIN;
-
 CREATE OR REPLACE FUNCTION snapshot.pre_snapshot_restore(p_data_schema text DEFAULT :'APP_SCHEMA'::text)
     RETURNS void
     LANGUAGE 'plpgsql'
