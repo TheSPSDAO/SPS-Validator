@@ -225,7 +225,7 @@ dl_snapshot() {
         echo    # (optional) move to a new line
         if [[ $REPLY =~ ^[Yy]$ ]]
         then
-            sudo rm -f SNAPSHOT
+            sudo rm -f "$SNAPSHOT"
             _dl_snapshot
         fi
     else
