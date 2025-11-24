@@ -9,6 +9,8 @@ export const TransitionPointDescriptions = {
         'Transition point for cleaning up validator state after the splinterlands -> validator transition. This is a one-time transition point that is part of version 1.2.0. Please see https://peakd.com/spsproposal/@clayboyn/sps-governance-proposal-sps-validator-transition-cleanup',
     bad_block_101201159:
         'Transition point for skipping transactions in block 101201159 because of a hive node issue. This is a one-time transition point that is part of version 1.3.0 to support replaying from initial snapshot.',
+    bad_block_101387262:
+        'Transition point for skipping transactions in block 101387262 because of a hive node issue. This is a one-time transition point that is part of version 1.3.0 to support replaying from initial snapshot.',
     adjust_token_distribution_strategy:
         'Transition point for changing the SPS staking reward algorithm and adjusting reward pool balances. This update also adds consecutive missed block tracking and double spend protection in token_transfer and token_transfer_multi ops. This is a one-time transition point that is part of version 1.3.0. Please see https://peakd.com/spsproposal/@clayboyn/sps-governance-proposal-adjust-token-distribution-strategy',
 } as const;

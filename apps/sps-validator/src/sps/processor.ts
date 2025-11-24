@@ -90,6 +90,20 @@ export class SpsBlockProcessor extends BlockProcessor<SpsSynchronisationConfig> 
                 },
                 { l2_block_id: block.prev_block_hash }, // previous block's l2_block_id
             );
+        } else if (this.transitionManager.isTransitionPoint('bad_block_101387262', block.block_num)) {
+            // Skip transactions in block 101387262 due to a hive node microfork that many validator nodes read
+            // during the Hive fork. This is a one-time transition point that is part of version 1.3.0 to support replaying from initial snapshot.
+            return new NBlock(
+                block.block_num,
+                {
+                    timestamp: '2025-11-21T21:27:54.000',
+                    transactions: [],
+                    transaction_ids: [],
+                    block_id: '060b0bfeecfece0743f61e8b0f26335839f6557f',
+                    previous: '060b0bfd484a25cd78093ddfdbf09a28342c4df8',
+                },
+                { l2_block_id: block.prev_block_hash }, // previous block's l2_block_id
+            );
         }
         return super.transformBlock(block);
     }

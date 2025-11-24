@@ -558,6 +558,12 @@ const schema = {
             default: 101201159,
             env: 'BAD_BLOCK_101201159_TRANSITION_POINT',
         },
+        bad_block_101387262: {
+            doc: 'Block number for the bad_block_101387262 transition',
+            format: 'nat',
+            default: 101387262,
+            env: 'BAD_BLOCK_101387262_TRANSITION_POINT',
+        },
         validator_transition_cleanup: {
             doc: 'Block number for the validator_transition_cleanup transition',
             format: 'nat',
