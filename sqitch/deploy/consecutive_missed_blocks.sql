@@ -40,6 +40,7 @@ BEGIN
     TRUNCATE snapshot.promise;							-- archive flag
     TRUNCATE snapshot.promise_history;					-- archive flag
 	TRUNCATE snapshot.config;							--
+    TRUNCATE snapshot.token_transfer_keys;
 
 	-- Set search path to get data schema
 	-- all references must use the schema name if not in the user default search path
