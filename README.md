@@ -188,7 +188,7 @@ schema-breaking updates cannot be applied before the go-live block. To apply a s
 
 ## Local development
 
-For local development, simply run `./run.sh start db` instead of `./run.sh start` after the setup instructions.
+For local development, simply run `./run.sh start pg` instead of `./run.sh start` after the setup instructions.
 
 - Make sure you have `node` installed.
 - Run `npm i && npm run build sps-validator` to install dependencies and build the dependencies and the sps-validator itself

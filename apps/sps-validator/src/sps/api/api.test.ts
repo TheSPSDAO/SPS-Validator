@@ -143,6 +143,9 @@ describe('Pool settings endpoints', () => {
         tokens_per_block: 8.56164,
         reduction_blocks: 864000,
         reduction_pct: 1,
+        outstanding_rewards: 0,
+        pool_balance: 0,
+        reward_account_balance: 0,
         total_staked: {
             amount: 0,
             token: 'SPSP',
@@ -155,6 +158,9 @@ describe('Pool settings endpoints', () => {
         tokens_per_block: 8.56164,
         reduction_blocks: 864000,
         reduction_pct: 1,
+        outstanding_rewards: 0,
+        pool_balance: 0,
+        reward_account_balance: 0,
         total_staked: {
             amount: 0,
             token: 'RUNNING_LICENSE',

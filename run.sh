@@ -83,20 +83,36 @@ snapshot() {
     # add to the beginning of the snapshot.sql file like -- to_change:$CHANGE
     sed -i "1s/^/-- to_change:$CHANGE\n/" snapshot.sql
 
-    echo "Snapshot created. You can find it in snapshot.sql"
+    echo "Snapshot created. Zipping snapshot"
+    zip snapshot.zip snapshot.sql
+    echo "Snapshot zipped. You can find it in snapshot.zip"
+    rm snapshot.sql
+    echo "Snapshot process complete."
 
-    read -p "Would you like to zip the snapshot? (y/n)" -n 1 -r
+    # ask if they want to create a slim snapshot
+    read -p "Would you like to create a slim snapshot as well? (y/n)" -n 1 -r
     echo    # (optional) move to a new line
     if [[ $REPLY =~ ^[Yy]$ ]]; then
-        echo "Zipping snapshot"
-        zip snapshot.zip snapshot.sql
-        echo "Snapshot zipped. You can find it in snapshot.zip"
+        echo "Creating slim snapshot"
+        # run the snapshot.slimifysnapshot function - do this in a transaction so we don't ruin the main snapshot
+        run_psql -c "BEGIN; SELECT snapshot.slimifysnapshot(); COMMIT;"
 
-        read -p "Would you like to remove the snapshot.sql file? (y/n)" -n 1 -r
-        echo    # (optional) move to a new line
-        if [[ $REPLY =~ ^[Yy]$ ]]; then
-            rm snapshot.sql
-        fi
+        echo "Dumping slim snapshot to file"
+        docker_compose exec -e PGPASSWORD="$APP_PASSWORD" pg pg_dump \
+            --no-owner --no-acl \
+            --no-comments --no-publications --no-security-labels \
+            --schema snapshot \
+            --no-subscriptions --no-tablespaces --data-only \
+            --host "127.0.0.1" \
+            --username "$APP_USER" \
+            "${APP_DATABASE}" > slim_snapshot.sql
+
+        sed -i "1s/^/-- to_change:$CHANGE\n/" slim_snapshot.sql
+
+        echo "Slim snapshot dumped to slim_snapshot.sql"
+        zip slim_snapshot.zip slim_snapshot.sql
+        rm slim_snapshot.sql
+        echo "Slim snapshot zipped. You can find it in slim_snapshot.zip"
     fi
 
     read -p "Would you like to start the validator again? (y/n)" -n 1 -r
@@ -225,7 +241,7 @@ dl_snapshot() {
         echo    # (optional) move to a new line
         if [[ $REPLY =~ ^[Yy]$ ]]
         then
-            sudo rm -f SNAPSHOT
+            sudo rm -f "$SNAPSHOT"
             _dl_snapshot
         fi
     else

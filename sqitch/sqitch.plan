@@ -19,3 +19,5 @@ transaction_players_perf 2025-02-25T20:07:13Z stephen <stephen@LAPTOP-N4OOE985> 
 partitions 2025-02-25T20:31:18Z stephen <stephen@LAPTOP-N4OOE985> # Add partitioning to large tables
 snapshot-function-v2 2025-02-26T01:44:21Z stephen <stephen@LAPTOP-N4OOE985> # add new transaction players columns to freshsnapshot and rework archive logic
 post-snapshot-restore-partition-prep 2025-04-15T18:53:29Z stephen <stephen@LAPTOP-N4OOE985> # Prep partitioned tables when restoring snapshots
+token_transfer_keys 2025-11-19T16:39:12Z stephen <stephen@LAPTOP-N4OOE985> # Add token_transfer_keys table to track double token transfers
+consecutive_missed_blocks 2025-11-19T15:43:41Z stephen <stephen@LAPTOP-N4OOE985> # Add consecutive missed blocks to validator table

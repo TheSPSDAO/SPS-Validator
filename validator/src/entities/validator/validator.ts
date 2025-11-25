@@ -3,6 +3,7 @@ import { ValidatorWatch } from '../../config';
 import { BlockRef } from '../block';
 import { getTableName } from '@wwwouter/typed-knex';
 import { EventLog, EventTypes } from '../event_log';
+import { IAction } from 'validator/src/actions';
 
 export type ValidatorEntry = {
     account_name: string;
@@ -11,9 +12,16 @@ export type ValidatorEntry = {
     api_url: string | null;
     total_votes: number;
     missed_blocks: number;
+    consecutive_missed_blocks?: number;
     reward_account: string | null;
     last_version: string | null;
 };
+
+/**
+ * v1 = original entry format. no consecutive_missed_blocks field.
+ * v2 = adds consecutive_missed_blocks field. this is used to track how many blocks in a row a validator has missed.
+ */
+export type ValidatorEntryVersion = 'v1' | 'v2';
 
 export type GetValidatorsParams = {
     limit?: number;
@@ -31,11 +39,19 @@ export class ValidatorRepository extends BaseRepository {
 
     public readonly table = getTableName(Validator_);
 
-    private static into(row: Validator_): ValidatorEntry {
-        return { ...row, total_votes: parseFloat(row.total_votes) };
+    private static into(row: Validator_, version: ValidatorEntryVersion): ValidatorEntry {
+        const entry = { ...row, total_votes: parseFloat(row.total_votes) } as ValidatorEntry;
+        if (version === 'v1' && entry.consecutive_missed_blocks !== undefined) {
+            delete entry.consecutive_missed_blocks;
+        }
+        return entry;
     }
 
-    public async register(params: { account: string; is_active: boolean; post_url?: string; reward_account?: string; api_url?: string }, trx?: Trx) {
+    protected validatorEntryVersion(block_num: number): ValidatorEntryVersion {
+        return 'v1';
+    }
+
+    public async register(params: { account: string; is_active: boolean; post_url?: string; reward_account?: string; api_url?: string }, action: IAction, trx?: Trx) {
         const record = await this.query(Validator_, trx)
             .useKnexQueryBuilder((query) =>
                 query
@@ -51,22 +67,52 @@ export class ValidatorRepository extends BaseRepository {
                     .returning('*'),
             )
             .getFirstOrNull();
-        return new EventLog(EventTypes.UPSERT, this, ValidatorRepository.into(record!));
+        return new EventLog(EventTypes.UPSERT, this, ValidatorRepository.into(record!, this.validatorEntryVersion(action.op.block_num)));
     }
 
-    public async incrementMissedBlocks(account: string, increment: number, trx?: Trx) {
+    public async disable(account: string, action: IAction, trx?: Trx) {
+        const record = await this.query(Validator_, trx).where('account_name', account).updateItemWithReturning({
+            is_active: false,
+        });
+        return new EventLog(EventTypes.UPDATE, this, ValidatorRepository.into(record!, this.validatorEntryVersion(action.op.block_num)));
+    }
+
+    public async incrementMissedBlocks(account: string, increment: number, action: IAction, trx?: Trx) {
         const record = await this.query(Validator_, trx)
             .where('account_name', account)
-            .useKnexQueryBuilder((query) => query.increment('missed_blocks', increment))
-            .updateItemWithReturning({}, ['account_name', 'missed_blocks', 'is_active', 'post_url', 'total_votes', 'reward_account', 'api_url', 'last_version']);
-        return [new EventLog(EventTypes.UPDATE, this, ValidatorRepository.into(record))];
+            .useKnexQueryBuilder((query) => {
+                query = query.increment('missed_blocks', increment);
+                if (this.validatorEntryVersion(action.op.block_num) === 'v2') {
+                    query = query.increment('consecutive_missed_blocks', increment);
+                }
+                return query;
+            })
+            .updateItemWithReturning({}, [
+                'account_name',
+                'missed_blocks',
+                'is_active',
+                'post_url',
+                'total_votes',
+                'reward_account',
+                'api_url',
+                'last_version',
+                'consecutive_missed_blocks',
+            ]);
+        return [new EventLog(EventTypes.UPDATE, this, ValidatorRepository.into(record, this.validatorEntryVersion(action.op.block_num)))];
     }
 
-    public async updateVersion(account: string, version: string, trx?: Trx) {
+    public async updateVersion(account: string, version: string, action: IAction, trx?: Trx) {
         const record = await this.query(Validator_, trx).where('account_name', account).updateItemWithReturning({
             last_version: version,
         });
-        return [new EventLog(EventTypes.UPDATE, this, ValidatorRepository.into(record))];
+        return [new EventLog(EventTypes.UPDATE, this, ValidatorRepository.into(record, this.validatorEntryVersion(action.op.block_num)))];
+    }
+
+    public async resetConsecutiveMissedBlocks(account: string, action: IAction, trx?: Trx) {
+        const record = await this.query(Validator_, trx).where('account_name', account).updateItemWithReturning({
+            consecutive_missed_blocks: 0,
+        });
+        return [new EventLog(EventTypes.UPDATE, this, ValidatorRepository.into(record, this.validatorEntryVersion(action.op.block_num)))];
     }
 
     public async getValidators(params?: GetValidatorsParams, trx?: Trx) {
@@ -121,9 +167,9 @@ export class ValidatorRepository extends BaseRepository {
         return validators.some((v) => v.account_name === account_name);
     }
 
-    async lookup(account_name: string, trx?: Trx): Promise<ValidatorEntry | null> {
+    async lookup(account_name: string, block_num: number, trx?: Trx): Promise<ValidatorEntry | null> {
         const record = await this.query(Validator_, trx).where('account_name', account_name).getFirstOrNull();
-        return record ? ValidatorRepository.into(record) : null;
+        return record ? ValidatorRepository.into(record, this.validatorEntryVersion(block_num)) : null;
     }
 
     public async getBlockValidator(block: Pick<BlockRef, 'prng' | 'block_num'>, trx?: Trx): Promise<ValidatorEntry | null> {
@@ -139,7 +185,7 @@ export class ValidatorRepository extends BaseRepository {
             .orderBy('total_votes', 'desc')
             .orderBy('account_name')
             .getMany();
-        const valid_validators = validators.map(ValidatorRepository.into);
+        const valid_validators = validators.map((v) => ValidatorRepository.into(v, this.validatorEntryVersion(block.block_num)));
 
         const min_validators = this.watcher.validator?.min_validators;
         if (min_validators === undefined || validators.length < min_validators) {
@@ -158,5 +204,13 @@ export class ValidatorRepository extends BaseRepository {
             }
             return valid_validators[i];
         }
+    }
+
+    public async resetMissedBlocksForAllValidators(action: IAction, trx?: Trx) {
+        const records = await this.query(Validator_, trx)
+            .useKnexQueryBuilder((query) => query.update({ consecutive_missed_blocks: 0, missed_blocks: 0 }).returning('*'))
+            .getMany();
+        const sortedRecords = records.sort((a, b) => a.account_name.localeCompare(b.account_name));
+        return sortedRecords.map((record) => new EventLog(EventTypes.UPDATE, this, ValidatorRepository.into(record, this.validatorEntryVersion(action.op.block_num))));
     }
 }

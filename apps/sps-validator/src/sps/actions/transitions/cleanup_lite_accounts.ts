@@ -135,7 +135,7 @@ export class CleanupLiteAccountsTransitionAction extends Action<typeof transitio
         // Move the liquid SPS tokens from the token staking account to the player's balance
         results.push(...(await this.balanceRepository.updateBalance(this, this.stakingConfiguration.staking_account, account, this.token, amount, balanceUpdateType, trx)));
         // They can't vote but we'll update their vote weight anyway
-        results.push(...(await this.validatorVoteRepository.incrementVoteWeight(account, amount * -1, trx)));
+        results.push(...(await this.validatorVoteRepository.incrementVoteWeight(account, amount * -1, this.op.block_num, trx)));
 
         return results;
     }

@@ -13,6 +13,9 @@ import {
 import { validate_block } from '../schema';
 import { MakeActionFactory, MakeRouter } from '../utils';
 
+// TODO: this should be in the config
+export const VALIDATE_BLOCK_REWARD_ACCOUNT = '$VALIDATOR_REWARDS';
+
 export class ValidateBlockAction extends Action<typeof validate_block.actionSchema> {
     constructor(
         op: OperationData,
@@ -65,8 +68,13 @@ export class ValidateBlockAction extends Action<typeof validate_block.actionSche
     }
 
     async process(trx?: Trx): Promise<EventLog[]> {
-        const validator = await this.validatorRepository.lookup(this.op.account, trx);
-        const reward_account = validator!.reward_account ?? this.op.account;
+        const validator = await this.validatorRepository.lookup(this.op.account, this.op.block_num, trx);
+        // this should _never_ happen
+        if (!validator) {
+            throw new ValidationError('Validator not found.', this, ErrorType.AccountNotKnown);
+        }
+
+        const reward_account = validator.reward_account ?? this.op.account;
         // Log the validation transaction id for the validated block
         const results: EventLog[] = [await this.blockRepository.insertValidation(this.params.block_num, this.op.transaction_id, trx)];
 
@@ -75,13 +83,19 @@ export class ValidateBlockAction extends Action<typeof validate_block.actionSche
         if (reward !== 0) {
             const [amount, token] = reward;
             if (amount > 0) {
-                results.push(...(await this.balanceRepository.updateBalance(this, '$VALIDATOR_REWARDS', reward_account, token, amount, this.action_name, trx)));
+                results.push(...(await this.balanceRepository.updateBalance(this, VALIDATE_BLOCK_REWARD_ACCOUNT, reward_account, token, amount, this.action_name, trx)));
             }
         }
 
         // update the validators version if needed
-        if (validator!.last_version !== this.params.version) {
-            results.push(...(await this.validatorRepository.updateVersion(this.op.account, this.params.version, trx)));
+        if (validator.last_version !== this.params.version) {
+            results.push(...(await this.validatorRepository.updateVersion(this.op.account, this.params.version, this, trx)));
+        }
+
+        // update the consecutive missed blocks count for the validator
+        // this will only be run once the transition happens to enable this field. If the field is not enabled, it will be undefined and this will be a no-op
+        if (validator.consecutive_missed_blocks !== undefined && validator.consecutive_missed_blocks > 0) {
+            results.push(...(await this.validatorRepository.resetConsecutiveMissedBlocks(this.op.account, this, trx)));
         }
 
         return results;
