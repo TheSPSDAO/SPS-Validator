@@ -573,8 +573,7 @@ const schema = {
         adjust_token_distribution_strategy: {
             doc: 'Block number for the adjust_token_distribution_strategy transition',
             format: 'nat',
-            // todo: adjust
-            default: 101732985,
+            default: 101928051,
             env: 'ADJUST_TOKEN_DISTRIBUTION_STRATEGY_TRANSITION_POINT',
         },
     },
