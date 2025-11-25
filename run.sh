@@ -107,6 +107,8 @@ snapshot() {
             --username "$APP_USER" \
             "${APP_DATABASE}" > slim_snapshot.sql
 
+        sed -i "1s/^/-- to_change:$CHANGE\n/" slim_snapshot.sql
+
         echo "Slim snapshot dumped to slim_snapshot.sql"
         zip slim_snapshot.zip slim_snapshot.sql
         rm slim_snapshot.sql
