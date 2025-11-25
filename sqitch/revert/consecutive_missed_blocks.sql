@@ -6,6 +6,9 @@ ALTER TABLE
 
 ALTER TABLE
     snapshot.validators DROP COLUMN IF EXISTS consecutive_missed_blocks;
+
+DROP FUNCTION IF EXISTS snapshot.slimifysnapshot(text);
+
 CREATE OR REPLACE FUNCTION snapshot.freshsnapshot(
 	p_archive_flag boolean DEFAULT false,
 	p_data_schema text DEFAULT :'APP_SCHEMA'::text)

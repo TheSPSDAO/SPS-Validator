@@ -212,4 +212,32 @@ END;
 END;
 $BODY$;
 
+CREATE OR REPLACE FUNCTION snapshot.slimifysnapshot(p_data_schema text DEFAULT :'APP_SCHEMA'::text)
+    RETURNS void
+    LANGUAGE 'plpgsql'
+    COST 100
+    VOLATILE PARALLEL UNSAFE
+AS $BODY$
+BEGIN
+    DECLARE v_min_block_num INTEGER;
+
+    BEGIN;
+    -- Make sure we have data first
+    PERFORM set_config('search_path', regexp_replace(p_data_schema ||', public', '[^\w ,]', '', 'g'), true);
+    RAISE NOTICE 'Data source schema: %', p_data_schema;
+    SELECT INTO v_min_block_num COALESCE(MAX(block_num), 0) - 432000 FROM snapshot.blocks;
+    IF v_min_block_num < 0 THEN
+        RAISE NOTICE 'No data to slimify. Did you run a fresh snapshot first?';
+        RETURN;
+    END IF;
+
+    RAISE NOTICE 'Slimify snapshot to block num >= %', v_min_block_num;
+
+    DELETE FROM snapshot.blocks WHERE block_num < v_min_block_num;
+    DELETE FROM snapshot.validator_transactions WHERE block_num < v_min_block_num;
+    DELETE FROM snapshot.validator_transaction_players WHERE block_num < v_min_block_num;
+
+    END;
+END;
+
 COMMIT;
