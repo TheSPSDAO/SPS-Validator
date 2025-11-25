@@ -9,7 +9,7 @@ replace_env() {
     sed -i "s/^$key=.*/$key=$value/g" "$file"
 }
 
-VERSION=v1.2.0
+VERSION=v1.3.0
 TARGET_DIR="SPS-Validator"
 
 set -e  # Exit on any error
