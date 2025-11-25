@@ -208,6 +208,10 @@ BEGIN
 	    created_date
 	FROM
 	    promise_history;
+
+    INSERT INTO snapshot.token_transfer_keys (account, key, trx_id, block_num, block_time)
+    SELECT account, key, trx_id, block_num, block_time
+    FROM token_transfer_keys;
 END;
 END;
 $BODY$;
