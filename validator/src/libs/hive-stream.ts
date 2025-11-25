@@ -78,7 +78,7 @@ async function streamBlocksIntoQueue(
         if (client.options.stream?.blocksBehindHead) {
             headBlockNum = Math.max(0, headBlockNum - client.options.stream.blocksBehindHead);
         }
-        if (headBlockNum < lastSuccessfullyFetchedBlockNum) {
+        if (headBlockNum <= lastSuccessfullyFetchedBlockNum) {
             // Do not stream negative amount of blocks (e.g. when we want to stream in the future)
             await waitForEvent(observer, 'updated');
             continue;
@@ -167,7 +167,7 @@ async function streamBlocksIntoQueue(
             await waitForEvent(queue, 'dequeued');
         }
 
-        if (observer.headBlockNum === lastSuccessfullyFetchedBlockNum) {
+        if (headBlockNum === lastSuccessfullyFetchedBlockNum) {
             await waitForEvent(observer, 'updated');
         }
     }
