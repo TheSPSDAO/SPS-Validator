@@ -35,7 +35,7 @@ export class UpdateValidatorAction extends Action<typeof update_validator.action
         const events: EventLog[] = [];
 
         // possibly have to update the reward pool
-        const validator = await this.validatorRepository.lookup(this.op.account, trx);
+        const validator = await this.validatorRepository.lookup(this.op.account, this.op.block_num, trx);
         if (validator && !this.params.is_active) {
             // setting to inactive
             events.push(...(await this.removeFromLicenseRewardPool(validator, trx)));
@@ -53,6 +53,7 @@ export class UpdateValidatorAction extends Action<typeof update_validator.action
                     api_url: this.params.api_url ?? undefined,
                     reward_account: this.params.reward_account ?? undefined,
                 },
+                this,
                 trx,
             ),
         );
@@ -68,7 +69,7 @@ export class UpdateValidatorAction extends Action<typeof update_validator.action
             // check if any other validator is using this reward account, or if they have their own validator
             const { validators } = await this.validatorRepository.getValidators({ reward_account: validator.reward_account, is_active: true }, trx);
             const filtered = validators.filter((v) => v.account_name !== validator.account_name);
-            const rewardAccountValidator = await this.validatorRepository.lookup(validator.reward_account, trx);
+            const rewardAccountValidator = await this.validatorRepository.lookup(validator.reward_account, this.op.block_num, trx);
             if (filtered.length === 0 && (!rewardAccountValidator || !rewardAccountValidator.is_active)) {
                 events.push(...(await this.licenseManager.expireCheckIn(validator.reward_account, this, trx)));
             }

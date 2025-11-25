@@ -141,8 +141,9 @@ export function registerApiRoutes(app: Router, opts: ApiOptions): void {
                 res.status(400).end();
                 return;
             }
+            const lastBlockCache = req.resolver.resolve<LastBlockCache>(LastBlockCache);
             await trxStarter.withTransaction(TransactionMode.Reporting, async (trx?: Trx) => {
-                res.json(await Validator.lookup(account, trx));
+                res.json(await Validator.lookup(account, lastBlockCache.value?.block_num ?? 0, trx));
             });
         } catch (err) {
             next(err);

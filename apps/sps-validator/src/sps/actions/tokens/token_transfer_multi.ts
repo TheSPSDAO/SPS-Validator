@@ -2,6 +2,8 @@ import { Action, BalanceRepository, ErrorType, EventLog, HiveAccountRepository, 
 import { SUPPORTED_TOKENS } from '../../features/tokens';
 import { token_transfer_multi } from '../schema';
 import { MakeActionFactory, MakeRouter } from '../utils';
+import { TransitionManager } from '../../features/transition';
+import { isValidTokenTransferKey } from './token_transfer';
 
 export class TokenTransferMultiAction extends Action<typeof token_transfer_multi.actionSchema> {
     constructor(
@@ -10,6 +12,7 @@ export class TokenTransferMultiAction extends Action<typeof token_transfer_multi
         index: number,
         private readonly balanceRepository: BalanceRepository,
         private readonly hiveAccountRepository: HiveAccountRepository,
+        private readonly transitionManager: TransitionManager,
     ) {
         super(token_transfer_multi, op, data, index);
     }
@@ -60,9 +63,29 @@ export class TokenTransferMultiAction extends Action<typeof token_transfer_multi
 
         const names = this.params.multi.flatMap((x) => x.to).flatMap((x) => x.name);
         const onlyValidAccounts = await this.validateAccounts(names, trx);
-
         if (!onlyValidAccounts) {
             throw new ValidationError('You cannot transfer tokens to a non existing Hive account.', this, ErrorType.AccountNotKnown);
+        }
+
+        if (this.transitionManager.isTransitioned('adjust_token_distribution_strategy', this.op.block_num)) {
+            const transferKeys = this.params.multi
+                .flatMap((x) => x.to)
+                .flatMap((x) => x.key)
+                .filter((k) => k !== undefined);
+            const transferKeysUnique = new Set(transferKeys);
+            if (transferKeys.length !== transferKeysUnique.size) {
+                throw new ValidationError('Duplicate transfer keys are not allowed.', this, ErrorType.DuplicateTransferKey);
+            }
+
+            const invalidKeys = transferKeys.filter((k): k is string => !isValidTokenTransferKey(k));
+            if (invalidKeys.length > 0) {
+                throw new ValidationError('Invalid transfer keys. Each key must be a non-empty string with a maximum length of 64 characters.', this, ErrorType.InvalidTransferKey);
+            }
+
+            const transferKeysExist = await this.balanceRepository.tokenTransferKeysExist(this.op.account, transferKeys, trx);
+            if (transferKeysExist) {
+                throw new ValidationError('A transfer for one of these keys has already been processed for this account.', this, ErrorType.DuplicateTransferKey);
+            }
         }
 
         return true;
@@ -73,17 +96,20 @@ export class TokenTransferMultiAction extends Action<typeof token_transfer_multi
         this.players.push(...affected_players);
 
         const type = this.params.type || this.action_name;
-        const transfers = this.params.multi.flatMap((x) => x.to.map((t) => ({ to: t.name, amount: t.qty, token: x.token, type: t.type || type })));
+        const transfers = this.params.multi.flatMap((x) => x.to.map((t) => ({ to: t.name, amount: t.qty, token: x.token, type: t.type || type, key: t.key })));
         const event_logs: EventLog[] = [];
 
         for (const transfer of transfers) {
             const event_log = await this.balanceRepository.updateBalance(this, this.op.account, transfer.to, transfer.token, transfer.amount, transfer.type, trx);
             event_logs.push(...event_log);
+            if (transfer.key && this.transitionManager.isTransitioned('adjust_token_distribution_strategy', this.op.block_num)) {
+                event_log.push(await this.balanceRepository.insertTokenTransferKey(this.op.account, transfer.key, this, trx));
+            }
         }
 
         return event_logs;
     }
 }
 
-const Builder = MakeActionFactory(TokenTransferMultiAction, BalanceRepository, HiveAccountRepository);
+const Builder = MakeActionFactory(TokenTransferMultiAction, BalanceRepository, HiveAccountRepository, TransitionManager);
 export const Router = MakeRouter(token_transfer_multi.action_name, Builder);

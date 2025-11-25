@@ -132,7 +132,7 @@ const schema = {
     blocks_behind_head: {
         doc: 'The amount of blocks to lag behind HEAD',
         format: 'nat',
-        default: 1,
+        default: 5,
         env: 'BLOCKS_BEHIND_HEAD',
     },
     blocks_head_mode: {
@@ -175,6 +175,24 @@ const schema = {
         format: 'nat',
         default: 25,
         env: 'REPLAY_BATCH_SIZE',
+    },
+    stream_safe_mode: {
+        doc: 'Enable safe mode for streaming blocks',
+        format: Boolean,
+        default: false,
+        env: 'STREAM_SAFE_MODE',
+    },
+    stream_safe_mode_retry_attempts: {
+        doc: 'Number of retry attempts in safe mode for streaming blocks',
+        format: 'nat',
+        default: 5,
+        env: 'STREAM_SAFE_MODE_RETRY_ATTEMPTS',
+    },
+    stream_safe_mode_retry_delay_ms: {
+        doc: 'Delay in milliseconds between retry attempts in safe mode for streaming blocks',
+        format: 'nat',
+        default: 1500,
+        env: 'STREAM_SAFE_MODE_RETRY_DELAY_MS',
     },
     validator_account: {
         format: String,
@@ -534,11 +552,30 @@ const schema = {
             default: 96950550,
             env: 'BAD_BLOCK_96950550_TRANSITION_POINT',
         },
+        bad_block_101201159: {
+            doc: 'Block number for the bad_block_101201159 transition',
+            format: 'nat',
+            default: 101201159,
+            env: 'BAD_BLOCK_101201159_TRANSITION_POINT',
+        },
+        bad_block_101387262: {
+            doc: 'Block number for the bad_block_101387262 transition',
+            format: 'nat',
+            default: 101387262,
+            env: 'BAD_BLOCK_101387262_TRANSITION_POINT',
+        },
         validator_transition_cleanup: {
             doc: 'Block number for the validator_transition_cleanup transition',
             format: 'nat',
             default: 100342741,
             env: 'VALIDATOR_TRANSITION_CLEANUP_TRANSITION_POINT',
+        },
+        adjust_token_distribution_strategy: {
+            doc: 'Block number for the adjust_token_distribution_strategy transition',
+            format: 'nat',
+            // todo: adjust
+            default: 101732985,
+            env: 'ADJUST_TOKEN_DISTRIBUTION_STRATEGY_TRANSITION_POINT',
         },
     },
 };

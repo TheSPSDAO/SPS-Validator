@@ -1,10 +1,10 @@
 import { emoji_payload, garbage_payload } from '../../../__tests__/db-helpers';
 import { container } from '../../../__tests__/test-composition-root';
 import { Fixture } from '../../../__tests__/action-fixture';
-import { TransitionPoints } from '../../features/transition';
+import { TransitionCfg } from '../../features/transition';
 
 const fixture = container.resolve(Fixture);
-let transitionPoints: TransitionPoints | null = null;
+let transitionPoints: TransitionCfg | null = null;
 
 beforeAll(async () => {
     await fixture.init();
@@ -16,7 +16,7 @@ beforeEach(async () => {
     fixture.testHelper.insertDummyVote('voter', 'steemmonsters', 100);
     fixture.testHelper.setStaked('voter', 50);
     await fixture.loader.load();
-    transitionPoints = container.resolve(TransitionPoints);
+    transitionPoints = container.resolve(TransitionCfg);
 });
 
 afterAll(async () => {

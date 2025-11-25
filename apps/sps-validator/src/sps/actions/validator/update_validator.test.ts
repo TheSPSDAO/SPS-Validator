@@ -53,7 +53,7 @@ test.dbOnly('Non-boolean is_active does not crash', async () => {
     await fixture.opsHelper.processOp('update_validator', 'steemmonsters7', {
         is_active: 'bagel',
     });
-    const validator = await fixture.Validator.lookup('steemmonsters7');
+    const validator = await fixture.Validator.lookup('steemmonsters7', 0);
     expect(validator).toBeFalsy();
 });
 
@@ -62,7 +62,7 @@ test.dbOnly('Non-string post_url does not crash', async () => {
         is_active: true,
         post_url: 12,
     });
-    const validator = await fixture.Validator.lookup('steemmonsters7');
+    const validator = await fixture.Validator.lookup('steemmonsters7', 0);
     expect(validator).toBeFalsy();
 });
 
@@ -85,7 +85,7 @@ test.dbOnly('Inserting new validator with posting auth does not work', async () 
         },
         { is_active: false },
     );
-    const validator = await fixture.Validator.lookup('steemmonsters7');
+    const validator = await fixture.Validator.lookup('steemmonsters7', 0);
     expect(validator).toBeFalsy();
 });
 

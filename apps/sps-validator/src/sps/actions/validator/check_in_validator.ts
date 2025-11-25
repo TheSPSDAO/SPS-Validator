@@ -15,7 +15,7 @@ export class CheckInValidatorAction extends Action<typeof check_in_validator.act
     }
 
     async validate(trx?: Trx) {
-        const validator = await this.validatorRepository.lookup(this.op.account, trx);
+        const validator = await this.validatorRepository.lookup(this.op.account, this.op.block_num, trx);
         if (!validator) {
             throw new ValidationError('Validator not found.', this, ErrorType.UnknownValidator);
         } else if (!validator.is_active) {
@@ -44,12 +44,12 @@ export class CheckInValidatorAction extends Action<typeof check_in_validator.act
 
     async process(trx?: Trx): Promise<EventLog[]> {
         const results: EventLog[] = [];
-        const validator = await this.validatorRepository.lookup(this.op.account, trx);
+        const validator = await this.validatorRepository.lookup(this.op.account, this.op.block_num, trx);
         const rewardAccount = validator!.reward_account ?? this.op.account;
         results.push(...(await this.licenseManager.checkIn(this, rewardAccount, trx)));
         // update the validators version if needed
         if (validator!.last_version !== this.params.version) {
-            results.push(...(await this.validatorRepository.updateVersion(this.op.account, this.params.version, trx)));
+            results.push(...(await this.validatorRepository.updateVersion(this.op.account, this.params.version, this, trx)));
         }
         return results;
     }

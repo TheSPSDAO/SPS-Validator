@@ -134,7 +134,7 @@ import { SpsValidatorCheckInRepository } from './entities/validator/validator_ch
 import { SpsBscRepository, SpsEthRepository, SpsBaseRepository } from './entities/tokens/eth';
 import { HiveEngineRepository } from './entities/tokens/hive_engine';
 import { VIRTUAL_TOKENS_CONFIG, VirtualTokenConfig } from './features/tokens';
-import { TransitionManager, TransitionPoints } from './features/transition';
+import { TransitionManager, TransitionCfg } from './features/transition';
 
 // Only use re-exported `container` to ensure composition root was loaded.
 export { container, singleton, inject, injectable } from 'tsyringe';
@@ -183,7 +183,7 @@ export class CompositionRoot extends null {
         container.register<MissedBlocksOpts>(MissedBlocksOpts, { useToken: ConfigType });
         container.register<StakingConfiguration>(StakingConfiguration, { useToken: ConfigType });
         container.register<SupplyOpts>(SupplyOpts, { useToken: ConfigType });
-        container.register<TransitionPoints>(TransitionPoints, { useToken: ConfigType });
+        container.register<TransitionCfg>(TransitionCfg, { useToken: ConfigType });
 
         // Hive
         container.register<HiveClient>(HiveClient, { useToken: SpsHiveClient });

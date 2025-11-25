@@ -12,12 +12,17 @@ const token_award = new Schema.Schema(
     }),
 );
 
+// we cant use any schema validations here because there could be a payload in the past with
+// a key field. we will validate in the actions instead. the alternative is creating a seperate
+// action, but that would require a lot of code duplication and we want to avoid that if possible.
+const tokenTransferKey = mixed().optional();
 const token_transfer = new Schema.Schema(
     'token_transfer',
     object({
         to: Schema.hiveUsernameOrSystemAccount.required(),
         token: Schema.token,
         qty: Schema.qty.positive(),
+        key: tokenTransferKey,
     }),
 );
 
@@ -44,6 +49,7 @@ const token_transfer_multi = new Schema.Schema(
                         qty: Schema.qty.positive(),
                         memo: string().strict().optional(),
                         type: string().strict().optional(),
+                        key: tokenTransferKey,
                     }),
                 ).required(),
             }),
@@ -191,7 +197,7 @@ const config_update = new Schema.Schema(
                 object({
                     group_name: string().strict().required(),
                     name: string().strict().required(),
-                    value: string().strict().required(),
+                    value: mixed().required(),
                 }).unknown(true),
             )
             .required(),
@@ -431,6 +437,13 @@ const transition_balance_token_staking_spsp = new Schema.Schema(
     }),
 );
 
+const transition_adjust_token_distribution_strategy = new Schema.Schema(
+    'transition_adjust_token_distribution_strategy',
+    object({
+        block_num: number().integer().positive().required(),
+    }),
+);
+
 export {
     token_award,
     token_transfer,
@@ -476,4 +489,5 @@ export {
     transition_fix_vote_weight,
     transition_cleanup_lite_accounts,
     transition_balance_token_staking_spsp,
+    transition_adjust_token_distribution_strategy,
 };

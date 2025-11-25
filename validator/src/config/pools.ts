@@ -1,13 +1,24 @@
-import { object, number, date } from 'yup';
+import { object, number, date, string, mixed } from 'yup';
 
-export type PoolSettings = {
+export type BasePoolSettings = {
     start_block: number;
-    tokens_per_block: number;
     stop_date_utc?: Date | string;
     stop_block?: number;
+};
+
+export type PoolPerBlockSettings = BasePoolSettings & {
+    type?: 'per_block';
+    tokens_per_block: number;
     reduction_pct?: number;
     reduction_blocks?: number;
 };
+
+export type PoolPerBlockCappedSettings = BasePoolSettings & {
+    type: 'per_block_capped';
+    tokens_per_block: number;
+};
+
+export type PoolSettings = PoolPerBlockSettings | PoolPerBlockCappedSettings;
 
 const unstaking_settings_schema = object({
     unstaking_interval_seconds: number().integer().positive().required(),
@@ -27,13 +38,27 @@ export type UnstakingConfiguration = {
     get(token?: string): UnstakingSettings;
 };
 
-const pool_settings_schema = object({
-    start_block: number().integer().positive().required(),
+const per_block_pool_settings_schema = object({
+    type: string().oneOf(['per_block', undefined]).optional(),
     tokens_per_block: number().min(0).required(),
-    stop_date_utc: date().optional(),
-    stop_block: number().integer().positive().optional(), // Can be used directly, or can be calculated from stop_date_utc once the moment rolls over.
     reduction_pct: number().min(0).max(100).optional(),
     reduction_blocks: number().positive().optional(),
+    start_block: number().integer().positive().required(),
+    stop_date_utc: date().optional(),
+    stop_block: number().integer().positive().optional(), // Can be used directly, or can be calculated from stop_date_utc once the moment rolls over.
+});
+
+const per_block_capped_pool_settings_schema = object({
+    type: string().oneOf(['per_block_capped']).required(),
+    tokens_per_block: number().min(0).required(),
+    start_block: number().integer().positive().required(),
+    stop_date_utc: date().optional(),
+    stop_block: number().integer().positive().optional(), // Can be used directly, or can be calculated from stop_date_utc once the moment rolls over.
+});
+
+const pool_settings_schema = mixed().test('is-pool-settings', 'Must be a valid PoolSettings object', (value): value is PoolSettings => {
+    const schemas = [per_block_pool_settings_schema, per_block_capped_pool_settings_schema];
+    return schemas.some((schema) => schema.isValidSync(value));
 });
 
 export type AwardPool<T extends string> = {

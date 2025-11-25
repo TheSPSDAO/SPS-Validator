@@ -1,7 +1,7 @@
 import { emoji_payload, garbage_payload } from '../../../__tests__/db-helpers';
 import { container } from '../../../__tests__/test-composition-root';
 import { Fixture } from '../../../__tests__/action-fixture';
-import { TransitionPoints } from '../../features/transition';
+import { TransitionCfg } from '../../features/transition';
 import { TOKENS } from '../../features/tokens';
 import { BalanceTokenStakingAccountTransitionAction } from './balance_token_staking_account';
 import { RawResult } from '@steem-monsters/splinterlands-validator';
@@ -19,7 +19,7 @@ const stakingAccountBalance = testAccounts.reduce((acc, cur) => acc + cur.spsp, 
 testAccounts.push({ account: '$TOKEN_STAKING', spsp: -stakingAccountBalance, sps: stakingAccountBalance });
 
 const fixture = container.resolve(Fixture);
-let transitionPoints: TransitionPoints | null = null;
+let transitionPoints: TransitionCfg | null = null;
 
 beforeAll(async () => {
     await fixture.init();
@@ -36,7 +36,7 @@ beforeEach(async () => {
     }
 
     await fixture.loader.load();
-    transitionPoints = container.resolve(TransitionPoints);
+    transitionPoints = container.resolve(TransitionCfg);
 });
 
 afterAll(async () => {

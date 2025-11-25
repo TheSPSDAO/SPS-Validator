@@ -1,5 +1,6 @@
 import { BlockRef, BlockRepository, PrefixOpts, ProcessResult, Trx, ValidatorUpdater, ValidatorWatch, VirtualPayloadSource } from '@steem-monsters/splinterlands-validator';
 import { inject, injectable } from 'tsyringe';
+import { TransitionManager } from '../features/transition';
 
 export type MissedBlocksOpts = {
     missed_blocks_account: string;
@@ -14,6 +15,7 @@ export class SpsUpdateMissedBlocksSource implements VirtualPayloadSource {
         @inject(MissedBlocksOpts) private readonly missedBlocksOpts: MissedBlocksOpts,
         @inject(ValidatorWatch) private readonly validatorWatch: ValidatorWatch,
         @inject(ValidatorUpdater) private readonly validatorUpdater: ValidatorUpdater,
+        @inject(TransitionManager) private readonly validatorRepository: TransitionManager,
     ) {}
 
     trx_id(block: BlockRef): string {
@@ -34,6 +36,14 @@ export class SpsUpdateMissedBlocksSource implements VirtualPayloadSource {
 
         // don't bother if we're before the reward start block
         if (expired_block < this.validatorWatch.validator.reward_start_block) {
+            return [];
+        }
+
+        // Don't count blocks within the range of the adjust token distribution strategy transition. this is because the missed blocks count will be reset at the transition point and we don't want to include any blocks that were missed before the transition.
+        const adjust_token_distro_block = this.validatorRepository.transitionPoints['adjust_token_distribution_strategy'];
+        const ignored_range_start = adjust_token_distro_block ? adjust_token_distro_block - this.validatorWatch.validator.max_block_age : 0;
+        const ignored_range_end = adjust_token_distro_block ? adjust_token_distro_block + this.validatorWatch.validator.max_block_age : 0;
+        if (expired_block >= ignored_range_start && expired_block <= ignored_range_end) {
             return [];
         }
 
