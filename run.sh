@@ -94,8 +94,8 @@ snapshot() {
     echo    # (optional) move to a new line
     if [[ $REPLY =~ ^[Yy]$ ]]; then
         echo "Creating slim snapshot"
-        # run the snapshot.slimifysnapshot function
-        run_psql -c "SELECT snapshot.slimifysnapshot();"
+        # run the snapshot.slimifysnapshot function - do this in a transaction so we don't ruin the main snapshot
+        run_psql -c "BEGIN; SELECT snapshot.slimifysnapshot(); COMMIT;"
 
         echo "Dumping slim snapshot to file"
         docker_compose exec -e PGPASSWORD="$APP_PASSWORD" pg pg_dump \
