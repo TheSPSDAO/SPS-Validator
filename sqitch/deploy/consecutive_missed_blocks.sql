@@ -224,7 +224,7 @@ CREATE OR REPLACE FUNCTION snapshot.slimifysnapshot(p_data_schema text DEFAULT :
 AS $BODY$
 BEGIN
     DECLARE v_min_block_num INTEGER;
-BEGIN;
+BEGIN
     -- Make sure we have data first
     PERFORM set_config('search_path', regexp_replace(p_data_schema ||', public', '[^\w ,]', '', 'g'), true);
     RAISE NOTICE 'Data source schema: %', p_data_schema;
