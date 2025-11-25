@@ -165,6 +165,7 @@ block-hash-breaking updates are designed to turn on at a certain block, so all y
 
 #### Update command
 - Run `./run.sh update` and follow the prompts.
+- Run `./run.sh build` IF the release notes require it.
 
 #### Manually updating
 - Pull the latest version with `git fetch --tags -f && git checkout v{version}`.
