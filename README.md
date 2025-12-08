@@ -6,8 +6,10 @@ To update an existing node to a new release, see [updating your node](#updating-
 
 Current snapshot URLs:
 
-- **Full**: https://d33cuc2qlex36c.cloudfront.net/prod-snapshot-2025-11-25.zip - Use this if you are running an archive node.
-- **Slim**: https://d33cuc2qlex36c.cloudfront.net/prod-slim-snapshot-2025-11-25.zip - Use this if you are running a light node.
+| Type | URL | Use Case |
+|------|-----|----------|
+| **Full** | https://d33cuc2qlex36c.cloudfront.net/prod-snapshot-2025-11-25.zip | Use this if you are running an archive node. |
+| **Slim** | https://d33cuc2qlex36c.cloudfront.net/prod-slim-snapshot-2025-11-25.zip | Use this if you are running a light node. |
 
 ## Easy Install (mac or linux only):
 Easy install will run through the setup steps for you, but requires the following to be installed on your machine:
