@@ -90,18 +90,19 @@ export class SpsConfigLoader
             max_votes: 10,
             num_top_validators: 10,
             reward_token: TOKENS.SPS,
+            consecutive_missed_blocks_threshold: 5,
         },
         sps: {
             unstaking_interval_seconds: 1,
             unstaking_periods: 1,
             staking_rewards_acc_tokens_per_share: 1,
-            staking_rewards_last_reward_block: 1,
+            staking_rewards_last_reward_block: 0,
             staking_rewards: {
                 start_block: 1,
                 tokens_per_block: 1,
             },
             validator_rewards_acc_tokens_per_share: 1,
-            validator_rewards_last_reward_block: 1,
+            validator_rewards_last_reward_block: 0,
             validator_rewards: {
                 start_block: 1,
                 tokens_per_block: 1,
@@ -394,14 +395,19 @@ export class SpsConfigLoader
         this.reload(config_entries);
     }
 
-    public async validateUpdateConfig(group_name: string, name: string, value: string, trx?: Trx): Promise<Result<void, string[]>> {
+    public async validateUpdateConfig(group_name: string, name: string, value: ConfigData, trx?: Trx): Promise<Result<void, string[]>> {
         const exists = await this.configRepository.exists({ group_name, name }, trx);
         if (!exists) {
             return Result.Err([`Config entry ${group_name}.${name} does not exist.`]);
         }
 
+        const unparseResult = ConfigRepository.unparse_value_safe(value);
+        if (Result.isErr(unparseResult)) {
+            return Result.Err([`Config entry ${group_name}.${name} could not be unparsed: ${unparseResult.error.message}`]);
+        }
+        const unparse_value = unparseResult.value;
         const currentConfig = this.value;
-        const newConfig = await this.configRepository.testUpdate({ group_name, name, value }, trx);
+        const newConfig = await this.configRepository.testUpdate({ group_name, name, value: unparse_value }, trx);
         const errors: string[] = [];
         for (const asserter of this.asserters) {
             const { key: asserterKey, assertions } = asserter;
@@ -435,13 +441,29 @@ export class SpsConfigLoader
      * Also reloads the entire configuration from the database.
      * @return a record of the updated configuration record.
      */
-    public async reloadingUpdateConfig(group_name: string, name: string, value: string, trx?: Trx): Promise<EventLog> {
-        const result = await this.configRepository.updateReturning({ group_name, name, value }, trx);
+    public async reloadingUpdateConfig(group_name: string, name: string, value: ConfigData, trx?: Trx): Promise<EventLog> {
+        const unparsed_value = ConfigRepository.unparse_value(value);
+        const result = await this.configRepository.updateReturning({ group_name, name, value: unparsed_value }, trx);
         if (result) {
             log(`Updated config value [${group_name}.${name}] to ${value}, reloading database.`, LogLevel.Info);
             await this.load(trx);
         }
         return new EventLog(EventTypes.UPDATE, ConfigEntity, result);
+    }
+
+    /**
+     * Inserts a new configuration entry into the database.
+     * @return a record of the updated configuration record.
+     */
+    async reloadingUpsertConfig(group_name: string, group_type: string, name: string, value: ConfigData, trx?: Trx): Promise<EventLog> {
+        const unparsed_value = ConfigRepository.unparse_value(value);
+        const value_type = ConfigRepository.value_type(value);
+        const result = await this.configRepository.upsertReturning({ group_name, group_type, name, value: unparsed_value, value_type }, 0, trx);
+        if (result) {
+            log(`Inserted config value [${group_name}.${name}] to ${value}, reloading database.`, LogLevel.Info);
+            await this.load(trx);
+        }
+        return new EventLog(EventTypes.UPSERT, ConfigEntity, result);
     }
 
     /**

@@ -4,10 +4,14 @@ import { inject, injectable } from 'tsyringe';
 import { container } from '../../../__tests__/test-composition-root';
 import { ConfigEntity, TokenUnstakingRepository } from '@steem-monsters/splinterlands-validator';
 import { TOKENS } from '../../features/tokens';
+import { TransitionManager } from '../../features/transition';
 
 @injectable()
 class Fixture extends BaseFixture {
-    constructor(@inject(TokenUnstakingRepository) readonly tokenUnstakingRepository: TokenUnstakingRepository) {
+    constructor(
+        @inject(TokenUnstakingRepository) readonly tokenUnstakingRepository: TokenUnstakingRepository,
+        @inject(TransitionManager) readonly transitionManager: TransitionManager,
+    ) {
         super();
     }
 }
@@ -68,4 +72,44 @@ test.dbOnly('Simple token_unstaking on-chain operation of currently unstaked tok
     expect(Number(unstaking?.total_qty)).toBe(121);
     // 0 or undefined are both fine
     expect(balance?.balance).toBeFalsy();
+});
+
+test.dbOnly('Simple token_unstaking virtual operation before fix_vote_weight transition does not update vote weight.', async () => {
+    await fixture.testHelper.insertDummyValidator('validator', true, 137);
+    await fixture.testHelper.insertDummyVote('steemmonsters', 'validator', 137);
+    await fixture.testHelper.setUnstakingRecord('steemmonsters', 137);
+    const unstakingRow = await fixture.testHelper.getUnstakingRecord('steemmonsters');
+    await expect(fixture.opsHelper.processVirtualOp('token_unstaking', 'steemmonsters', fixture.tokenUnstakingRepository.boundParams(unstakingRow!))).resolves.toBeUndefined();
+    const unstaking = await fixture.testHelper.getUnstakingRecord('steemmonsters');
+    const balance = await fixture.testHelper.getDummyToken('steemmonsters', TOKENS.SPS);
+    expect(unstaking).toBeNull();
+    expect(balance?.balance).toBe(137);
+
+    const [voteWeight] = await fixture.testHelper.votesForValidator('validator');
+    expect(voteWeight.vote_weight).toBe(137);
+    const validator = await fixture.testHelper.validator('validator');
+    expect(validator).toBeTruthy();
+    expect(validator!.total_votes).toBe(137);
+});
+
+test.dbOnly('Simple token_unstaking virtual operation after fix_vote_weight transition does update vote weight.', async () => {
+    await fixture.testHelper.insertDummyValidator('validator', true, 137);
+    await fixture.testHelper.insertDummyVote('steemmonsters', 'validator', 137);
+    await fixture.testHelper.setUnstakingRecord('steemmonsters', 137);
+    const unstakingRow = await fixture.testHelper.getUnstakingRecord('steemmonsters');
+    await expect(
+        fixture.opsHelper.processVirtualOp('token_unstaking', 'steemmonsters', fixture.tokenUnstakingRepository.boundParams(unstakingRow!), {
+            block_num: fixture.transitionManager.transitionPoints.fix_vote_weight,
+        }),
+    ).resolves.toBeUndefined();
+    const unstaking = await fixture.testHelper.getUnstakingRecord('steemmonsters');
+    const balance = await fixture.testHelper.getDummyToken('steemmonsters', TOKENS.SPS);
+    expect(unstaking).toBeNull();
+    expect(balance?.balance).toBe(137);
+
+    const [voteWeight] = await fixture.testHelper.votesForValidator('validator');
+    expect(voteWeight.vote_weight).toBe(0);
+    const validator = await fixture.testHelper.validator('validator');
+    expect(validator).toBeTruthy();
+    expect(validator!.total_votes).toBe(0);
 });

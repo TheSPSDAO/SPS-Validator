@@ -44,26 +44,40 @@ export class TestHelper extends BaseRepository {
         }
     }
 
-    insertDummyValidator(account_name: string, is_active = true, total_votes = 0, reward_account: string | null = null, trx?: Trx) {
+    insertDummyValidator(account_name: string, is_active = true, total_votes = 0, reward_account: string | null = null, consecutive_missed_blocks = 0, trx?: Trx) {
         return this.query(ValidatorEntity, trx).insertItem({
             account_name,
             is_active,
             total_votes: String(total_votes),
-            missed_blocks: 0,
+            missed_blocks: consecutive_missed_blocks,
+            consecutive_missed_blocks,
             reward_account,
         });
     }
 
-    insertDummyVote(voter: string, validator: string, trx?: Trx) {
+    insertDummyVote(voter: string, validator: string, vote_weight = 1, trx?: Trx) {
         return this.query(ValidatorVoteEntity, trx).insertItem({
             voter,
             validator,
-            vote_weight: String(1),
+            vote_weight: String(vote_weight),
         });
     }
 
-    votesForValidator(validator: string, trx?: Trx) {
-        return this.query(ValidatorVoteEntity, trx).where('validator', validator).getMany();
+    async votesForValidator(validator: string, trx?: Trx) {
+        const rows = await this.query(ValidatorVoteEntity, trx).where('validator', validator).getMany();
+        return rows.map((row) => ({
+            ...row,
+            vote_weight: parseFloat(row.vote_weight),
+        }));
+    }
+
+    async validator(account_name: string, trx?: Trx) {
+        const row = await this.query(ValidatorEntity, trx).where('account_name', account_name).getSingleOrNull();
+        if (row) {
+            return { ...row, total_votes: parseFloat(row.total_votes), missed_blocks: parseFloat(row.missed_blocks as unknown as string) };
+        } else {
+            return null;
+        }
     }
 
     async getDummyToken(account_name: string, token = TOKENS.SPS, trx?: Trx) {

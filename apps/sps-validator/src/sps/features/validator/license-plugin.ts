@@ -1,4 +1,4 @@
-import { EventLog, HiveClient, LogLevel, Plugin, Prime, Trx, ValidatorRepository, log } from '@steem-monsters/splinterlands-validator';
+import { BlockRepository, EventLog, HiveClient, LogLevel, Plugin, Prime, Trx, ValidatorRepository, log } from '@steem-monsters/splinterlands-validator';
 import { inject, singleton } from 'tsyringe';
 import config from '../../convict-config';
 import { SpsValidatorCheckInRepository } from '../../entities/validator/validator_check_in';
@@ -29,9 +29,11 @@ export class ValidatorCheckInPlugin implements Plugin, Prime {
         private readonly licenseManager: SpsValidatorLicenseManager,
         @inject(ValidatorRepository)
         private readonly validatorRepository: ValidatorRepository,
+        @inject(BlockRepository)
+        private readonly blockRepository: BlockRepository,
     ) {
         this.validatorAccount = config.validator_account;
-        this.checkInWatcher.addValidatorCheckInWatcher(this.CHANGE_KEY, (value) => {
+        this.checkInWatcher.addValidatorCheckInWatcher(this.CHANGE_KEY, () => {
             this.nextCheckInBlock = this.lastCheckInBlock ? this.getNextCheckInBlock(this.lastCheckInBlock) : undefined;
         });
     }
@@ -48,7 +50,8 @@ export class ValidatorCheckInPlugin implements Plugin, Prime {
             log('Validator check in config is invalid. Not setting next check in block.', LogLevel.Warning);
             return;
         }
-        const validator = await this.validatorRepository.lookup(this.validatorAccount, trx);
+        const lastBlockNum = await this.blockRepository.getLatestBlockNum(trx);
+        const validator = await this.validatorRepository.lookup(this.validatorAccount, lastBlockNum ?? 0, trx);
         const rewardAccount = validator ? validator?.reward_account ?? this.validatorAccount : undefined;
         const checkIn = rewardAccount ? await this.checkInRepository.getByAccount(rewardAccount, trx) : undefined;
         this.lastCheckInBlock = checkIn ? checkIn.last_check_in_block_num : undefined;
@@ -69,7 +72,7 @@ export class ValidatorCheckInPlugin implements Plugin, Prime {
             return;
         }
 
-        const validator = await this.validatorRepository.lookup(this.validatorAccount);
+        const validator = await this.validatorRepository.lookup(this.validatorAccount, blockNumber);
         if (!validator || !validator.is_active) {
             log('Validator not found or inactive. Not sending check in.', LogLevel.Warning);
             return;

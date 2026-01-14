@@ -1,24 +1,58 @@
 import { TransactionMode, TransactionStarter, Trx } from '@steem-monsters/splinterlands-validator';
 import { Router } from 'express';
-import { SpsBalanceRepository } from '../entities/tokens/balance';
+import { SpsBalanceRepository, SupplyEntry } from '../entities/tokens/balance';
 
 const SUPPLY_CACHE_TIME_MS = 1000 * 60 * 5;
 
 export function registerSpsRoutes(app: Router) {
     const supplyCache = new Map<string, { result: unknown; expires: Date }>();
+
+    async function getSupply(repository: SpsBalanceRepository, token: string, trx?: Trx) {
+        const cached = supplyCache.get(token);
+        if (cached && cached.expires > new Date()) {
+            return cached.result as SupplyEntry;
+        }
+        const result = await repository.getSupply(token, trx);
+        supplyCache.set(token, { result, expires: new Date(Date.now() + SUPPLY_CACHE_TIME_MS) });
+        return result;
+    }
+
     app.get('/extensions/tokens/:token/supply', async (req, res, next) => {
         try {
             const token = req.params.token;
             const trxStarter = req.resolver.resolve<TransactionStarter>(TransactionStarter);
             const Balance = req.resolver.resolve(SpsBalanceRepository);
             await trxStarter.withTransaction(TransactionMode.Reporting, async (trx?: Trx) => {
-                const cached = supplyCache.get(token);
-                if (cached && cached.expires > new Date()) {
-                    return res.json(cached.result);
-                }
-                const result = await Balance.getSupply(token, trx);
-                supplyCache.set(token, { result, expires: new Date(Date.now() + SUPPLY_CACHE_TIME_MS) });
-                return res.json(result);
+                const supply = await getSupply(Balance, token, trx);
+                return res.json(supply);
+            });
+        } catch (err) {
+            next(err);
+        }
+    });
+
+    app.get('/extensions/tokens/:token/supply/circulating', async (req, res, next) => {
+        try {
+            const token = req.params.token;
+            const trxStarter = req.resolver.resolve<TransactionStarter>(TransactionStarter);
+            const Balance = req.resolver.resolve(SpsBalanceRepository);
+            await trxStarter.withTransaction(TransactionMode.Reporting, async (trx?: Trx) => {
+                const supply = await getSupply(Balance, token, trx);
+                return res.json(supply.circulating_supply);
+            });
+        } catch (err) {
+            next(err);
+        }
+    });
+
+    app.get('/extensions/tokens/:token/supply/total', async (req, res, next) => {
+        try {
+            const token = req.params.token;
+            const trxStarter = req.resolver.resolve<TransactionStarter>(TransactionStarter);
+            const Balance = req.resolver.resolve(SpsBalanceRepository);
+            await trxStarter.withTransaction(TransactionMode.Reporting, async (trx?: Trx) => {
+                const supply = await getSupply(Balance, token, trx);
+                return res.json(supply.total_supply ?? supply.circulating_supply);
             });
         } catch (err) {
             next(err);
@@ -84,6 +118,18 @@ export function registerSpsRoutes(app: Router) {
                         trx,
                     ),
                 );
+            });
+        } catch (err) {
+            next(err);
+        }
+    });
+
+    app.get('/extensions/tokens/SPS/richlist', async (req, res, next) => {
+        try {
+            const trxStarter = req.resolver.resolve(TransactionStarter);
+            const Balance = req.resolver.resolve(SpsBalanceRepository);
+            await trxStarter.withTransaction(TransactionMode.Reporting, async (trx?: Trx) => {
+                res.json(await Balance.getSpsRichlist(trx));
             });
         } catch (err) {
             next(err);

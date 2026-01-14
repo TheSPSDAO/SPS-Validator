@@ -132,8 +132,14 @@ const schema = {
     blocks_behind_head: {
         doc: 'The amount of blocks to lag behind HEAD',
         format: 'nat',
-        default: 1,
+        default: 5,
         env: 'BLOCKS_BEHIND_HEAD',
+    },
+    blocks_head_mode: {
+        doc: 'The mode to use for the blocks head',
+        format: ['latest', 'irreversible'],
+        default: 'irreversible',
+        env: 'BLOCKS_HEAD_MODE',
     },
     rpc_nodes: {
         doc: 'The Hive RPC nodes to connect to, in failover order',
@@ -170,6 +176,24 @@ const schema = {
         default: 25,
         env: 'REPLAY_BATCH_SIZE',
     },
+    stream_safe_mode: {
+        doc: 'Enable safe mode for streaming blocks',
+        format: Boolean,
+        default: false,
+        env: 'STREAM_SAFE_MODE',
+    },
+    stream_safe_mode_retry_attempts: {
+        doc: 'Number of retry attempts in safe mode for streaming blocks',
+        format: 'nat',
+        default: 5,
+        env: 'STREAM_SAFE_MODE_RETRY_ATTEMPTS',
+    },
+    stream_safe_mode_retry_delay_ms: {
+        doc: 'Delay in milliseconds between retry attempts in safe mode for streaming blocks',
+        format: 'nat',
+        default: 1500,
+        env: 'STREAM_SAFE_MODE_RETRY_DELAY_MS',
+    },
     validator_account: {
         format: String,
         nullable: true,
@@ -181,12 +205,6 @@ const schema = {
         nullable: true,
         default: null as null | string,
         env: 'VALIDATOR_KEY',
-    },
-    api_port: {
-        format: 'port',
-        nullable: true,
-        default: null as null | number,
-        env: 'API_PORT',
     },
     socket_url: {
         format: 'websocket_url',
@@ -200,6 +218,32 @@ const schema = {
         default: null as null | string,
         env: 'SOCKET_KEY',
         sensitive: true,
+    },
+    api: {
+        port: {
+            doc: 'The port the API server will listen on',
+            format: 'port',
+            default: 3000,
+            env: 'API_PORT',
+        },
+        helmetjs: {
+            doc: 'Enable helmetjs security middleware',
+            format: Boolean,
+            default: false,
+            env: 'API_HELMETJS',
+        },
+        health_checker: {
+            doc: 'Enable health checker http routes',
+            format: 'Boolean',
+            default: false,
+            env: 'HEALTH_CHECKER',
+        },
+        detailed_errors: {
+            doc: 'Enable detailed error messages in the API responses',
+            format: Boolean,
+            default: false,
+            env: 'API_DETAILED_ERRORS',
+        },
     },
     db_connection: {
         format: 'stringy-object',
@@ -234,12 +278,6 @@ const schema = {
                 default: 5432,
             },
         },
-    },
-    health_checker: {
-        doc: 'Enable health checker http routes',
-        format: 'Boolean',
-        default: false,
-        env: 'HEALTH_CHECKER',
     },
     sm_api_url: {
         doc: 'Url of SteemMonsters API',
@@ -291,23 +329,11 @@ const schema = {
         default: 'sps.dao.reserves',
         env: 'DAO_RESERVE_ACCOUNT',
     },
-    sl_hive_account: {
-        doc: 'SPS sl-hive account',
+    dao_delegation_account: {
+        doc: 'SPS dao delegation account',
         nullable: false,
-        default: 'sl-hive',
-        env: 'SL_HIVE_ACCOUNT',
-    },
-    terablock_bsc_account: {
-        doc: 'SPS terablock bsc account',
-        nullable: false,
-        default: 'terablock-bsc',
-        env: 'TERABLOCK_BSC_ACCOUNT',
-    },
-    terablock_eth_account: {
-        doc: 'SPS terablock eth account',
-        nullable: false,
-        default: 'terablock-eth',
-        env: 'TERABLOCK_ETH_ACCOUNT',
+        default: 'spsdaodelegation',
+        env: 'DAO_DELEGATION_ACCOUNT',
     },
     reward_pool_accounts: {
         doc: 'SPS reward pool accounts',
@@ -387,12 +413,6 @@ const schema = {
             env: 'PRICE_FEED_COIN_MARKET_CAP_TOKEN_MAP',
         },
     },
-    helmetjs: {
-        doc: 'Enable helmetjs security middleware',
-        format: Boolean,
-        default: false,
-        env: 'HELMETJS',
-    },
     version: {
         doc: 'The application version',
         format: String,
@@ -434,34 +454,128 @@ const schema = {
             env: 'BSC_CONTRACT_ADDRESS',
         },
     },
-    hive_supply_exclusion_accounts: {
-        doc: 'Accounts to exclude from the circulating supply calculation',
-        format: 'stringy-array',
-        default: ['steemmonsters'],
-        env: 'HIVE_SUPPLY_EXCLUSION_ACCOUNTS',
+    base: {
+        rpc_node: {
+            doc: 'The Base JSON RPC node to connect to',
+            format: 'url',
+            default: 'https://mainnet.base.org',
+            env: 'BASE_RPC_NODE',
+        },
+        contract_address: {
+            doc: 'The Base SPS contract address',
+            format: String,
+            default: '0x578661e9a09eee6b2cd97d4ded1ccbae7b8516b9',
+            env: 'BASE_CONTRACT_ADDRESS',
+        },
     },
-    eth_supply_exclusion_addresses: {
-        doc: 'Addresses to exclude from the circulating supply calculation',
-        format: 'stringy-array',
-        default: [
-            '0xc5465a401c8722ffcc0706ea0001a16dc9da94f3',
-            '0xde38b4681f7d0634182d032474fb72e47e9aa2d2',
-            '0xb4a84042F9Da14A4C46d704203f808A0B9FC93FA',
-            '0xe434f06f44700a41fa4747be53163148750a6478',
-        ],
-        env: 'ETH_SUPPLY_EXCLUSION_ADDRESSES',
+    bridge_accounts_by_chain: {
+        eth: {
+            hive_accounts: {
+                doc: 'Hive accounts that hold SPS bridged from Ethereum',
+                format: 'stringy-array',
+                default: ['spsoneth', 'deconeth'],
+                env: 'ETH_BRIDGE_HIVE_ACCOUNTS',
+            },
+            excluded_addresses: {
+                doc: 'Addresses to exclude from the circulating supply calculation',
+                format: 'stringy-array',
+                default: [
+                    '0xC5465A401c8722fFcC0706EA0001a16DC9Da94f3',
+                    '0xde38b4681f7d0634182d032474fb72e47e9aa2d2',
+                    '0xb4a84042F9Da14A4C46d704203f808A0B9FC93FA',
+                    '0xe434f06f44700a41fa4747be53163148750a6478',
+                    '0x0B8A76f88AF5fffDc42c6e8dC521bca8d8edC838',
+                ],
+                env: 'ETH_BRIDGE_EXCLUDED_ADDRESSES',
+            },
+        },
+        bsc: {
+            hive_accounts: {
+                doc: 'Hive accounts that hold SPS bridged from BSC',
+                format: 'stringy-array',
+                default: ['spsonbsc', 'deconbsc'],
+                env: 'BSC_BRIDGE_HIVE_ACCOUNTS',
+            },
+            excluded_addresses: {
+                doc: 'Addresses to exclude from the circulating supply calculation',
+                format: 'stringy-array',
+                default: [
+                    '0xec93875c65476437bd56e3eaaa0b799a5c69e5f6',
+                    '0xdf5Fd6B21E0E7aC559B41Cf2597126B3714f432C',
+                    '0x000000000000000000000000000000000000dead',
+                    '0xE434F06f44700a41FA4747bE53163148750a6478',
+                    '0x61eB2237a1657fBeCa7554aa1b10908dE326918F',
+                    '0x30636788a272D377501c8ca95c0F3B0b400aa7a9',
+                ],
+                env: 'BSC_BRIDGE_EXCLUDED_ADDRESSES',
+            },
+        },
+        base: {
+            hive_accounts: {
+                doc: 'Hive accounts that hold SPS bridged from Base',
+                format: 'stringy-array',
+                default: ['spsonbase', 'deconbase'],
+                env: 'BASE_BRIDGE_HIVE_ACCOUNTS',
+            },
+            excluded_addresses: {
+                doc: 'Addresses to exclude from the circulating supply calculation',
+                format: 'stringy-array',
+                default: ['0x30636788a272D377501c8ca95c0F3B0b400aa7a9', '0x84598829B7AC6eF8bf3494730CF06F8Ff237645a'],
+                env: 'BASE_BRIDGE_EXCLUDED_ADDRESSES',
+            },
+        },
+        hive: {
+            hive_accounts: {
+                doc: 'Hive accounts that hold SPS bridged from Hive',
+                format: 'stringy-array',
+                default: ['sl-hive'],
+                env: 'HIVE_BRIDGE_HIVE_ACCOUNTS',
+            },
+            excluded_addresses: {
+                doc: 'Accounts to exclude from the circulating supply calculation',
+                format: 'stringy-array',
+                default: ['steemmonsters', 'sl-hive'],
+                env: 'HIVE_BRIDGE_EXCLUDED_ACCOUNTS',
+            },
+        },
     },
-    bsc_supply_exclusion_addresses: {
-        doc: 'Addresses to exclude from the circulating supply calculation',
-        format: 'stringy-array',
-        default: [
-            '0xec93875c65476437bd56e3eaaa0b799a5c69e5f6',
-            '0xdf5Fd6B21E0E7aC559B41Cf2597126B3714f432C',
-            '0x000000000000000000000000000000000000dead',
-            '0xE434F06f44700a41FA4747bE53163148750a6478',
-            '0x61eB2237a1657fBeCa7554aa1b10908dE326918F',
-        ],
-        env: 'BSC_SUPPLY_EXCLUSION_ADDRESSES',
+    transition_points: {
+        fix_vote_weight: {
+            doc: 'Block number for the fix_vote_weight transition',
+            format: 'nat',
+            default: 95026480,
+            env: 'FIX_VOTE_WEIGHT_TRANSITION_POINT',
+        },
+        bad_block_96950550: {
+            doc: 'Block number for the bad_block_96950550 transition',
+            format: 'nat',
+            default: 96950550,
+            env: 'BAD_BLOCK_96950550_TRANSITION_POINT',
+        },
+        bad_block_101201159: {
+            doc: 'Block number for the bad_block_101201159 transition',
+            format: 'nat',
+            default: 101201159,
+            env: 'BAD_BLOCK_101201159_TRANSITION_POINT',
+        },
+        bad_block_101387262: {
+            doc: 'Block number for the bad_block_101387262 transition',
+            format: 'nat',
+            default: 101387262,
+            env: 'BAD_BLOCK_101387262_TRANSITION_POINT',
+        },
+        validator_transition_cleanup: {
+            doc: 'Block number for the validator_transition_cleanup transition',
+            format: 'nat',
+            default: 100342741,
+            env: 'VALIDATOR_TRANSITION_CLEANUP_TRANSITION_POINT',
+        },
+        adjust_token_distribution_strategy: {
+            doc: 'Block number for the adjust_token_distribution_strategy transition',
+            format: 'nat',
+            default: 101928051,
+            env: 'ADJUST_TOKEN_DISTRIBUTION_STRATEGY_TRANSITION_POINT',
+        },
     },
 };
 

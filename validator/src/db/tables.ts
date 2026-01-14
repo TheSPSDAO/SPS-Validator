@@ -78,6 +78,15 @@ export class BalanceEntity {
     @Column() public balance = '0'; // numeric(15, 3)
 }
 
+@Table('token_transfer_keys')
+export class TokenTransferKeyEntity {
+    @Column() public account!: string;
+    @Column() public key!: string;
+    @Column() public block_num!: number;
+    @Column() public block_time!: Date;
+    @Column() public trx_id!: string;
+}
+
 @Table('balance_history')
 export class BalanceHistoryEntity {
     @Column() public player!: string;
@@ -247,6 +256,7 @@ export class ValidatorEntity {
     @Column() public api_url!: string | null;
     @Column() public total_votes = '0'; // numeric(12, 3)
     @Column() public missed_blocks = 0;
+    @Column() public consecutive_missed_blocks = 0;
     @Column() public reward_account!: string | null;
     @Column() public last_version!: string | null;
 }

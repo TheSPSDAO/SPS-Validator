@@ -21,8 +21,8 @@ class Fixture extends BaseFixture {
         super();
         const app = express();
         registerApiRoutes(app, {
+            ...cfg.api,
             resolver: container,
-            health_checker: cfg.health_checker,
             injection_middleware: middleware,
             db_block_retention: cfg.db_block_retention,
             version: cfg.version,
@@ -143,6 +143,9 @@ describe('Pool settings endpoints', () => {
         tokens_per_block: 8.56164,
         reduction_blocks: 864000,
         reduction_pct: 1,
+        outstanding_rewards: 0,
+        pool_balance: 0,
+        reward_account_balance: 0,
         total_staked: {
             amount: 0,
             token: 'SPSP',
@@ -155,6 +158,9 @@ describe('Pool settings endpoints', () => {
         tokens_per_block: 8.56164,
         reduction_blocks: 864000,
         reduction_pct: 1,
+        outstanding_rewards: 0,
+        pool_balance: 0,
+        reward_account_balance: 0,
         total_staked: {
             amount: 0,
             token: 'RUNNING_LICENSE',

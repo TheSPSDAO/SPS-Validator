@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import { usePromise } from '../hooks/Promise';
 import { DefaultService } from '../services/openapi';
 import React, { useRef } from 'react';
-import { Table, TableRow, TableBody, TableCell, TableHeader, GradientOverflow } from '../components/Table';
+import { Table, TableRow, TableBody, TableCell, TableHeader, GradientOverflow, TableHead, TableColumn } from '../components/Table';
 import { useMetrics } from '../context/MetricsContext';
 import { ValidatorName } from '../components/ValidatorName';
 import { localeNumber } from '../components/LocaleNumber';
@@ -66,12 +66,12 @@ const MetricsCard = () => {
     );
 };
 
-export type TopValidatorsTableProps = {
+type TopValidatorsTableProps = {
     limit?: number;
     active?: boolean;
 };
 
-export function TopValidatorsTable(props: TopValidatorsTableProps) {
+function TopValidatorsTable(props: TopValidatorsTableProps) {
     const [result, isLoading] = usePromise(() => DefaultService.getValidators(props.limit, undefined, undefined, props.active), [props.limit]);
     const spinnerColor = useSpinnerColor("blue");
     const containerRef = useRef<HTMLDivElement | null>(null);
@@ -117,12 +117,12 @@ export function TopValidatorsTable(props: TopValidatorsTableProps) {
     );
 }
 
-export type TopSpsHoldersTableProps = {
+type TopSpsHoldersTableProps = {
     limit?: number;
     className?: string;
 };
 
-export function TopSpsHoldersTable(props: TopSpsHoldersTableProps) {
+function TopSpsHoldersTable(props: TopSpsHoldersTableProps) {
     const [balances, isLoading] = usePromise(() => DefaultService.getExtendedBalancesByToken('SPS_TOTAL', props.limit), [props.limit]);
     const spinnerColor = useSpinnerColor("blue");
     const containerRef = useRef<HTMLDivElement | null>(null);
@@ -149,6 +149,70 @@ export function TopSpsHoldersTable(props: TopSpsHoldersTableProps) {
     );
 }
 
+function UpcomingTransitionsCard(props: { className?: string }) {
+    const [result, isLoading] = usePromise(() => DefaultService.getTransitions(), []);
+    const transitions = result?.transition_points;
+    if (isLoading || !transitions) {
+        return;
+    }
+
+    const upcomingTransitions = transitions.filter((transition) => !transition.transitioned && transition.blocks_until <= 432000);
+    if (upcomingTransitions.length === 0) {
+        return;
+    }
+
+    return (
+        <Card className={props.className}>
+            <CardBody>
+                <Typography variant="h5" color="blue-gray" className="mb-2 dark:text-gray-200">
+                    Upcoming Transitions
+                </Typography>
+                <Typography variant="paragraph" className="mb-2 dark:text-gray-300">
+                    Transitions are changes to the SPS validator nodes that are scheduled to occur in the future. They are used to implement new features or changes to the node
+                    software. If you are a validator node operator, you should be aware of these transitions and must be prepared to update your node before they occur.
+                </Typography>
+                <Table className="w-full mt-5 border-2 border-gray-200 dark:border-gray-300">
+                    <TableHead>
+                        <TableRow>
+                            <TableColumn>
+                                <Typography color="blue-gray" className="font-normal text-left dark:text-gray-800">
+                                    Transition
+                                </Typography>
+                            </TableColumn>
+                            <TableColumn>
+                                <Typography color="blue-gray" className="font-normal text-left dark:text-gray-800">
+                                    Block Num
+                                </Typography>
+                            </TableColumn>
+                            <TableColumn>
+                                <Typography color="blue-gray" className="font-normal text-left dark:text-gray-800">
+                                    Blocks Until
+                                </Typography>
+                            </TableColumn>
+                        </TableRow>
+                    </TableHead>
+                    <TableBody>
+                        {upcomingTransitions.map((transition) => (
+                            <TableRow key={transition.transition}>
+                                <TableCell>
+                                    <Typography color="blue-gray" className="font-bold dark:text-gray-300">
+                                        {transition.transition}
+                                    </Typography>
+                                    <Typography color="blue-gray" className="text-sm dark:text-gray-300">
+                                        {transition.description}
+                                    </Typography>
+                                </TableCell>
+                                <TableCell>{localeNumber(transition.block_num)}</TableCell>
+                                <TableCell>{localeNumber(transition.blocks_until)}</TableCell>
+                            </TableRow>
+                        ))}
+                    </TableBody>
+                </Table>
+            </CardBody>
+        </Card>
+    );
+}
+
 export function Home() {
     return (
         <div className="grid xl:grid-cols-4 gap-6">
@@ -168,6 +232,8 @@ export function Home() {
                         </Typography>
                     </CardBody>
                 </Card>
+
+                <UpcomingTransitionsCard className="col-span-full dark:bg-gray-800 dark:text-gray-300 dark:shadow-none" />
 
                 <Card className="col-span-full dark:bg-gray-800 dark:shadow-none">
                     <CardBody>

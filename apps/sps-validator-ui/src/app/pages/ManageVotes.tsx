@@ -1,5 +1,5 @@
-import {FormEvent, useRef, useState } from 'react';
-import { Hive, HiveService } from '../services/hive';
+import { FormEvent, useRef, useState } from 'react';
+import { HiveService } from '../services/hive';
 import { Button, Card, CardBody, CardFooter, Input, Spinner, Typography } from '@material-tailwind/react';
 import { AuthorizedAccountWrapper } from '../components/AuthorizedAccountWrapper';
 import { usePromise } from '../hooks/Promise';
@@ -65,9 +65,9 @@ function VoteCard({
     const [progress, setProgress] = useState<boolean>(false);
     const [error, setError] = useState<string>('');
     const [page, setPage] = useState(0);
-    const [limit, setLimit] = useState(10); // TODO: Add a limit selector
+    const limit = 10;
     const [search, setSearch] = useState('');
-    const [count, isLoadingCount] = usePromise(() => DefaultService.getValidators(0, 0), [search]);
+    const [count, isLoadingCount] = usePromise(() => DefaultService.getValidators(0, 0, search), [search]);
     const [result, isLoading] = usePromise(() => DefaultService.getValidators(limit, page * limit, search), [search, limit, page]);
     const spinnerColor = useSpinnerColor("blue")
     const containerRef = useRef<HTMLDivElement | null>(null);
@@ -293,7 +293,7 @@ function MyVotesCard({
 
 export function ManageVotes() {
     const [account, setAccount] = useState<string | undefined>();
-    const [votes, votesLoading, votesError, reloadVotes] = usePromise(() => (account ? DefaultService.getVotesByAccount(account!) : Promise.resolve([])), [account]);
+    const [votes, votesLoading, votesError, reloadVotes] = usePromise(() => (account ? DefaultService.getVotesByAccount(account) : Promise.resolve([])), [account]);
     const [validatorConfig, validatorConfigLoading, validatorConfigError, reloadConfig] = usePromise(() => DefaultService.getValidatorConfig(), []);
     const loaded = !votesLoading && !validatorConfigLoading && account && votes && validatorConfig;
     const error = (votesError || validatorConfigError)?.message;

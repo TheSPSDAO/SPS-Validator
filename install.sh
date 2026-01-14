@@ -9,7 +9,7 @@ replace_env() {
     sed -i "s/^$key=.*/$key=$value/g" "$file"
 }
 
-VERSION=v1.0.0
+VERSION=v1.3.0
 TARGET_DIR="SPS-Validator"
 
 set -e  # Exit on any error
@@ -132,6 +132,29 @@ if [[ "$db_block_retention" =~ ^[Yy]$ ]]; then
     replace_env "DB_BLOCK_RETENTION" "432000" .env
 fi
 
+# Ask for the snapshot url (optional)
+echo "You can use the default snapshot, the latest snapshot from the community, or provide a custom snapshot URL to restore your node."
+echo "1. Default snapshot (genesis snapshot, will take a long time to sync)"
+echo "2. Custom snapshot (if you have your own snapshot)"
+read -p "Enter your choice (1, or 2): " -n 1 -r snapshot_choice
+echo
+case $snapshot_choice in
+    1)
+        echo "Using default snapshot URL..."
+        # do nothing, already set in .env
+        ;;
+    2)
+        read -p "Enter a custom snapshot URL (or press enter to use the default): " -r snapshot_url
+        echo
+        if [ -n "$snapshot_url" ]; then
+            replace_env "SNAPSHOT_URL" "$snapshot_url" .env
+        fi
+        ;;
+    *)
+        echo -e "${RED}Invalid snapshot choice. Exiting.${NC}"
+        exit 1
+        ;;
+esac
 
 # Ensure validator is not running
 echo "Ensuring validator is not running..."

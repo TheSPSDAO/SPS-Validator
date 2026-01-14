@@ -3,7 +3,7 @@ import { BalanceHistoryRepository } from './balance_history';
 import TokenTransfer from './token_transfer';
 import { EventLog, EventTypes } from '../event_log';
 import { IAction } from '../../actions/action';
-import { BalanceEntity, BaseRepository, Handle, Trx } from '../../db/tables';
+import { BalanceEntity, TokenTransferKeyEntity, BaseRepository, Handle, Trx } from '../../db/tables';
 import { Bookkeeping } from '../bookkeeping';
 
 export type BalanceEntry = {
@@ -106,7 +106,6 @@ export class BalanceRepository extends BaseRepository {
             throw new ActionError('Amount must always be greater than 0', action, ErrorType.AmountNotPositive);
         }
 
-        // Using Promise.all could lead to a deadlock because of starved connection pool.
         const from_balance = await this.getBalance(from, token, trx);
         const to_balance = await this.getBalance(to, token, trx);
 
@@ -127,5 +126,23 @@ export class BalanceRepository extends BaseRepository {
         const token_transfer = new TokenTransfer(from, to, amount, token, from_balance, to_balance, type);
         const insertBalanceHistory = await this.balanceHistory.insert(action, token_transfer, trx);
         return [new EventLog(EventTypes.UPDATE, BalanceEntity, updated_from_balance), new EventLog(EventTypes.UPDATE, BalanceEntity, updated_to_balance), ...insertBalanceHistory];
+    }
+
+    async tokenTransferKeysExist(account: string, keys: string[], trx?: Trx): Promise<boolean> {
+        const count = await this.query(TokenTransferKeyEntity, trx).where('account', account).whereIn('key', keys).getCount();
+        // big int to number how
+        const countNumber = Number(count);
+        return countNumber > 0;
+    }
+
+    async insertTokenTransferKey(account: string, key: string, action: IAction, trx?: Trx): Promise<EventLog> {
+        const result = await this.query(TokenTransferKeyEntity, trx).insertItemWithReturning({
+            account,
+            key,
+            block_num: action.op.block_num,
+            block_time: action.op.block_time,
+            trx_id: action.op.trx_op_id,
+        });
+        return new EventLog(EventTypes.INSERT, TokenTransferKeyEntity, result);
     }
 }

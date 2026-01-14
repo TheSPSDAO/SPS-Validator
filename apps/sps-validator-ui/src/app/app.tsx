@@ -198,23 +198,23 @@ function BackToTopButton({ scrollDivRef }: { scrollDivRef: React.RefObject<HTMLD
 export function App() {
     const isDesktop = useMediaQuery({ minWidth: 961 });
     const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
-    
+
     useEffect(() => {
         if (isDesktop) {
-        setMobileSidebarOpen(false);
+            setMobileSidebarOpen(false);
         }
     }, [isDesktop]);
-    
+
     return (
         <DarkModeProvider>
             <MetricsProvider>
-                <AppContent mobileSidebarOpen={mobileSidebarOpen} setMobileSidebarOpen={setMobileSidebarOpen}/>
+                <AppContent mobileSidebarOpen={mobileSidebarOpen} setMobileSidebarOpen={setMobileSidebarOpen} />
             </MetricsProvider>
         </DarkModeProvider>
     );
 }
 
-function AppContent({ mobileSidebarOpen, setMobileSidebarOpen}: { mobileSidebarOpen: boolean, setMobileSidebarOpen: React.Dispatch<React.SetStateAction<boolean>> }) {
+function AppContent({ mobileSidebarOpen, setMobileSidebarOpen }: { mobileSidebarOpen: boolean; setMobileSidebarOpen: React.Dispatch<React.SetStateAction<boolean>> }) {
     const tickers = useTickers();
     const sidebarRef = useRef<HTMLDivElement>(null);
     const contentRef = useRef<HTMLDivElement>(null);

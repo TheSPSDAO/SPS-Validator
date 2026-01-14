@@ -154,15 +154,24 @@ test.dbOnly('Verify stop block is set after stop_date', async () => {
 
 test.dbOnly('[VULN] regression test', async () => {
     const admin = 'admin';
-    await fixture.testHelper.insertExistingAdmins([admin]);
-    await fixture.loader.load();
 
-    const startBlock = 1;
+    const startBlock = baseBlock;
     const delta = 1000;
     const endBlock = startBlock + delta;
     const account1 = 'wordempire';
     const account2 = 'wordempire2';
     const sponsor = '$SPONSOR';
+
+    await fixture.testHelper.insertExistingAdmins([admin]);
+
+    await fixture.handle
+        .query(ConfigEntity)
+        .where('group_name', 'sps')
+        .andWhere('name', 'staking_rewards')
+        .updateItem({ value: JSON.stringify({ tokens_per_block: 1, start_block: startBlock, unstaking_interval_seconds: 1, unstaking_periods: 1, stop_block: endBlock + 1 }) });
+
+    await fixture.loader.load();
+
     await fixture.testHelper.setLiquidSPSBalance(account1, 10);
     await fixture.testHelper.setLiquidSPSBalance(account2, 10);
     await fixture.testHelper.setLiquidSPSBalance(sponsor, 1000);

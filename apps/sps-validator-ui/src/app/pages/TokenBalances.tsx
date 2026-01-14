@@ -1,5 +1,6 @@
 import { Card, CardBody, Checkbox, Select, Spinner, Tab, TabPanel, Tabs, TabsBody, TabsHeader, Typography, Option } from '@material-tailwind/react';
-import { useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { DefaultService } from '../services/openapi';
 import { usePromise } from '../hooks/Promise';
 import { Table, TableBody, TableCell, TableColumn, TableHead, TablePager, TableRow, GradientOverflow, TableHeader } from '../components/Table';
@@ -9,15 +10,33 @@ import { ChevronDownIcon } from '@heroicons/react/24/solid';
 
 const tokens = ['SPS', 'SPSP', 'SPS_TOTAL', 'LICENSE', 'ACTIVATED_LICENSE', 'LICENSE_TOTAL', 'RUNNING_LICENSE'];
 
-function TokenBalancesTable({ token }: { token: string }) {
-    const [page, setPage] = useState(0);
-    const [limit, setLimit] = useState(10); // TODO: Add a limit selector
-    const [systemAccounts, setSystemAccounts] = useState(false);
-    const [count, isLoadingCount] = usePromise(() => DefaultService.getBalancesByToken(token, 0, 0, systemAccounts), [token, systemAccounts]);
-    const [balances, isLoading] = usePromise(() => DefaultService.getBalancesByToken(token, limit, page * limit, systemAccounts), [token, page, limit, systemAccounts]);
+function TokenBalancesTable({ token, searchParams, setSearchParams }: { token: string; searchParams: URLSearchParams; setSearchParams: (params: URLSearchParams) => void }) {
+    const pageParam = parseInt(searchParams.get('page') || '0', 10);
+    const systemAccountsParam = searchParams.get('systemAccounts') === 'true';
+
+    const [page, setPage] = useState(pageParam);
+    const [limit] = useState(10); // TODO: Add a limit selector
+    const [systemAccounts, setSystemAccounts] = useState(systemAccountsParam);
+
     const spinnerColor = useSpinnerColor("blue")
     const containerRef = useRef<HTMLDivElement | null>(null);
 
+    // Sync state with URL params on mount and when params change
+    useEffect(() => {
+        setPage(pageParam);
+        setSystemAccounts(systemAccountsParam);
+    }, [pageParam, systemAccountsParam]);
+
+    // Update URL params when state changes
+    useEffect(() => {
+        const newParams = new URLSearchParams(searchParams);
+        newParams.set('page', page.toString());
+        newParams.set('systemAccounts', systemAccounts.toString());
+        setSearchParams(newParams);
+    }, [page, systemAccounts, searchParams, setSearchParams]);
+
+    const [count, isLoadingCount] = usePromise(() => DefaultService.getExtendedBalancesByToken(token, 0, 0, systemAccounts), [token, systemAccounts]);
+    const [balances, isLoading] = usePromise(() => DefaultService.getExtendedBalancesByToken(token, limit, page * limit, systemAccounts), [token, page, limit, systemAccounts]);
 
     const toggleSystemAccounts = (value: boolean) => {
         setSystemAccounts(value);
@@ -173,7 +192,28 @@ function SpsSupplyTable({ supply }: { supply: SpsTokenSupply }) {
 }
 
 export function TokenBalances() {
-    const [token, setToken] = useState(tokens[0]);
+    const [searchParams, setSearchParams] = useSearchParams();
+    const tokenParam = searchParams.get('token') || tokens[0];
+    const [token, setToken] = useState(tokenParam);
+
+    // Sync state with URL params on mount and when params change
+    useEffect(() => {
+        const urlToken = searchParams.get('token');
+        if (urlToken && tokens.includes(urlToken)) {
+            setToken(urlToken);
+        }
+    }, [searchParams]);
+
+    // Update URL params when token changes
+    const handleTokenChange = (newToken: string) => {
+        setToken(newToken);
+        const newParams = new URLSearchParams(searchParams);
+        newParams.set('token', newToken);
+        // Reset page when token changes
+        newParams.set('page', '0');
+        setSearchParams(newParams);
+    };
+
     return (
         <div className="grid gap-6 w-full">
             <Card className="w-full col-span-full dark:bg-gray-800 dark:text-gray-300 dark:shadow-none">
@@ -181,15 +221,15 @@ export function TokenBalances() {
                     <Typography variant="h5" color="blue-gray" className="mb-2 dark:text-gray-200">
                         Token Information
                     </Typography>
-                    <div className="mt-4 flex max-w-96 dark:bg-gray-800 dark:text-gray-300">
-                        <Select 
-                            label="Token" 
-                            value={token} 
-                            onChange={(val) => setToken(val ?? tokens[0])} 
+                    <div className="mt-4 flex 2xl:max-w-96 2xl:w-1/4 lg:w-2/3 md:w-full dark:bg-gray-800 dark:text-gray-300">
+                        <Select
+                            label="Token"
+                            value={token}
+                            onChange={(val) => handleTokenChange(val ?? tokens[0])}
                             className="dark:bg-gray-800 dark:text-gray-300 dark:border-x-gray-300 dark:border-b-gray-300"
-                            labelProps={{className: "dark:text-gray-300 dark:peer-disabled:before:border-transparent dark:peer-disabled:after:border-transparent dark:before:border-gray-300 dark:after:border-gray-300 "}} 
-                            containerProps={{className: "dark:bg-gray-800"}} 
-                            menuProps={{className: "dark:bg-gray-800 dark:text-gray-300 dark:border-gray-300"}} 
+                            labelProps={{className: "dark:text-gray-300 dark:peer-disabled:before:border-transparent dark:peer-disabled:after:border-transparent dark:before:border-gray-300 dark:after:border-gray-300 "}}
+                            containerProps={{className: "dark:bg-gray-800"}}
+                            menuProps={{className: "dark:bg-gray-800 dark:text-gray-300 dark:border-gray-300"}}
                             arrow={<ChevronDownIcon className="w-5 h-5 dark:fill-gray-300 dark:text-gray-300" />}
                         >
                             {tokens.map((token) => (
@@ -207,8 +247,8 @@ export function TokenBalances() {
                         <Typography variant="h5" color="blue-gray" className="mb-6 dark:text-gray-200">
                             Account Balances
                         </Typography>
-                        <div>
-                            <TokenBalancesTable token={token} />
+                        <div className="mt-4">
+                            <TokenBalancesTable token={token} searchParams={searchParams} setSearchParams={setSearchParams} />
                         </div>
                     </CardBody>
                 </Card>

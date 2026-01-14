@@ -19,7 +19,7 @@ import { payout } from './utilities/token_support';
 import { SynchronisationConfig } from './sync/type';
 import { EventLog } from './entities/event_log';
 import { isDefined } from './libs/guards';
-import { Trx } from './lib';
+import { BalanceRepository, Trx } from './lib';
 
 export type ValidatorOpts = {
     validator_account: string | null;
@@ -35,6 +35,10 @@ export type PostProcessor = {
 type UnionAccountCreation = AccountCreateOperation | AccountCreateWithDelegationOperation | CreateClaimedAccountOperation;
 
 export class BlockProcessor<T extends SynchronisationConfig> {
+    get validateBlockRewardAccount(): string | null {
+        return null;
+    }
+
     public constructor(
         // TODO: way too many params/responsibilities
         private readonly trxStarter: TransactionStarter,
@@ -46,30 +50,32 @@ export class BlockProcessor<T extends SynchronisationConfig> {
         private readonly validatorOpts: ValidatorOpts,
         private readonly watcher: ValidatorWatch,
         private readonly hiveAccountRepository: HiveAccountRepository,
+        private readonly balanceRepository: BalanceRepository,
         private readonly hive: HiveClient,
         public readonly lastBlockCache: LastBlockCache,
         private readonly sync: SynchronisationClosure<T>,
         private readonly special_ops: Map<string, string> = new Map(),
     ) {}
 
-    public async process(block: NBlock, headBlock: number): Promise<{ block_hash: string; event_logs: EventLog[] }> {
+    public async process(block: NBlock, headBlock: number): Promise<{ block_hash: string; event_logs: EventLog[]; reward: payout }> {
         const operations: Operation[] = [];
-        await this.sync.waitToProcessBlock(block.block_num);
-        const block_hash = await this.trxStarter.withTransaction(async (trx) => {
-            const reward = this.calculateBlockReward(block);
+        const transformedBlock = this.transformBlock(block);
+        await this.sync.waitToProcessBlock(transformedBlock.block_num);
+        const { block_hash, reward } = await this.trxStarter.withTransaction(async (trx) => {
+            const reward = await this.calculateBlockReward(transformedBlock);
             // TODO: procesVirtualOps
-            const wrappedPayloads = await this.topLevelVirtualPayloadSource.process(block, trx);
+            const wrappedPayloads = await this.topLevelVirtualPayloadSource.process(transformedBlock, trx);
             for (const wrappedPayload of wrappedPayloads) {
                 const { trx_id, payloads } = wrappedPayload;
                 for (let i = 0; i < payloads.length; i++) {
                     const data = payloads[i];
-                    const op = this.operationFactory.build(block, reward, data, trx_id, i, true);
+                    const op = this.operationFactory.build(transformedBlock, reward, data, trx_id, i, true);
                     operations.push(op);
                     await op.process(trx);
                 }
             }
 
-            for (const t of block.transactions) {
+            for (const t of transformedBlock.transactions) {
                 for (const [op_index, op] of t.transaction.operations.entries()) {
                     if (BlockProcessor.isAccountCreationOperation(op)) {
                         await this.hiveAccountRepository.upsert({ name: op[1].new_account_name, authority: {} });
@@ -81,16 +87,16 @@ export class BlockProcessor<T extends SynchronisationConfig> {
                         continue;
                     }
 
-                    const operation = this.operationFactory.build(block, reward, op, t.id, op_index);
+                    const operation = this.operationFactory.build(transformedBlock, reward, op, t.id, op_index);
                     operations.push(operation);
                     await operation.process(trx);
                 }
             }
 
             // Load the validator for this block
-            const validator = await this.validatorRepository.getBlockValidator(block, trx);
-            const { block_num, l2_block_id } = await this.blockRepository.insertProcessed(block, operations, validator, trx);
-            this.lastBlockCache.update(block);
+            const validator = await this.validatorRepository.getBlockValidator(transformedBlock, trx);
+            const { block_num, l2_block_id } = await this.blockRepository.insertProcessed(transformedBlock, operations, validator, trx);
+            this.lastBlockCache.update(transformedBlock);
 
             // If we are the validator chosen for this block, submit the block hash to validate it
             if (this.isChosenValidator(validator)) {
@@ -102,13 +108,22 @@ export class BlockProcessor<T extends SynchronisationConfig> {
                 }
             }
 
-            return l2_block_id;
+            return { block_hash: l2_block_id, reward };
         });
 
         return {
             event_logs: operations.flatMap((x) => x.actions.flatMap((x) => x.result).filter(isDefined)),
             block_hash,
+            reward,
         };
+    }
+
+    /**
+     * Hook to modify the block data before processing.
+     * This is currently used to fix replay because of a microfork that the splinterlands node read
+     */
+    protected transformBlock(block: NBlock): NBlock {
+        return block;
     }
 
     private async trySubmitBlockValidation(block_num: number, l2_block_id: string, attempts = 5): Promise<void> {
@@ -153,19 +168,43 @@ export class BlockProcessor<T extends SynchronisationConfig> {
         return op[1].id === this.prefix.custom_json_id || op[1].id.startsWith(this.prefix.custom_json_prefix);
     }
 
-    private calculateBlockReward(block: NBlock): payout {
+    private async calculateBlockReward(block: NBlock, trx?: Trx): Promise<payout> {
         const validator = this.watcher.validator;
         // No block rewards for broken blocks!
         if (validator === undefined) {
             return 0;
         }
+
         const elapsed_blocks = block.block_num - validator.reward_start_block;
         // Return 0 if rewards haven't started yet
         if (elapsed_blocks < 0) return 0;
 
-        const token = validator.reward_token;
-        // Reduce the validator block rewards by {reduction_pct}% every {reduction_blocks} blocks (1% per month)
-        const reward = +(validator.tokens_per_block * (1 - (parseInt(`${elapsed_blocks / validator.reduction_blocks}`) * validator.reduction_pct) / 100)).toFixed(3);
-        return [reward, token];
+        if (validator.reward_version === 'per_block_capped') {
+            const blocks_per_month = 864000;
+            const rewardAccount = this.validateBlockRewardAccount;
+            if (!rewardAccount) {
+                console.warn('No validate block reward account configured, cannot calculate dynamic block reward.');
+                return 0;
+            }
+            const token = validator.reward_token;
+            // This is the remaining balance in the reward pool minus the outstanding rewards that have not been claimed yet
+            const balance = await this.balanceRepository.getBalance(rewardAccount, token, trx);
+            // This is the number of blocks since we last rewarded this pool
+            const num_blocks = 1;
+            // We divide the reward pool balance by blocks per month to convert it to a per-block value
+            const Y = (balance / blocks_per_month) * num_blocks;
+            // tokens_per_block * num_blocks gives us the "current monthly reward allocation" converted to the number of blocks since we last rewarded this pool
+            const X = validator.tokens_per_block * num_blocks;
+            // Now we can apply the cap formula to get the new reward allocation
+            const o1 = X * 0.7;
+            const o2 = Math.min(Y * 0.05, X * 0.9);
+            const Z = Math.max(o1, o2);
+            return [Z, token];
+        } else {
+            const token = validator.reward_token;
+            // Reduce the validator block rewards by {reduction_pct}% every {reduction_blocks} blocks (1% per month)
+            const reward = +(validator.tokens_per_block * (1 - (parseInt(`${elapsed_blocks / validator.reduction_blocks}`) * validator.reduction_pct) / 100)).toFixed(3);
+            return [reward, token];
+        }
     }
 }

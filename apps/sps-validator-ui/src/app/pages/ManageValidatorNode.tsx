@@ -187,12 +187,22 @@ function RegisterCard({ account, registered }: { account: string; registered: ()
     const [apiUrl, setApiUrl] = useState('');
     const [rewardAccount, setRewardAccount] = useState('');
     const [error, setError] = useState('');
+    const [rewardAccountError, setRewardAccountError] = useState('');
     const [progress, setProgress] = useState(false);
     const spinnerColor = useSpinnerColor("teal")
 
     const register = async () => {
         setProgress(true);
         setError('');
+        setRewardAccountError('');
+        
+        // Prevent user from setting their own account as reward account
+        if (rewardAccount.trim() !== '' && rewardAccount.trim() === account) {
+            setRewardAccountError('You entered your own account as the reward account. To receive rewards to your own account, please leave this field blank.');
+            setProgress(false);
+            return;
+        }
+
         try {
             const posted = await HiveService.updateValidator(
                 {
@@ -253,19 +263,38 @@ function RegisterCard({ account, registered }: { account: string; registered: ()
                                 label: "Reward Account",
                                 tooltip: "The accounts that your nodes rewards will be sent to. If not set, they will go to the nodes account.",
                                 value: rewardAccount,
-                                onChange: (e) => setRewardAccount(e.target.value.trim()),
+                                onChange: (e) => {
+                                    setRewardAccount(e.target.value.trim());
+                                    setRewardAccountError('');
+                                },
                             },
                         ]}
                     />                        
+                        {rewardAccountError && (
+                            <Typography variant="paragraph" color="red" className="mt-1 text-sm font-normal">
+                                {rewardAccountError}
+                            </Typography>
+                        )}
                     </form>
                 </CardBody>
-                <CardFooter>
+                <CardFooter className="pt-0">
+                    <div className="flex flex-col gap-2">
+                        <Typography variant="paragraph" className="text-sm font-normal">
+                            API URL(not required): URL that your node will be accessible from. Not setting this can discourage users from voting for your node.
+                        </Typography>
+                        <Typography variant="paragraph" className="text-sm font-normal">
+                            Post URL(not required): PeakD post describing why users should vote for your node. Not setting this can discourage users from voting for your node.
+                        </Typography>
+                        <Typography variant="paragraph" className="text-sm font-normal">
+                            Reward Account(not required): Leave blank to receive rewards to your own validator account. Set only if you want rewards sent to a different account.
+                        </Typography>
+                    </div>
                     {error && (
-                        <Typography variant="paragraph" color="red" className="mb-2 text-center">
+                        <Typography variant="paragraph" color="red" className="mb-2 text-center text-sm font-normal">
                             {error}
                         </Typography>
                     )}
-                    <div className="flex items-center justify-end">
+                    <div className="flex items-center justify-end mt-4">
                         <Button className="flex flex-row items-center dark:bg-blue-800 dark:hover:bg-blue-600 dark:border-gray-300 dark:border dark:text-gray-300 dark:hover:text-gray-100 dark:shadow-none" variant="filled" disabled={progress} onClick={register}>
                             {progress && <Spinner className="me-3 text-sm" color={spinnerColor}/>}
                             Register
@@ -283,12 +312,22 @@ function ManageCard({ account, validator, reloadValidator }: { account: string; 
     const [apiUrl, setApiUrl] = useState<string>(validator.api_url ?? '');
     const [rewardAccount, setRewardAccount] = useState<string>(validator.reward_account ?? '');
     const [error, setError] = useState('');
+    const [rewardAccountError, setRewardAccountError] = useState('');
     const [progress, setProgress] = useState(false);
     const spinnerColor = useSpinnerColor("teal")
 
     const update = async () => {
         setProgress(true);
         setError('');
+        setRewardAccountError('');
+        
+        // Prevent user from setting their own account as reward account
+        if (rewardAccount.trim() !== '' && rewardAccount.trim() === account) {
+            setRewardAccountError('You entered your own account as the reward account. To receive rewards to your own account, please leave this field blank.');
+            setProgress(false);
+            return;
+        }
+
         try {
             const broadcastResult = await HiveService.updateValidator(
                 {
@@ -341,7 +380,7 @@ function ManageCard({ account, validator, reloadValidator }: { account: string; 
                         <Typography variant="h5" color="blue-gray" className="mb-2 dark:text-gray-200">
                             Manage Validator Node - {account}
                         </Typography>
-                        <form className="mt-8 flex flex-col gap-4">
+                        <form className="mt-4 flex flex-col gap-4">
                             <div className="-mx-3">
                                 <Checkbox checked={isActive} onChange={(e) => setIsActive(e.target.checked)} label="Active" disabled={progress} className="dark:checked:bg-blue-800 dark:border-gray-300 dark:before:bg-blue-400 dark:checked:before:bg-blue-400 dark:text-gray-300" labelProps={{className: "dark:text-gray-300"}}/>
                             </div>
@@ -365,24 +404,44 @@ function ManageCard({ account, validator, reloadValidator }: { account: string; 
                                         label: "Reward Account",
                                         tooltip: "The accounts that your nodes rewards will be sent to. If not set, they will go to the nodes account.",
                                         value: rewardAccount,
-                                        onChange: (e) => setRewardAccount(e.target.value.trim()),
+                                        onChange: (e) => {
+                                            setRewardAccount(e.target.value.trim());
+                                            setRewardAccountError('');
+                                        },
                                     },
                                 ]}
-                            />{' '}
+                            />
+                            {rewardAccountError && (
+                                <Typography variant="paragraph" color="red" className="mt-1 text-sm font-normal">
+                                    {rewardAccountError}
+                                </Typography>
+                            )}
+
+                        </form>
+                    </CardBody>
+                    <CardFooter className="pt-0">
+                        <div className="flex flex-col gap-2">
+                            <Typography variant="paragraph" className="text-sm font-normal">
+                                <b>API URL (optional)</b>: URL that your node will be accessible from. Not setting this can discourage users from voting for your node.
+                            </Typography>
+                            <Typography variant="paragraph" className="text-sm font-normal">
+                                <b>Post URL (optional)</b>: PeakD post describing why users should vote for your node. Not setting this can discourage users from voting for your node.
+                            </Typography>
+                            <Typography variant="paragraph" className="text-sm font-normal">
+                                <b>Reward Account (optional)</b>: Leave blank to receive rewards to your own validator account. Set only if you want rewards sent to a different account.
+                            </Typography>
                             {!isActive && (
-                                <Typography variant="paragraph" color="red">
+                                <Typography variant="paragraph" color="red" className="text-sm font-normal">
                                     You will not be able to validate blocks and receive rewards if your node is inactive.
                                 </Typography>
                             )}
-                        </form>
-                    </CardBody>
-                    <CardFooter>
+                        </div>
                         {error && (
-                            <Typography variant="paragraph" color="red" className="mb-2 text-center">
+                            <Typography variant="paragraph" color="red" className="mb-2 text-center text-sm font-normal">
                                 {error}
                             </Typography>
                         )}
-                        <div className="flex items-center justify-start md:justify-end">
+                        <div className="flex items-center justify-end mt-4">
                             <Button className="flex flex-row items-center dark:bg-blue-800 dark:hover:bg-blue-600 dark:border-gray-300 dark:border dark:text-gray-300 dark:hover:text-gray-100 dark:shadow-none" variant="filled" disabled={progress} onClick={update}>
                                 {progress && <Spinner className="me-3 text-sm" color={spinnerColor}/>}
                                 Update

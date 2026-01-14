@@ -12,8 +12,9 @@ services:
     networks:
       - "postgres"
     restart: on-failure
+    shm_size: 256m
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready", "-d", "${POSTGRES_DB:-postgres}"]
+      test: ["CMD-SHELL", "pg_isready", "-d", "$$POSTGRES_DB"]
       interval: 30s
       timeout: 60s
       retries: 5
@@ -21,6 +22,7 @@ services:
     environment:
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
       POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      PGUSER: ${POSTGRES_USER:-postgres}
       POSTGRES_DB: ${POSTGRES_DB:-postgres}
       VALIDATOR_DB: ${APP_DATABASE:-validator}
 
@@ -35,12 +37,14 @@ services:
       - "validator"
     restart: on-failure
     environment:
-      VERSION: "${VERSION:-1.0.1}"
+      VERSION: "${VERSION:-1.3.0}"
       API_PORT: "3333"
+      API_DETAILED_ERRORS: ${API_DETAILED_ERRORS:-false}
       POSTGRES_PASSWORD: ${APP_PASSWORD:-validator}
       POSTGRES_USER: ${APP_USER:-validator}
       POSTGRES_DB: ${APP_DATABASE:-validator}
-      BLOCKS_BEHIND_HEAD: ${BLOCKS_BEHIND_HEAD:-1}
+      BLOCKS_BEHIND_HEAD: ${BLOCKS_BEHIND_HEAD:-3}
+      BLOCKS_HEAD_MODE: ${BLOCKS_HEAD_MODE:-irreversible}
       CUSTOM_JSON_PREFIX: ${CUSTOM_JSON_PREFIX:-sm_}
       LOGGING_LEVEL: ${LOGGING_LEVEL:-2}
       START_BLOCK: ${START_BLOCK:-}
@@ -49,8 +53,12 @@ services:
       HIVE_ENGINE_RPC_NODES: ${HIVE_ENGINE_RPC_NODES:-https://api.hive-engine.com/rpc,https://engine.rishipanthee.com,https://herpc.dtools.dev,https://ha.herpc.dtools.dev,https://api.primersion.com,https://herpc.kanibot.com,https://ctpmain.com,https://herpc.actifit.io}
       ETH_RPC_NODE: ${ETH_RPC_NODE:-https://eth-mainnet.public.blastapi.io}
       BSC_RPC_NODE: ${BSC_RPC_NODE:-https://bsc-dataseed.binance.org}
+      BASE_RPC_NODE: ${BASE_RPC_NODE:-https://mainnet.base.org}
       RPC_TIMEOUT: ${RPC_TIMEOUT:-5000}
       REPLAY_BATCH_SIZE: ${REPLAY_BATCH_SIZE:-25}
+      STREAM_SAFE_MODE: ${STREAM_SAFE_MODE:-false}
+      STREAM_SAFE_MODE_RETRY_ATTEMPTS: ${STREAM_SAFE_MODE_RETRY_ATTEMPTS:-5}
+      STREAM_SAFE_MODE_RETRY_DELAY_MS: ${STREAM_SAFE_MODE_RETRY_DELAY_MS:-1500}
       DB: '{ "host": "pg", "port": 5432, "database": "${APP_DATABASE:-validator}", "user": "${APP_USER:-validator}", "password": "${APP_PASSWORD:-validator}" }'
       VALIDATOR_ACCOUNT: ${VALIDATOR_ACCOUNT:-}
       VALIDATOR_KEY: ${VALIDATOR_KEY:-}
@@ -62,6 +70,13 @@ services:
       PRICE_FEED_COIN_MARKET_CAP_API_KEY: ${PRICE_FEED_COIN_MARKET_CAP_API_KEY:-}
       DB_BLOCK_RETENTION: ${DB_BLOCK_RETENTION:-}
       KILL_BLOCK: ${KILL_BLOCK:-}
+      FIX_VOTE_WEIGHT_TRANSITION_POINT: ${FIX_VOTE_WEIGHT_TRANSITION_POINT:-95026480}
+      BAD_BLOCK_96950550_TRANSITION_POINT: ${BAD_BLOCK_96950550_TRANSITION_POINT:-96950550}
+      BAD_BLOCK_101201159_TRANSITION_POINT: ${BAD_BLOCK_101201159_TRANSITION_POINT:-101201159}
+      BAD_BLOCK_101387262_TRANSITION_POINT: ${BAD_BLOCK_101387262_TRANSITION_POINT:-101387262}
+      VALIDATOR_TRANSITION_CLEANUP_TRANSITION_POINT: ${VALIDATOR_TRANSITION_CLEANUP_TRANSITION_POINT:-100342741}
+      ADJUST_TOKEN_DISTRIBUTION_STRATEGY_TRANSITION_POINT: ${ADJUST_TOKEN_DISTRIBUTION_STRATEGY_TRANSITION_POINT:-101928051}
+
     depends_on:
       - pg
 
@@ -87,7 +102,7 @@ services:
       APP_USER: ${APP_USER:-validator}
       APP_DATABASE: ${APP_DATABASE:-validator}
       APP_SCHEMA: ${APP_SCHEMA:-public}
-      DB_BLOCK_RETENTION: ${DB_BLOCK_RETENTION}
+      DB_BLOCK_RETENTION: ${DB_BLOCK_RETENTION:-}
 
   ui:
     build:

@@ -25,7 +25,7 @@ export class ApproveValidatorAction extends Action<typeof approve_validator.acti
     }
 
     async validate(trx?: Trx) {
-        const validator = await this.validatorRepository.lookup(this.params.account_name, trx);
+        const validator = await this.validatorRepository.lookup(this.params.account_name, this.op.block_num, trx);
 
         if (!validator) {
             throw new ValidationError('Specified validator not found.', this, ErrorType.UnknownValidator);
