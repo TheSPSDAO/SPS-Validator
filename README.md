@@ -207,7 +207,7 @@ The UI can be developed without running a local validator process, as long as yo
 - Run `npx nx serve sps-validator-ui` (defaults to http://localhost:4200)
 - Configure the API base URL (default is `http://localhost:3333`):
   - Recommended: copy `apps/sps-validator-ui/.env.example` to `apps/sps-validator-ui/.env.local` and set `VALIDATOR_API_URL`
-  - Or in your browser devtools: set `localStorage['api.url'] = 'https://your-validator-api-host'` (this overrides the env var)
+  - Or in your browser devtools: set `localStorage['api.url'] = JSON.stringify('https://your-validator-api-host')` (this overrides the env var)
 
 If the UI loads but shows no data and your browser console/network shows CORS errors, use the dev proxy:
 
