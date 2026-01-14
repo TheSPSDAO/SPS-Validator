@@ -21,12 +21,11 @@ export function BlockList({ className }: { className?: string }) {
     if (error) {
         return <Typography color="red">Error loading blocks: {error.message}</Typography>;
     }
-    if (isBlocksLoading && !blocks) {
+    if (isBlocksLoading && blocks === null) {
         return <Spinner color={spinnerColor} />;
     }
-    }
     if (blocks === null) {
-        return <div>Waiting for block data</div>;
+        return <Typography color="blue-gray">Waiting for block data</Typography>;
     }
     
     return (
