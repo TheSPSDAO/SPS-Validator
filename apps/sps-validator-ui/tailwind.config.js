@@ -8,8 +8,8 @@ const config = {
     theme: {
         extend: {
             screens: {
-                "3xl": "1660px",
-              },
+                '3xl': '1660px',
+            },
         },
     },
     darkMode: 'class',
