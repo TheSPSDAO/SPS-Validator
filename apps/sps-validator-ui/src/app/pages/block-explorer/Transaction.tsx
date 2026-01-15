@@ -16,7 +16,7 @@ import { useDarkMode } from '../../context/DarkModeContext';
 SyntaxHighlighter.registerLanguage('json', json);
 
 function TransactionInfo({ id: trxId, className }: { id: string | null; className?: string }) {
-    const spinnerColor = useSpinnerColor("blue");
+    const spinnerColor = useSpinnerColor('blue');
     const { darkMode } = useDarkMode();
     const containerRef = useRef<HTMLDivElement | null>(null);
     const [transaction, isTrxLoading] = usePromise(async () => {
@@ -61,7 +61,13 @@ function TransactionInfo({ id: trxId, className }: { id: string | null; classNam
                         <Typography variant="h5" color="blue-gray" className="leading-none break-all dark:text-gray-200">
                             Transaction {trxId}
                         </Typography>
-                        {transaction?.id.includes('_') && <Chip variant="outlined" value="virtual" className="ml-2 rounded-full inline italic dark:text-gray-300 dark:border-gray-300 dark:group-hover:text-gray-800 dark:group-hover:border-gray-800" />}
+                        {transaction?.id.includes('_') && (
+                            <Chip
+                                variant="outlined"
+                                value="virtual"
+                                className="ml-2 rounded-full inline italic dark:text-gray-300 dark:border-gray-300 dark:group-hover:text-gray-800 dark:group-hover:border-gray-800"
+                            />
+                        )}
                     </div>
 
                     {isTrxLoading && (
@@ -129,7 +135,7 @@ function TransactionInfo({ id: trxId, className }: { id: string | null; classNam
                                     </TableBody>
                                 </Table>
                             </div>
-                            <GradientOverflow isLoading={isTrxLoading} containerRef={containerRef}/>
+                            <GradientOverflow isLoading={isTrxLoading} containerRef={containerRef} />
                         </div>
                     )}
                 </CardBody>
@@ -140,7 +146,14 @@ function TransactionInfo({ id: trxId, className }: { id: string | null; classNam
                         Transaction Parameters
                         <InfoTooltip text="The custom_json parameters for this transaction." className="dark:text-gray-200" />
                     </Typography>
-                    <SyntaxHighlighter language="json" style={oneLight} wrapLongLines={true} wrapLines={true} customStyle={{ backgroundColor: darkMode ? '#e0e0e0' : '#fafafa' }} codeTagProps={{ style: { backgroundColor: darkMode ? '#e0e0e0' : '#fafafa' } }} >
+                    <SyntaxHighlighter
+                        language="json"
+                        style={oneLight}
+                        wrapLongLines={true}
+                        wrapLines={true}
+                        customStyle={{ backgroundColor: darkMode ? '#e0e0e0' : '#fafafa' }}
+                        codeTagProps={{ style: { backgroundColor: darkMode ? '#e0e0e0' : '#fafafa' } }}
+                    >
                         {prettyData}
                     </SyntaxHighlighter>
                 </CardBody>
@@ -150,11 +163,21 @@ function TransactionInfo({ id: trxId, className }: { id: string | null; classNam
                     <CardBody>
                         <Typography variant="h5" color="blue-gray" className="flex items-center gap-2 dark:text-gray-200">
                             Transaction Result
-                            <InfoTooltip text="The transaction result is a JSON object that records every database change that was made by the transaction. These changes are hashed into the block hash, which is used to make sure all of the validators agree on the state of the database." className="dark:text-gray-200" />
+                            <InfoTooltip
+                                text="The transaction result is a JSON object that records every database change that was made by the transaction. These changes are hashed into the block hash, which is used to make sure all of the validators agree on the state of the database."
+                                className="dark:text-gray-200"
+                            />
                         </Typography>
-                            <SyntaxHighlighter language="json" style={oneLight} wrapLongLines={true}  wrapLines={true} customStyle={{ backgroundColor: darkMode ? '#e0e0e0' : '#fafafa' }} codeTagProps={{ style: { backgroundColor: darkMode ? '#e0e0e0' : '#fafafa' } }} >
-                                {prettyResult}
-                            </SyntaxHighlighter>
+                        <SyntaxHighlighter
+                            language="json"
+                            style={oneLight}
+                            wrapLongLines={true}
+                            wrapLines={true}
+                            customStyle={{ backgroundColor: darkMode ? '#e0e0e0' : '#fafafa' }}
+                            codeTagProps={{ style: { backgroundColor: darkMode ? '#e0e0e0' : '#fafafa' } }}
+                        >
+                            {prettyResult}
+                        </SyntaxHighlighter>
                     </CardBody>
                 </Card>
             )}

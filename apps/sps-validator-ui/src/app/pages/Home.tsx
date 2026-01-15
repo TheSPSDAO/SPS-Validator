@@ -1,13 +1,13 @@
-import { Card, CardBody, List, ListItem, Spinner, Typography } from '@material-tailwind/react';
+import { Button, Card, CardBody, List, ListItem, Spinner, Typography } from '@material-tailwind/react';
 import { Link } from 'react-router-dom';
 import { usePromise } from '../hooks/Promise';
 import { DefaultService } from '../services/openapi';
 import React, { useRef } from 'react';
-import { Table, TableRow, TableBody, TableCell, TableHeader, GradientOverflow, TableHead, TableColumn } from '../components/Table';
+import { Table, TableRow, TableBody, TableCell, TableHeader, GradientOverflow } from '../components/Table';
 import { useMetrics } from '../context/MetricsContext';
 import { ValidatorName } from '../components/ValidatorName';
 import { localeNumber } from '../components/LocaleNumber';
-import { useSpinnerColor } from '../hooks/SpinnerColor'
+import { useSpinnerColor } from '../hooks/SpinnerColor';
 
 const usefulLinks = [
     { name: 'Splinterlands', url: 'https://splinterlands.com' },
@@ -24,7 +24,9 @@ function UsefulLinksCard() {
                 <List className="p-0 -mx-2 gap-0 min-w-0">
                     {usefulLinks.map((link) => (
                         <a key={link.url} href={link.url} target="_blank" rel="noopener noreferrer">
-                            <ListItem className="rounded-none border-gray-400 border-b-[1px] hover:bg-blue-gray-50 hover:text-gray-900 dark:text-gray-300 dark:hover:text-gray-800">{link.name}</ListItem>
+                            <ListItem className="rounded-none border-gray-400 border-b-[1px] hover:bg-blue-gray-50 hover:text-gray-900 dark:text-gray-300 dark:hover:text-gray-800">
+                                {link.name}
+                            </ListItem>
                         </a>
                     ))}
                 </List>
@@ -72,19 +74,38 @@ type TopValidatorsTableProps = {
 };
 
 function TopValidatorsTable(props: TopValidatorsTableProps) {
-    const [result, isLoading] = usePromise(() => DefaultService.getValidators(props.limit, undefined, undefined, props.active), [props.limit]);
-    const spinnerColor = useSpinnerColor("blue");
+    const [result, isLoading, error, reload] = usePromise(() => DefaultService.getValidators(props.limit, undefined, undefined, props.active), [props.limit, props.active]);
+    const spinnerColor = useSpinnerColor('blue');
     const containerRef = useRef<HTMLDivElement | null>(null);
-    
+
     if (isLoading) {
-        return <Spinner className="w-full dark:text-gray-500 " color={spinnerColor} />
+        return <Spinner className="w-full" color={spinnerColor} />;
+    }
+
+    if (error) {
+        return (
+            <div className="flex flex-col gap-2">
+                <Typography variant="paragraph" color="red" className="text-sm">
+                    Failed to load validators: {error.message}
+                </Typography>
+                <div>
+                    <Button
+                        size="sm"
+                        onClick={reload}
+                        className="dark:bg-blue-800 dark:hover:bg-blue-600 dark:border-gray-300 dark:border dark:text-gray-300 dark:hover:text-gray-100 dark:shadow-none"
+                    >
+                        Retry
+                    </Button>
+                </div>
+            </div>
+        );
     }
     const noValidators = result?.validators === undefined || result.validators.length === 0;
     return (
         <div className="relative">
             <div ref={containerRef} className="overflow-x-auto">
                 <Table className="w-full min-w-max p-4 border-2 border-gray-200 dark:bg-gray-800 dark:text-gray-300 dark:border-gray-300">
-                    <TableHeader columns={["Validator", "Acitve", "Missed Blocks", "Total Votes"]}/>
+                    <TableHeader columns={['Validator', 'Active', 'Missed Blocks', 'Total Votes']} />
                     <TableBody>
                         {noValidators && (
                             <TableRow>
@@ -112,7 +133,7 @@ function TopValidatorsTable(props: TopValidatorsTableProps) {
                     </TableBody>
                 </Table>
             </div>
-            <GradientOverflow containerRef={containerRef} isLoading={isLoading}/>
+            <GradientOverflow containerRef={containerRef} isLoading={isLoading} />
         </div>
     );
 }
@@ -123,24 +144,53 @@ type TopSpsHoldersTableProps = {
 };
 
 function TopSpsHoldersTable(props: TopSpsHoldersTableProps) {
-    const [balances, isLoading] = usePromise(() => DefaultService.getExtendedBalancesByToken('SPS_TOTAL', props.limit), [props.limit]);
-    const spinnerColor = useSpinnerColor("blue");
+    const [balances, isLoading, error, reload] = usePromise(() => DefaultService.getExtendedBalancesByToken('SPS_TOTAL', props.limit), [props.limit]);
+    const spinnerColor = useSpinnerColor('blue');
     const containerRef = useRef<HTMLDivElement | null>(null);
     if (isLoading) {
-        return <Spinner className="w-full dark:text-gray-500 " color={spinnerColor} />
+        return <Spinner className="w-full" color={spinnerColor} />;
     }
+
+    if (error) {
+        return (
+            <div className="flex flex-col gap-2">
+                <Typography variant="paragraph" color="red" className="text-sm">
+                    Failed to load balances: {error.message}
+                </Typography>
+                <div>
+                    <Button
+                        size="sm"
+                        onClick={reload}
+                        className="dark:bg-blue-800 dark:hover:bg-blue-600 dark:border-gray-300 dark:border dark:text-gray-300 dark:hover:text-gray-100 dark:shadow-none"
+                    >
+                        Retry
+                    </Button>
+                </div>
+            </div>
+        );
+    }
+
+    const noBalances = !balances?.balances || balances.balances.length === 0;
     return (
         <div className="relative">
             <div ref={containerRef} className="overflow-x-auto">
                 <Table className={props.className}>
-                    <TableHeader columns={["Player", "Balance"]} />
+                    <TableHeader columns={['Player', 'Balance']} />
                     <TableBody>
-                        {balances?.balances?.map((balance, index) => (
-                            <TableRow key={index} className="dark:border-gray-300">
-                                <TableCell>{balance.player}</TableCell>
-                                <TableCell>{localeNumber(balance.balance)}</TableCell>
+                        {noBalances && (
+                            <TableRow className="dark:border-gray-300">
+                                <TableCell colSpan={2} className="text-center">
+                                    No balances found
+                                </TableCell>
                             </TableRow>
-                        ))}
+                        )}
+                        {!noBalances &&
+                            balances?.balances?.map((balance) => (
+                                <TableRow key={balance.player} className="dark:border-gray-300">
+                                    <TableCell>{balance.player}</TableCell>
+                                    <TableCell>{localeNumber(balance.balance)}</TableCell>
+                                </TableRow>
+                            ))}
                     </TableBody>
                 </Table>
             </div>
@@ -150,15 +200,54 @@ function TopSpsHoldersTable(props: TopSpsHoldersTableProps) {
 }
 
 function UpcomingTransitionsCard(props: { className?: string }) {
-    const [result, isLoading] = usePromise(() => DefaultService.getTransitions(), []);
+    const [result, isLoading, error, reload] = usePromise(() => DefaultService.getTransitions(), []);
+    const spinnerColor = useSpinnerColor('blue');
     const transitions = result?.transition_points;
-    if (isLoading || !transitions) {
-        return;
+
+    if (isLoading) {
+        return (
+            <Card className={props.className}>
+                <CardBody>
+                    <Typography variant="h5" color="blue-gray" className="mb-2 dark:text-gray-200">
+                        Upcoming Transitions
+                    </Typography>
+                    <Spinner className="w-full" color={spinnerColor} />
+                </CardBody>
+            </Card>
+        );
+    }
+
+    if (error) {
+        return (
+            <Card className={props.className}>
+                <CardBody>
+                    <Typography variant="h5" color="blue-gray" className="mb-2 dark:text-gray-200">
+                        Upcoming Transitions
+                    </Typography>
+                    <Typography variant="paragraph" color="red" className="text-sm">
+                        Failed to load transitions: {error.message}
+                    </Typography>
+                    <div className="mt-3">
+                        <Button
+                            size="sm"
+                            onClick={reload}
+                            className="dark:bg-blue-800 dark:hover:bg-blue-600 dark:border-gray-300 dark:border dark:text-gray-300 dark:hover:text-gray-100 dark:shadow-none"
+                        >
+                            Retry
+                        </Button>
+                    </div>
+                </CardBody>
+            </Card>
+        );
+    }
+
+    if (!transitions) {
+        return null;
     }
 
     const upcomingTransitions = transitions.filter((transition) => !transition.transitioned && transition.blocks_until <= 432000);
     if (upcomingTransitions.length === 0) {
-        return;
+        return null;
     }
 
     return (
@@ -172,25 +261,7 @@ function UpcomingTransitionsCard(props: { className?: string }) {
                     software. If you are a validator node operator, you should be aware of these transitions and must be prepared to update your node before they occur.
                 </Typography>
                 <Table className="w-full mt-5 border-2 border-gray-200 dark:border-gray-300">
-                    <TableHead>
-                        <TableRow>
-                            <TableColumn>
-                                <Typography color="blue-gray" className="font-normal text-left dark:text-gray-800">
-                                    Transition
-                                </Typography>
-                            </TableColumn>
-                            <TableColumn>
-                                <Typography color="blue-gray" className="font-normal text-left dark:text-gray-800">
-                                    Block Num
-                                </Typography>
-                            </TableColumn>
-                            <TableColumn>
-                                <Typography color="blue-gray" className="font-normal text-left dark:text-gray-800">
-                                    Blocks Until
-                                </Typography>
-                            </TableColumn>
-                        </TableRow>
-                    </TableHead>
+                    <TableHeader columns={['Transition', 'Block Num', 'Blocks Until']} />
                     <TableBody>
                         {upcomingTransitions.map((transition) => (
                             <TableRow key={transition.transition}>
@@ -254,8 +325,8 @@ export function Home() {
                 </Card>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-1 col-span-full xl:col-span-1 gap-6 auto-rows-min">
-                {UsefulLinksCard()}
-                {MetricsCard()}
+                <UsefulLinksCard />
+                <MetricsCard />
             </div>
         </div>
     );

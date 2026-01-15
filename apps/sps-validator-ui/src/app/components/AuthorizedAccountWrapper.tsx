@@ -18,7 +18,7 @@ export function AuthorizedAccountWrapper(props: AuthorizedAccountWrapperProps) {
     const [workingAccount, setWorkingAccount] = useState(account);
     const [error, setError] = useState('');
     const [progress, setProgress] = useState(false);
-    const spinnerColor = useSpinnerColor("teal")
+    const spinnerColor = useSpinnerColor('teal');
 
     useEffect(() => {
         props.onAuthorized(authorized ? account : undefined);
@@ -60,7 +60,11 @@ export function AuthorizedAccountWrapper(props: AuthorizedAccountWrapperProps) {
         return (
             <div className="flex flex-col gap-4">
                 <div className="flex justify-end">
-                    <Button variant="outlined" onClick={reauthorize} className="dark:bg-blue-800 dark:hover:bg-blue-600 dark:border-gray-300 dark:border dark:text-gray-300 dark:hover:text-gray-100 dark:shadow-none">
+                    <Button
+                        variant="outlined"
+                        onClick={reauthorize}
+                        className="dark:bg-blue-800 dark:hover:bg-blue-600 dark:border-gray-300 dark:border dark:text-gray-300 dark:hover:text-gray-100 dark:shadow-none"
+                    >
                         Switch Account ({account})
                     </Button>
                 </div>
@@ -91,8 +95,11 @@ export function AuthorizedAccountWrapper(props: AuthorizedAccountWrapperProps) {
                                         }
                                     }}
                                     disabled={progress}
-                                    className="dark:text-gray-300 dark:border-gray-300 dark:placeholder-shown:border-t-gray-300 dark:focus:border-gray-200 dark:focus:border-t-transparent dark:placeholder:text-gray-300 dark:focus:placeholder:text-gray-500 dark:border-t-transparent dark:disabled:text-gray-800" 
-                                    labelProps={{className: "dark:peer-placeholder-shown:text-gray-300 dark:placeholder:text-gray-300 dark:text-gray-300 dark:peer-focus:text-gray-300 dark:peer-focus:before:!border-gray-200 dark:peer-focus:after:!border-gray-200 dark:before:border-gray-300 dark:after:border-gray-300"}}
+                                    className="dark:text-gray-300 dark:border-gray-300 dark:placeholder-shown:border-t-gray-300 dark:focus:border-gray-200 dark:focus:border-t-transparent dark:placeholder:text-gray-300 dark:focus:placeholder:text-gray-500 dark:border-t-transparent dark:disabled:text-gray-800"
+                                    labelProps={{
+                                        className:
+                                            'dark:peer-placeholder-shown:text-gray-300 dark:placeholder:text-gray-300 dark:text-gray-300 dark:peer-focus:text-gray-300 dark:peer-focus:before:!border-gray-200 dark:peer-focus:after:!border-gray-200 dark:before:border-gray-300 dark:after:border-gray-300',
+                                    }}
                                 />
                             </div>
                         </form>
@@ -104,8 +111,13 @@ export function AuthorizedAccountWrapper(props: AuthorizedAccountWrapperProps) {
                             </Typography>
                         )}
                         <div className="flex items-center justify-end">
-                            <Button className="flex flex-row items-center dark:bg-blue-800 dark:hover:bg-blue-600 dark:border-gray-300 dark:border dark:text-gray-300 dark:hover:text-gray-100 dark:shadow-none" variant="filled" disabled={!workingAccount || progress} onClick={authorize}>
-                                {progress && <Spinner className="me-3 text-sm dark:border-gray-300 dark:border-t-transparent" color={spinnerColor}/>}
+                            <Button
+                                className="flex flex-row items-center dark:bg-blue-800 dark:hover:bg-blue-600 dark:border-gray-300 dark:border dark:text-gray-300 dark:hover:text-gray-100 dark:shadow-none"
+                                variant="filled"
+                                disabled={!workingAccount || progress}
+                                onClick={authorize}
+                            >
+                                {progress && <Spinner className="me-3 text-sm dark:border-gray-300 dark:border-t-transparent" color={spinnerColor} />}
                                 Authorize
                             </Button>
                         </div>

@@ -32,7 +32,7 @@ import { Block } from './pages/block-explorer/Block';
 import { Transaction } from './pages/block-explorer/Transaction';
 import { Account } from './pages/block-explorer/Account';
 import { DarkModeProvider } from './context/DarkModeContext';
-import { useMediaQuery } from "react-responsive";
+import { useMediaQuery } from 'react-responsive';
 
 function AppRoutes() {
     return (
@@ -153,45 +153,43 @@ function useTickers() {
     return tickers;
 }
 
-function BackToTopButton({ scrollDivRef }: { scrollDivRef: React.RefObject<HTMLDivElement> } ) {
+function BackToTopButton({ scrollDivRef }: { scrollDivRef: React.RefObject<HTMLDivElement> }) {
     const [isVisible, setIsVisible] = useState(false);
-  
+
     useEffect(() => {
+        const element = scrollDivRef.current;
+        if (!element) return;
+
         const handleScroll = () => {
-          if (scrollDivRef.current && scrollDivRef.current.scrollTop > 1000) {
-            setIsVisible(true);
-          } else {
-            setIsVisible(false);
-          }
-        };
-    
-        if (scrollDivRef.current) {
-          scrollDivRef.current.addEventListener('scroll', handleScroll);
-    
-          return () => {
-            if(scrollDivRef.current){
-              scrollDivRef.current.removeEventListener('scroll', handleScroll);
+            if (element.scrollTop > 1000) {
+                setIsVisible(true);
+            } else {
+                setIsVisible(false);
             }
-          };
-        }
-      }, []);
-    
-      const scrollToTop = () => {
+        };
+
+        element.addEventListener('scroll', handleScroll);
+        return () => element.removeEventListener('scroll', handleScroll);
+    }, [scrollDivRef]);
+
+    const scrollToTop = () => {
         if (scrollDivRef.current) {
-          scrollDivRef.current.scrollTo({
-            top: 0,
-            behavior: 'smooth',
-          });
+            scrollDivRef.current.scrollTo({
+                top: 0,
+                behavior: 'smooth',
+            });
         }
-      };
-  
+    };
+
     return (
-        <div
+        <button
+            type="button"
+            aria-label="Back to top"
             className={`fixed bottom-8 right-8 cursor-pointer transition-opacity duration-300 md:hidden ${isVisible ? 'block' : 'hidden'}`}
             onClick={scrollToTop}
         >
             <ChevronUpIcon className="h-8 w-8 rounded-full p-1 bg-black text-white dark:bg-blue-800 dark:border-gray-300 dark:border dark:text-gray-300" />
-        </div>
+        </button>
     );
 }
 
@@ -223,11 +221,7 @@ function AppContent({ mobileSidebarOpen, setMobileSidebarOpen }: { mobileSidebar
 
     useEffect(() => {
         function handleClickOutside(event: MouseEvent) {
-            if (
-                sidebarRef.current &&
-                !sidebarRef.current.contains(event.target as Node) &&
-                !toggleButtonRef.current?.contains(event.target as Node)
-            ) {
+            if (sidebarRef.current && !sidebarRef.current.contains(event.target as Node) && !toggleButtonRef.current?.contains(event.target as Node)) {
                 setMobileSidebarOpen(false);
             }
         }
@@ -237,29 +231,23 @@ function AppContent({ mobileSidebarOpen, setMobileSidebarOpen }: { mobileSidebar
                 handleClickOutside(event);
             }
         }
-        
-        if (mobileSidebarOpen && overlayRef.current) {
-            overlayRef.current.addEventListener('mousedown', handleOverlayClick);
-        }
 
-        return () => {
-            if (overlayRef.current) {
-                overlayRef.current.removeEventListener('mousedown', handleOverlayClick);
-            }
-        };
+        const overlayElement = overlayRef.current;
+        if (!mobileSidebarOpen || !overlayElement) return;
+
+        overlayElement.addEventListener('mousedown', handleOverlayClick);
+        return () => overlayElement.removeEventListener('mousedown', handleOverlayClick);
     }, [mobileSidebarOpen, setMobileSidebarOpen]);
-
 
     return (
         <div ref={contentRef} className="h-screen w-full flex flex-col overflow-x-auto">
-            <AppNavbar 
-                tickers={tickers} 
+            <AppNavbar
+                tickers={tickers}
                 toggleSidebar={(event) => {
                     event.stopPropagation();
                     setMobileSidebarOpen((prev) => !prev);
                 }}
                 toggleButtonRef={toggleButtonRef}
-                 
             />
             <div className="flex-grow flex relative dark:bg-gray-900">
                 <AppSidebar ref={sidebarRef} isMobileOpen={mobileSidebarOpen}>

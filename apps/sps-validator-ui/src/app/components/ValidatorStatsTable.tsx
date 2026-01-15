@@ -14,7 +14,7 @@ export function ValidatorStatsTable({ validator, className }: { validator: Valid
         <div className="relative">
             <div ref={containerRef} className="overflow-x-auto">
                 <Table className={`border-2 border-gray-200 dark:border-gray-300 ${className}`}>
-                    <TableHeader columns={["Field", "Value"]} />
+                    <TableHeader columns={['Field', 'Value']} />
                     <TableBody>
                         <TableRow className="dark:border-gray-300">
                             <TableCell>Account</TableCell>
@@ -67,7 +67,7 @@ export function ValidatorStatsTable({ validator, className }: { validator: Valid
                     </TableBody>
                 </Table>
             </div>
-            <GradientOverflow containerRef={containerRef} isLoading={loading}/>
+            <GradientOverflow containerRef={containerRef} isLoading={loading} />
         </div>
     );
 }

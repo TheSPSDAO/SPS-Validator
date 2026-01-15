@@ -7,7 +7,7 @@ import { localeNumber } from './LocaleNumber';
 
 export function ValidatorVotesTable({ account, className }: { account: string; className?: string }) {
     const [page, setPage] = useState(0);
-    const [limit, setLimit] = useState(10); // TODO: Add a limit selector
+    const [limit] = useState(10); // TODO: Add a limit selector
     const [votes, loading] = usePromise(() => DefaultService.getVotesByValidator(account), [account]);
     const containerRef = useRef<HTMLDivElement | null>(null);
     if (loading) {
@@ -19,7 +19,7 @@ export function ValidatorVotesTable({ account, className }: { account: string; c
         <div className="relative">
             <div ref={containerRef} className="overflow-x-auto">
                 <Table className={`border-2 border-gray-200 dark:border-gray-300 ${className}`}>
-                    <TableHeader columns={["Account", voteWeightHeader]} />
+                    <TableHeader columns={['Account', voteWeightHeader]} />
                     <TableBody>
                         {votes?.length === 0 && (
                             <TableRow className="dark:border-gray-300">
@@ -37,10 +37,18 @@ export function ValidatorVotesTable({ account, className }: { account: string; c
                     </TableBody>
                 </Table>
                 {votes && votes.length >= limit && (
-                    <TablePager className="w-full justify-center mt-3" page={page} limit={limit} displayPageCount={2} onPageChange={setPage} count={votes.length} containerRef={containerRef} />
+                    <TablePager
+                        className="w-full justify-center mt-3"
+                        page={page}
+                        limit={limit}
+                        displayPageCount={2}
+                        onPageChange={setPage}
+                        count={votes.length}
+                        containerRef={containerRef}
+                    />
                 )}
             </div>
-            <GradientOverflow containerRef={containerRef} isLoading={loading}/>
+            <GradientOverflow containerRef={containerRef} isLoading={loading} />
         </div>
     );
 }

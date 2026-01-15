@@ -7,7 +7,7 @@ import { DefaultService, ValidatorConfig, ValidatorVote } from '../services/open
 import { Table, TableBody, TableCell, TableHeader, TablePager, TableRow, GradientOverflow } from '../components/Table';
 import { TxLookupService } from '../services/TxLookupService';
 import { Link, useSearchParams } from 'react-router-dom';
-import { useSpinnerColor } from '../hooks/SpinnerColor'
+import { useSpinnerColor } from '../hooks/SpinnerColor';
 import { MagnifyingGlassIcon, TrashIcon, EyeIcon } from '@heroicons/react/24/solid';
 import { ValidatorName } from '../components/ValidatorName';
 import { localeNumber } from '../components/LocaleNumber';
@@ -18,7 +18,7 @@ async function handleVoteAction(
     action: 'disapprove' | 'approve',
     setProgress: React.Dispatch<React.SetStateAction<boolean>>,
     setError: React.Dispatch<React.SetStateAction<string>>,
-    reloadVotes: () => void
+    reloadVotes: () => void,
 ): Promise<void> {
     setError('');
     setProgress(true);
@@ -33,17 +33,19 @@ async function handleVoteAction(
                 account_name: validator,
             });
         }
-  
-        if (broadcastResult.error || !broadcastResult.result) {
+
+        const txId = broadcastResult.result?.id;
+        if (broadcastResult.error || !txId) {
             throw new Error(broadcastResult.error ?? 'There was an error broadcasting the transaction');
         }
-        const txResult = await TxLookupService.waitForTx(broadcastResult.result!.id);
+
+        const txResult = await TxLookupService.waitForTx(txId);
         if (!txResult.success) {
             throw new Error(txResult.error ?? 'There was an error broadcasting the transaction');
         }
         reloadVotes();
-    } catch (err) {
-        setError(err!.toString());
+    } catch (err: unknown) {
+        setError(err instanceof Error ? err.message : String(err));
     } finally {
         setProgress(false);
     }
@@ -67,9 +69,9 @@ function VoteCard({
     const [page, setPage] = useState(0);
     const limit = 10;
     const [search, setSearch] = useState('');
-    const [count, isLoadingCount] = usePromise(() => DefaultService.getValidators(0, 0, search), [search]);
-    const [result, isLoading] = usePromise(() => DefaultService.getValidators(limit, page * limit, search), [search, limit, page]);
-    const spinnerColor = useSpinnerColor("blue")
+    const [count, isLoadingCount, countError, reloadCount] = usePromise(() => DefaultService.getValidators(0, 0, search), [search]);
+    const [result, isLoading, listError, reloadList] = usePromise(() => DefaultService.getValidators(limit, page * limit, search), [search, limit, page]);
+    const spinnerColor = useSpinnerColor('blue');
     const containerRef = useRef<HTMLDivElement | null>(null);
 
     const [workingSearch, setWorkingSearch] = useState('');
@@ -88,10 +90,41 @@ function VoteCard({
     };
 
     if (isLoading || isLoadingCount) {
-        return <Spinner className="w-full" color={spinnerColor}/>;
-    };
+        return <Spinner className="w-full" color={spinnerColor} />;
+    }
+
+    const loadError = listError ?? countError;
+    if (loadError) {
+        return (
+            <Card className="3xl:col-span-3 dark:bg-gray-800 dark:text-gray-300 dark:shadow-none">
+                <CardBody>
+                    <Typography variant="h5" color="blue-gray" className="mb-2 dark:text-gray-200">
+                        Vote for Validator
+                    </Typography>
+                    <Typography variant="paragraph" color="red" className="text-sm">
+                        Failed to load validators: {loadError.message}
+                    </Typography>
+                </CardBody>
+                <CardFooter>
+                    <div className="flex justify-end">
+                        <Button
+                            size="sm"
+                            onClick={() => {
+                                reloadList();
+                                reloadCount();
+                            }}
+                            className="dark:bg-blue-800 dark:hover:bg-blue-600 dark:border-gray-300 dark:border dark:text-gray-300 dark:hover:text-gray-100 dark:shadow-none"
+                        >
+                            Retry
+                        </Button>
+                    </div>
+                </CardFooter>
+            </Card>
+        );
+    }
 
     const noValidators = result?.validators === undefined || result.validators.length === 0;
+    const emptyMessage = search.trim() ? `No validators found for "${search.trim()}".` : 'No validators found.';
 
     return (
         <Card className="3xl:col-span-3 dark:bg-gray-800 dark:text-gray-300 dark:shadow-none">
@@ -132,30 +165,35 @@ function VoteCard({
                 </div>
 
                 <form className="mt-4 w-full sm:max-w-[400px] flex justify-self-end gap-4" onSubmit={updateSearch}>
-                    <Input 
-                        value={workingSearch} 
-                        onChange={(e) => setWorkingSearch(e.target.value)} 
-                        label="Account" 
-                        placeholder="Account" 
-                        className="flex-grow-1 dark:text-gray-300 dark:border-gray-300 dark:placeholder-shown:border-t-gray-300 dark:focus:border-gray-200 dark:focus:border-t-transparent dark:placeholder:text-gray-300 dark:focus:placeholder:text-gray-500 dark:border-t-transparent" 
-                        labelProps={{className: "dark:peer-placeholder-shown:text-gray-300 dark:placeholder:text-gray-300 dark:text-gray-300 dark:peer-focus:text-gray-300 dark:peer-focus:before:!border-gray-200 dark:peer-focus:after:!border-gray-200 dark:before:border-gray-300 dark:after:border-gray-300"}} 
+                    <Input
+                        value={workingSearch}
+                        onChange={(e) => setWorkingSearch(e.target.value)}
+                        label="Account"
+                        placeholder="Account"
+                        className="flex-grow-1 dark:text-gray-300 dark:border-gray-300 dark:placeholder-shown:border-t-gray-300 dark:focus:border-gray-200 dark:focus:border-t-transparent dark:placeholder:text-gray-300 dark:focus:placeholder:text-gray-500 dark:border-t-transparent"
+                        labelProps={{
+                            className:
+                                'dark:peer-placeholder-shown:text-gray-300 dark:placeholder:text-gray-300 dark:text-gray-300 dark:peer-focus:text-gray-300 dark:peer-focus:before:!border-gray-200 dark:peer-focus:after:!border-gray-200 dark:before:border-gray-300 dark:after:border-gray-300',
+                        }}
                     />
-                    <Button className="p-2 sm:w-32 dark:bg-blue-800 dark:hover:bg-blue-600 dark:border-gray-300 dark:border dark:text-gray-300 dark:hover:text-gray-100 dark:shadow-none" type="submit">
-                        <MagnifyingGlassIcon className="sm:hidden size-6"/>
+                    <Button
+                        className="p-2 sm:w-32 dark:bg-blue-800 dark:hover:bg-blue-600 dark:border-gray-300 dark:border dark:text-gray-300 dark:hover:text-gray-100 dark:shadow-none"
+                        type="submit"
+                    >
+                        <MagnifyingGlassIcon className="sm:hidden size-6" />
                         <p className="sr-only sm:not-sr-only">Search</p>
-                    
                     </Button>
                 </form>
                 <div className="relative mt-4">
                     <div ref={containerRef} className="overflow-x-auto">
                         <Table className="w-full border-2 border-gray-200 dark:bg-gray-800 dark:text-gray-300 dark:border-gray-300">
-                            <TableHeader columns={["Validator", "Last Version", "Active", "Missed Blocks", "Total Votes", ""]} />
+                            <TableHeader columns={['Validator', 'Last Version', 'Active', 'Missed Blocks', 'Total Votes', '']} />
                             <TableBody>
                                 {noValidators && (
                                     <TableRow className="dark:border-gray-300">
-                                        <TableCell colSpan={4}>
+                                        <TableCell colSpan={6}>
                                             <Typography color="blue-gray" className="text-center dark:text-gray-300">
-                                                No validators registered. You can register your validator{' '}
+                                                {emptyMessage} You can register your validator{' '}
                                                 <Link to="/validator-nodes/manage" className="text-blue-600 underline dark:text-blue-500">
                                                     here.
                                                 </Link>
@@ -174,34 +212,33 @@ function VoteCard({
                                         <TableCell>{localeNumber(validator.total_votes)}</TableCell>
                                         <TableCell>
                                             <div className="flex flex-col md:flex-row justify-center align-middle">
-                                                <Button 
-                                                    disabled={progress} 
-                                                    onClick={() => onNodeSelected(validator.account_name)} 
-                                                    size="sm" 
+                                                <Button
+                                                    disabled={progress}
+                                                    onClick={() => onNodeSelected(validator.account_name)}
+                                                    size="sm"
                                                     className="md:me-2 mb-2 md:mb-0 dark:bg-blue-800 dark:hover:bg-blue-600 dark:border-gray-300 dark:border dark:text-gray-300 dark:hover:text-gray-100 dark:shadow-none"
                                                 >
                                                     View
                                                 </Button>
-                                                {
-                                                    votes.some((v) => v.validator === validator.account_name) ?
-                                                        <Button
-                                                            disabled={progress}
-                                                            onClick={() => removeVote(validator.account_name)}
-                                                            size="sm"
-                                                            className="dark:bg-red-800 dark:hover:bg-red-600 dark:border-gray-300 dark:border dark:text-gray-300 dark:hover:text-gray-100 dark:shadow-none !text-nowrap text-white"
-                                                        >
-                                                            Remove Vote
-                                                        </Button>
-                                                        :
-                                                        <Button
-                                                            disabled={progress}
-                                                            onClick={() =>voteFor(validator.account_name)}
-                                                            size="sm"
-                                                            className="dark:bg-blue-800 dark:hover:bg-blue-600 dark:border-gray-300 dark:border dark:text-gray-300 dark:hover:text-gray-100 dark:shadow-none"
-                                                        >
-                                                            Vote
-                                                        </Button>
-                                                }
+                                                {votes.some((v) => v.validator === validator.account_name) ? (
+                                                    <Button
+                                                        disabled={progress}
+                                                        onClick={() => removeVote(validator.account_name)}
+                                                        size="sm"
+                                                        className="dark:bg-red-800 dark:hover:bg-red-600 dark:border-gray-300 dark:border dark:text-gray-300 dark:hover:text-gray-100 dark:shadow-none !text-nowrap text-white"
+                                                    >
+                                                        Remove Vote
+                                                    </Button>
+                                                ) : (
+                                                    <Button
+                                                        disabled={progress}
+                                                        onClick={() => voteFor(validator.account_name)}
+                                                        size="sm"
+                                                        className="dark:bg-blue-800 dark:hover:bg-blue-600 dark:border-gray-300 dark:border dark:text-gray-300 dark:hover:text-gray-100 dark:shadow-none"
+                                                    >
+                                                        Vote
+                                                    </Button>
+                                                )}
                                             </div>
                                         </TableCell>
                                     </TableRow>
@@ -211,7 +248,17 @@ function VoteCard({
                     </div>
                     <GradientOverflow isLoading={isLoading} containerRef={containerRef} />
                 </div>
-                {count?.count && <TablePager className="w-full justify-center mt-3" page={page} limit={limit} displayPageCount={2} onPageChange={setPage} count={count?.count} containerRef={containerRef} />}
+                {count?.count && (
+                    <TablePager
+                        className="w-full justify-center mt-3"
+                        page={page}
+                        limit={limit}
+                        displayPageCount={2}
+                        onPageChange={setPage}
+                        count={count?.count}
+                        containerRef={containerRef}
+                    />
+                )}
             </CardBody>
         </Card>
     );
@@ -232,9 +279,11 @@ function MyVotesCard({
 }) {
     const [progress, setProgress] = useState<boolean>(false);
     const [error, setError] = useState<string>('');
-    const spinnerColor = useSpinnerColor("teal");
+    const spinnerColor = useSpinnerColor('teal');
     const containerRef = useRef<HTMLDivElement | null>(null);
-    
+
+    const noVotes = votes.length === 0;
+
     const removeVote = async (validator: string) => {
         await handleVoteAction(validator, 'disapprove', setProgress, setError, reloadVotes);
     };
@@ -258,22 +307,38 @@ function MyVotesCard({
                 <div className="relative">
                     <div ref={containerRef} className="overflow-x-auto">
                         <Table className="w-full border-2 border-gray-200 dark:bg-gray-800 dark:text-gray-300 dark:border-gray-300">
-                            <TableHeader columns={["Validator", "Vote Weight", ""]} />
+                            <TableHeader columns={['Validator', 'Vote Weight', '']} />
                             <TableBody>
+                                {noVotes && (
+                                    <TableRow className="dark:border-gray-300">
+                                        <TableCell colSpan={3} className="text-center">
+                                            You have not voted for any validators yet.
+                                        </TableCell>
+                                    </TableRow>
+                                )}
                                 {votes.map((vote) => (
-                                    <TableRow key={vote.validator}  className="dark:border-gray-300">
+                                    <TableRow key={vote.validator} className="dark:border-gray-300">
                                         <TableCell>{vote.validator}</TableCell>
                                         <TableCell>{localeNumber(vote.vote_weight)}</TableCell>
                                         <TableCell>
                                             <div className="flex justify-center">
-                                                <Button disabled={progress} onClick={() => onNodeSelected(vote.validator)} size="sm" className="me-2 p-2 sm:px-4 dark:bg-blue-800 dark:hover:bg-blue-600 dark:border-gray-300 dark:border dark:text-gray-300 dark:hover:text-gray-100 dark:shadow-none">
+                                                <Button
+                                                    disabled={progress}
+                                                    onClick={() => onNodeSelected(vote.validator)}
+                                                    size="sm"
+                                                    className="me-2 p-2 sm:px-4 dark:bg-blue-800 dark:hover:bg-blue-600 dark:border-gray-300 dark:border dark:text-gray-300 dark:hover:text-gray-100 dark:shadow-none"
+                                                >
                                                     <EyeIcon className="sm:hidden size-6" />
                                                     <p className="sr-only sm:not-sr-only">View</p>
                                                 </Button>
-                                                <Button className="p-2 sm:px-4 dark:bg-red-800 dark:hover:bg-red-600 dark:border-gray-300 dark:border dark:text-gray-300 dark:hover:text-gray-100 dark:shadow-none" disabled={progress} onClick={() => removeVote(vote.validator)}>
+                                                <Button
+                                                    className="p-2 sm:px-4 dark:bg-red-800 dark:hover:bg-red-600 dark:border-gray-300 dark:border dark:text-gray-300 dark:hover:text-gray-100 dark:shadow-none"
+                                                    disabled={progress}
+                                                    onClick={() => removeVote(vote.validator)}
+                                                >
                                                     <div className="flex flex-row items-center">
                                                         {progress && <Spinner className="me-3" width={16} height={16} color={spinnerColor} />}
-                                                        <TrashIcon className="sm:hidden size-6"/>
+                                                        <TrashIcon className="sm:hidden size-6" />
                                                         <p className="sr-only sm:not-sr-only">Remove Vote</p>
                                                     </div>
                                                 </Button>
@@ -297,7 +362,7 @@ export function ManageVotes() {
     const [validatorConfig, validatorConfigLoading, validatorConfigError, reloadConfig] = usePromise(() => DefaultService.getValidatorConfig(), []);
     const loaded = !votesLoading && !validatorConfigLoading && account && votes && validatorConfig;
     const error = (votesError || validatorConfigError)?.message;
-    const spinnerColor = useSpinnerColor("blue")
+    const spinnerColor = useSpinnerColor('blue');
     const reloadAll = () => {
         reloadVotes();
         reloadConfig();
@@ -326,7 +391,11 @@ export function ManageVotes() {
                         </CardBody>
                         <CardFooter>
                             <div className="flex flex-row justify-end gap-4">
-                                <Button onClick={reloadAll} size="sm" className="dark:bg-blue-800 dark:hover:bg-blue-600 dark:border-gray-300 dark:border dark:text-gray-300 dark:hover:text-gray-100 dark:shadow-none">
+                                <Button
+                                    onClick={reloadAll}
+                                    size="sm"
+                                    className="dark:bg-blue-800 dark:hover:bg-blue-600 dark:border-gray-300 dark:border dark:text-gray-300 dark:hover:text-gray-100 dark:shadow-none"
+                                >
                                     Retry
                                 </Button>
                             </div>

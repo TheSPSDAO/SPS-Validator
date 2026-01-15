@@ -1,19 +1,28 @@
-import { color } from "@material-tailwind/react/types/components/spinner";
-import { useState, useEffect } from "react";
+import { color } from '@material-tailwind/react/types/components/spinner';
+import { useState, useEffect } from 'react';
 
-export function useSpinnerColor(defaultColor: color = "blue") {
-  const isDarkMode = document.documentElement.classList.contains("dark");
-  const [spinnerColor, setSpinnerColor] = useState<color | undefined>(
-    isDarkMode ? defaultColor : undefined
-  );
+export function useSpinnerColor(defaultColor: color = 'blue') {
+    const [spinnerColor, setSpinnerColor] = useState<color | undefined>(() => {
+        return document.documentElement.classList.contains('dark') ? defaultColor : undefined;
+    });
 
-  useEffect(() => {
-    if (document.documentElement.classList.contains("dark")) {
-      setSpinnerColor(defaultColor);
-    } else {
-      setSpinnerColor(undefined);
-    }
-  }, [defaultColor]);
+    useEffect(() => {
+        const compute = () => (document.documentElement.classList.contains('dark') ? defaultColor : undefined);
 
-  return spinnerColor;
+        setSpinnerColor(compute());
+
+        const observer = new MutationObserver(() => {
+            setSpinnerColor((prev) => {
+                const next = compute();
+                return prev === next ? prev : next;
+            });
+        });
+
+        observer.observe(document.documentElement, { attributes: true, attributeFilter: ['class'] });
+        return () => {
+            observer.disconnect();
+        };
+    }, [defaultColor]);
+
+    return spinnerColor;
 }

@@ -1,7 +1,7 @@
-import { Dialog, DialogHeader, DialogBody } from "@material-tailwind/react";
-import { Typography } from "@material-tailwind/react";
-import { ValidatorStatsTable } from "./ValidatorStatsTable";
-import { ValidatorVotesTable } from "./ValidatorVotesTable";
+import { Dialog, DialogHeader, DialogBody } from '@material-tailwind/react';
+import { Typography } from '@material-tailwind/react';
+import { ValidatorStatsTable } from './ValidatorStatsTable';
+import { ValidatorVotesTable } from './ValidatorVotesTable';
 
 interface ValidatorDialogProps {
     open: boolean;
