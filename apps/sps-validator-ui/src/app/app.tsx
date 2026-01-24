@@ -185,7 +185,7 @@ function BackToTopButton({ scrollDivRef }: { scrollDivRef: React.RefObject<HTMLD
         <button
             type="button"
             aria-label="Back to top"
-            className={`fixed bottom-8 right-8 cursor-pointer transition-opacity duration-300 md:hidden ${isVisible ? 'block' : 'hidden'}`}
+            className={`fixed z-50 bottom-8 right-8 cursor-pointer transition-opacity duration-300 md:hidden ${isVisible ? 'block' : 'hidden'}`}
             onClick={scrollToTop}
         >
             <ChevronUpIcon className="h-8 w-8 rounded-full p-1 bg-black text-white dark:bg-blue-800 dark:border-gray-300 dark:border dark:text-gray-300" />
