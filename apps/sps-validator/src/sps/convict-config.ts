@@ -576,6 +576,12 @@ const schema = {
             default: 101928051,
             env: 'ADJUST_TOKEN_DISTRIBUTION_STRATEGY_TRANSITION_POINT',
         },
+        fix_multi_undelegate_crash: {
+            doc: 'Block number for the fix_multi_undelegate_crash transition',
+            format: 'nat',
+            default: 103680250,
+            env: 'FIX_MULTI_UNDELEGATE_CRASH_TRANSITION_POINT',
+        },
     },
 };
 
