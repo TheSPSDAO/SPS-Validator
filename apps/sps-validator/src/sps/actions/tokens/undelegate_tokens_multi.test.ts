@@ -311,3 +311,49 @@ test.dbOnly('Token delegation using posting key fails.', async () => {
     expect(active_delegation1_record_after.last_undelegation_date).toBeNull();
     expect(active_delegation1_record_after.last_undelegation_tx).toBeNull();
 });
+
+test.dbOnly('Duplicate undelegation entries in the same undelegate_tokens_multi tx does not crash.', async () => {
+    const accountA = 'account-a';
+    const accountB = 'account-b';
+    const delegated_amount = 1000;
+
+    await fixture.testHelper.setHiveAccount(accountA);
+    await fixture.testHelper.setHiveAccount(accountB);
+    await fixture.testHelper.setStaked(accountA, delegated_amount);
+    await fixture.testHelper.setDelegatedOut(accountA, 0);
+    await fixture.testHelper.setDelegatedIn(accountA, 0);
+    await fixture.testHelper.setStaked(accountB, 0);
+    await fixture.testHelper.setDelegatedOut(accountB, 0);
+    await fixture.testHelper.setDelegatedIn(accountB, 0);
+    await fixture.testHelper.setActiveDelegationRecord(accountA, accountB, TOKENS.SPSP, delegated_amount);
+
+    await fixture.loader.load();
+
+    const block_time = new Date();
+    // there is an undelegation cooldown, so set this block_time beyond that.
+    block_time.setTime(block_time.getTime() + 8 * 24 * 60 * 60 * 1000);
+
+    // Two identical undelegation entries for the full delegated amount in the same tx.
+    // Each entry individually passes validation (1000 <= 1000), but the total (2000) exceeds the delegation.
+    await expect(
+        fixture.opsHelper.processOp(
+            'undelegate_tokens_multi',
+            accountA,
+            {
+                token: 'SPSP',
+                data: [
+                    { from: accountB, qty: delegated_amount },
+                    { from: accountB, qty: delegated_amount },
+                ],
+            },
+            { block_num: 103680250, block_time },
+        ),
+    ).resolves.toBeUndefined();
+
+    const active_delegation_record_after = (await fixture.testHelper.getActiveDelegationRecord(accountA, accountB, TOKENS.SPSP))!;
+
+    // No changes — the operation should fail gracefully without crashing
+    expect(Number(active_delegation_record_after.amount)).toBe(delegated_amount);
+    expect(active_delegation_record_after.last_undelegation_date).toBeNull();
+    expect(active_delegation_record_after.last_undelegation_tx).toBeNull();
+});

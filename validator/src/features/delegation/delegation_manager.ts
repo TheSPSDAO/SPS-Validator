@@ -52,6 +52,10 @@ export class DelegationManager {
         private readonly delegationRepository: ActiveDelegationsRepository,
     ) {}
 
+    shouldGroupTransfersInMultiOps(block_num: number): boolean {
+        return false;
+    }
+
     async validateDelegationPromise(request: Pick<DelegateTokensRequest, 'to' | 'qty' | 'token'>, action: IAction, trx?: Trx): Promise<Result<void, Error>> {
         const tokenEntry = TokenSupport.entry(this.tokenSupport.tokens, request.token);
         if (!tokenEntry || !tokenEntry.delegation) {
@@ -119,8 +123,20 @@ export class DelegationManager {
             return Result.Err(new ValidationError('Cannot delegate tokens to yourself.', action, ErrorType.CannotDelegateToSelf));
         }
 
+        let delegations = request.to;
+        if (this.shouldGroupTransfersInMultiOps(action.op.block_num)) {
+            const toGrouped = request.to.reduce((acc, [to, qty]) => {
+                if (!acc[to]) {
+                    acc[to] = 0;
+                }
+                acc[to] += qty;
+                return acc;
+            }, {} as Record<string, number>);
+            delegations = Object.entries(toGrouped);
+        }
+
         // Must be valid Hive account
-        const toAccounts = request.to.map(([account]) => account);
+        const toAccounts = delegations.map(([account]) => account);
         const accountsToValidate = [...toAccounts, request.from];
         const is_valid_account = await (request.allowSystemAccounts
             ? this.hiveAccountRepository.onlyHiveOrSystemAccounts(accountsToValidate, trx)
@@ -129,7 +145,7 @@ export class DelegationManager {
             return Result.Err(new ValidationError('to players must all be valid Hive accounts.', action, ErrorType.AccountNotKnown));
         }
 
-        if (request.to.some(([_, qty]) => qty <= 0 || isNaN(qty))) {
+        if (delegations.some(([_, qty]) => qty <= 0 || isNaN(qty))) {
             return Result.Err(new ValidationError('Amount must always be greater than 0.', action, ErrorType.AmountNotPositive));
         }
 
@@ -139,7 +155,7 @@ export class DelegationManager {
             return Result.Err(new ValidationError(`${action.op.account} does not have the authority to delegate tokens for ${request.from}.`, action, ErrorType.NoAuthority));
         }
 
-        const qtyNeeded = request.to.reduce((acc, [_, qty]) => acc + qty, 0);
+        const qtyNeeded = delegations.reduce((acc, [_, qty]) => acc + qty, 0);
         // Check that the player has enough liquid tokens in their account
         const available_balance = await this.delegationRepository.getAvailableBalance(request.from, tokenEntry, trx);
         if (available_balance < qtyNeeded) {
@@ -209,8 +225,21 @@ export class DelegationManager {
         if (!tokenEntry || !tokenEntry.delegation) {
             return Result.Err(new ValidationError('Delegation is not supported for the specified token.', action, ErrorType.DelegationNotSupportedForToken));
         }
+
+        let undelegations = request.from;
+        if (this.shouldGroupTransfersInMultiOps(action.op.block_num)) {
+            const fromGrouped = request.from.reduce((acc, [from, qty]) => {
+                if (!acc[from]) {
+                    acc[from] = 0;
+                }
+                acc[from] += qty;
+                return acc;
+            }, {} as Record<string, number>);
+            undelegations = Object.entries(fromGrouped);
+        }
+
         // Must be valid Hive account
-        const accounts = request.from.map(([account]) => account);
+        const accounts = undelegations.map(([account]) => account);
         if (accounts.some((a) => a === request.to)) {
             return Result.Err(new ValidationError('Cannot undelegate tokens from yourself.', action, ErrorType.CannotUndelegateToSelf));
         }
@@ -223,7 +252,7 @@ export class DelegationManager {
             return Result.Err(new ValidationError('Argument to must be a valid Hive account.', action, ErrorType.AccountNotKnown));
         }
 
-        if (request.from.some(([_, qty]) => qty <= 0 || isNaN(qty))) {
+        if (undelegations.some(([_, qty]) => qty <= 0 || isNaN(qty))) {
             return Result.Err(new ValidationError('Amount must always be greater than 0.', action, ErrorType.AmountNotPositive));
         }
 
@@ -236,7 +265,7 @@ export class DelegationManager {
         // Check that the undelegation amount is not bigger than amount delegated
         const active_delegations = await this.delegationRepository.getActiveDelegations(request.to, accounts, request.token, trx);
 
-        for (const [from, qty] of request.from) {
+        for (const [from, qty] of undelegations) {
             const active_delegation = active_delegations.find((d) => d.delegatee === from);
             const validationResult = this.canUndelegate(active_delegation, request.token, from, request.to, qty, action);
             if (Result.isErr(validationResult)) {
