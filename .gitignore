@@ -7,6 +7,7 @@ node_modules
 /.vscode/
 /dist/
 .env
+apps/sps-validator-ui/.env.local
 config.ini
 /sqitch/validator-data-latest.zip
 .nx

@@ -100,6 +100,7 @@
         "pg": "8.7.3",
         "react": "18.3.1",
         "react-dom": "18.3.1",
+        "react-responsive": "^10.0.0",
         "react-router-dom": "6.11.2",
         "react-syntax-highlighter": "15.6.1",
         "seedrandom": "3.0.5",

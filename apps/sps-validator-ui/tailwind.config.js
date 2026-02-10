@@ -6,7 +6,11 @@ const { join } = require('path');
 const config = {
     content: [join(__dirname, '{src,pages,components,app}/**/*!(*.stories|*.spec).{ts,tsx,html}'), ...createGlobPatternsForDependencies(__dirname)],
     theme: {
-        extend: {},
+        extend: {
+            screens: {
+                '3xl': '1660px',
+            },
+        },
     },
     darkMode: 'class',
     plugins: [],

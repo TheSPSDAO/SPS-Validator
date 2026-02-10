@@ -1,5 +1,5 @@
 import { Link, Route, Routes } from 'react-router-dom';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import {
     CurrencyDollarIcon,
     HomeIcon,
@@ -12,6 +12,7 @@ import {
     EnvelopeIcon,
     PencilSquareIcon,
     CubeIcon,
+    ChevronUpIcon,
 } from '@heroicons/react/24/solid';
 import { ListItem, ListItemPrefix } from '@material-tailwind/react';
 import { AppNavbar, AppNavbarTickerProps } from './components/layout/Navbar';
@@ -30,6 +31,8 @@ import { BlockExplorer } from './pages/block-explorer/BlockExplorer';
 import { Block } from './pages/block-explorer/Block';
 import { Transaction } from './pages/block-explorer/Transaction';
 import { Account } from './pages/block-explorer/Account';
+import { DarkModeProvider } from './context/DarkModeContext';
+import { useMediaQuery } from 'react-responsive';
 
 function AppRoutes() {
     return (
@@ -52,7 +55,7 @@ function AppRoutes() {
 
 function AppSidebarItems({ closeSidebar }: { closeSidebar: () => void }) {
     return (
-        <>
+        <div className="h-full">
             <Link to="/" onClick={closeSidebar}>
                 <ListItem>
                     <ListItemPrefix>
@@ -125,7 +128,7 @@ function AppSidebarItems({ closeSidebar }: { closeSidebar: () => void }) {
                     Site Settings
                 </ListItem>
             </Link>
-        </>
+        </div>
     );
 }
 
@@ -150,39 +153,112 @@ function useTickers() {
     return tickers;
 }
 
-export function App() {
-    const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
+function BackToTopButton({ scrollDivRef }: { scrollDivRef: React.RefObject<HTMLDivElement> }) {
+    const [isVisible, setIsVisible] = useState(false);
+
     useEffect(() => {
-        const listener = () => {
-            if (window.innerWidth > 960) {
-                setMobileSidebarOpen(false);
+        const element = scrollDivRef.current;
+        if (!element) return;
+
+        const handleScroll = () => {
+            if (element.scrollTop > 1000) {
+                setIsVisible(true);
+            } else {
+                setIsVisible(false);
             }
         };
-        window.addEventListener('resize', listener);
-        return () => window.removeEventListener('resize', listener);
-    });
+
+        element.addEventListener('scroll', handleScroll);
+        return () => element.removeEventListener('scroll', handleScroll);
+    }, [scrollDivRef]);
+
+    const scrollToTop = () => {
+        if (scrollDivRef.current) {
+            scrollDivRef.current.scrollTo({
+                top: 0,
+                behavior: 'smooth',
+            });
+        }
+    };
 
     return (
-        <MetricsProvider>
-            <AppContent mobileSidebarOpen={mobileSidebarOpen} setMobileSidebarOpen={setMobileSidebarOpen} />
-        </MetricsProvider>
+        <button
+            type="button"
+            aria-label="Back to top"
+            className={`fixed z-50 bottom-8 right-8 cursor-pointer transition-opacity duration-300 md:hidden ${isVisible ? 'block' : 'hidden'}`}
+            onClick={scrollToTop}
+        >
+            <ChevronUpIcon className="h-8 w-8 rounded-full p-1 bg-black text-white dark:bg-blue-800 dark:border-gray-300 dark:border dark:text-gray-300" />
+        </button>
+    );
+}
+
+export function App() {
+    const isDesktop = useMediaQuery({ minWidth: 961 });
+    const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
+
+    useEffect(() => {
+        if (isDesktop) {
+            setMobileSidebarOpen(false);
+        }
+    }, [isDesktop]);
+
+    return (
+        <DarkModeProvider>
+            <MetricsProvider>
+                <AppContent mobileSidebarOpen={mobileSidebarOpen} setMobileSidebarOpen={setMobileSidebarOpen} />
+            </MetricsProvider>
+        </DarkModeProvider>
     );
 }
 
 function AppContent({ mobileSidebarOpen, setMobileSidebarOpen }: { mobileSidebarOpen: boolean; setMobileSidebarOpen: React.Dispatch<React.SetStateAction<boolean>> }) {
     const tickers = useTickers();
+    const sidebarRef = useRef<HTMLDivElement>(null);
+    const contentRef = useRef<HTMLDivElement>(null);
+    const toggleButtonRef = useRef<HTMLButtonElement>(null);
+    const overlayRef = useRef<HTMLDivElement>(null);
+
+    useEffect(() => {
+        function handleClickOutside(event: MouseEvent) {
+            if (sidebarRef.current && !sidebarRef.current.contains(event.target as Node) && !toggleButtonRef.current?.contains(event.target as Node)) {
+                setMobileSidebarOpen(false);
+            }
+        }
+
+        function handleOverlayClick(event: MouseEvent) {
+            if (mobileSidebarOpen) {
+                handleClickOutside(event);
+            }
+        }
+
+        const overlayElement = overlayRef.current;
+        if (!mobileSidebarOpen || !overlayElement) return;
+
+        overlayElement.addEventListener('mousedown', handleOverlayClick);
+        return () => overlayElement.removeEventListener('mousedown', handleOverlayClick);
+    }, [mobileSidebarOpen, setMobileSidebarOpen]);
 
     return (
-        <div className="h-screen w-full flex flex-col">
-            <AppNavbar className="fixed" tickers={tickers} toggleSidebar={() => setMobileSidebarOpen((prev) => !prev)} />
-            <div className="flex-grow flex relative mt-[4.5rem]">
-                <AppSidebar isMobileOpen={mobileSidebarOpen}>
+        <div ref={contentRef} className="h-screen w-full flex flex-col overflow-x-auto">
+            <AppNavbar
+                tickers={tickers}
+                toggleSidebar={(event) => {
+                    event.stopPropagation();
+                    setMobileSidebarOpen((prev) => !prev);
+                }}
+                toggleButtonRef={toggleButtonRef}
+            />
+            <div className="flex-grow flex relative dark:bg-gray-900">
+                <AppSidebar ref={sidebarRef} isMobileOpen={mobileSidebarOpen}>
                     <AppSidebarItems closeSidebar={() => setMobileSidebarOpen(false)} />
                 </AppSidebar>
-                <div className="flex-grow p-5">
+                <div className="flex-grow pt-5 sm:p-5 w-full">
+                    <div ref={overlayRef} className={`fixed inset-0 z-30 ${mobileSidebarOpen ? 'block' : 'hidden'}`} />
                     <AppRoutes />
                 </div>
             </div>
+            <BackToTopButton scrollDivRef={contentRef} />
         </div>
     );
 }

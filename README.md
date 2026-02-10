@@ -200,6 +200,21 @@ schema-breaking updates cannot be applied before the go-live block. To apply a s
 
 For local development, simply run `./run.sh start pg` instead of `./run.sh start` after the setup instructions.
 
+### UI (standalone)
+
+The UI can be developed without running a local validator process, as long as you point it at any reachable validator API.
+
+- Run `npx nx serve sps-validator-ui` (defaults to http://localhost:4200)
+- Configure the API base URL (default is `http://localhost:3333`):
+  - Recommended: copy `apps/sps-validator-ui/.env.example` to `apps/sps-validator-ui/.env.local` and set `VALIDATOR_API_URL`
+  - Or in your browser devtools: set `localStorage['api.url'] = JSON.stringify('https://your-validator-api-host')` (this overrides the env var)
+
+If the UI loads but shows no data and your browser console/network shows CORS errors, use the dev proxy:
+
+- Set `VALIDATOR_API_URL=/api`
+- Set `VALIDATOR_API_PROXY_TARGET=https://your-validator-api-host`
+- Restart `npx nx serve sps-validator-ui`
+
 - Make sure you have `node` installed.
 - Run `npm i && npm run build sps-validator` to install dependencies and build the dependencies and the sps-validator itself
 - Copy `.env-example` to `.env` if you haven't and make any desired local changes
