@@ -56,7 +56,7 @@ function ValidatorNodesCard({ className, onNodeSelected }: { className?: string;
                             onChange={(e) => updateActive()}
                             label="Active Only"
                             className="dark:checked:bg-blue-800 dark:border-gray-300 dark:before:bg-blue-400 dark:checked:before:bg-blue-400 dark:text-gray-300"
-                            containerProps={{ className: 'pl-0 ' }}
+                            containerProps={{ className: 'p-0 mr-3' }}
                             labelProps={{ className: 'dark:text-gray-300' }}
                         />
                     </div>
