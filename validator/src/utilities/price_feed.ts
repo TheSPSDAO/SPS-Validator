@@ -57,6 +57,12 @@ export class MedianPriceCalculator implements PriceCalculator {
 }
 
 export class RawPriceFeed extends Cache<Map<string, PriceEntry[]>, PriceEntry> implements PriceFeedConsumer, PriceFeedProducer, Cloneable<RawPriceFeed>, Prime {
+    private static readonly FRESHNESS_WINDOW_MS = 12 * 60 * 60 * 1000;
+    private static readonly MIN_FRESH_FEEDS = 7;
+    private static readonly MIN_OUTLIER_FILTER_SAMPLE_SIZE = 5;
+    private static readonly MAD_THRESHOLD = 3.5;
+    private static readonly MAD_ZERO_FALLBACK_RELATIVE_THRESHOLD = 0.2;
+
     #lock = false;
     private acquire() {
         if (this.#lock) {
@@ -70,7 +76,11 @@ export class RawPriceFeed extends Cache<Map<string, PriceEntry[]>, PriceEntry> i
         this.#lock = false;
     }
 
-    constructor(private readonly priceHistoryRepository: PriceHistoryRepository, private readonly calculator: PriceCalculator, private readonly blockRepository: BlockRepository) {
+    constructor(
+        protected readonly priceHistoryRepository: PriceHistoryRepository,
+        protected readonly calculator: PriceCalculator,
+        protected readonly blockRepository: BlockRepository,
+    ) {
         super(new Map());
     }
 
@@ -96,7 +106,7 @@ export class RawPriceFeed extends Cache<Map<string, PriceEntry[]>, PriceEntry> i
 
     async getPriceAtPoint(token: string, block_time: Date, trx?: Trx): Promise<number | undefined> {
         await this.fillStore(trx);
-        const relevant = this.value.get(token);
+        const relevant = this.entriesForCalculation(token, block_time);
         if (relevant?.length) {
             return this.calculator.calculate(block_time, relevant);
         } else {
@@ -108,7 +118,7 @@ export class RawPriceFeed extends Cache<Map<string, PriceEntry[]>, PriceEntry> i
         await this.fillStore(trx);
         const results: Array<{ token: string; price: number | undefined }> = [];
         for (const token of tokens) {
-            const relevant = this.value.get(token);
+            const relevant = this.entriesForCalculation(token, block_time);
             if (relevant?.length) {
                 results.push({ token, price: this.calculator.calculate(block_time, relevant) });
             } else {
@@ -118,7 +128,7 @@ export class RawPriceFeed extends Cache<Map<string, PriceEntry[]>, PriceEntry> i
         return results;
     }
 
-    private async fillStore(trx?: Trx) {
+    protected async fillStore(trx?: Trx) {
         if (!this.canUpdate || !this.acquire()) {
             return;
         }
@@ -148,6 +158,50 @@ export class RawPriceFeed extends Cache<Map<string, PriceEntry[]>, PriceEntry> i
         } finally {
             this.release();
         }
+    }
+
+    protected entriesForCalculation(token: string, blockTime: Date): PriceEntry[] {
+        return this.entriesForCalculationFromList(this.value.get(token), blockTime);
+    }
+
+    protected entriesForCalculationFromList(relevant: readonly PriceEntry[] | undefined, blockTime: Date): PriceEntry[] {
+        if (!relevant?.length) {
+            return [];
+        }
+
+        const freshCutoff = blockTime.getTime() - RawPriceFeed.FRESHNESS_WINDOW_MS;
+        const freshEntries = relevant.filter((entry) => entry.block_time.getTime() >= freshCutoff);
+        const entriesToUse = freshEntries.length >= RawPriceFeed.MIN_FRESH_FEEDS ? freshEntries : relevant;
+        return this.filterOutliers(entriesToUse);
+    }
+
+    private filterOutliers(entries: readonly PriceEntry[]): PriceEntry[] {
+        if (entries.length < RawPriceFeed.MIN_OUTLIER_FILTER_SAMPLE_SIZE) {
+            return [...entries];
+        }
+
+        const prices = entries.map((entry) => entry.token_price).sort((a, b) => a - b);
+        const medianPrice = this.median(prices);
+        const deviations = entries.map((entry) => Math.abs(entry.token_price - medianPrice)).sort((a, b) => a - b);
+        const mad = this.median(deviations);
+
+        if (mad === 0) {
+            const relativeThreshold = Math.abs(medianPrice) * RawPriceFeed.MAD_ZERO_FALLBACK_RELATIVE_THRESHOLD;
+            const filtered = entries.filter((entry) => Math.abs(entry.token_price - medianPrice) <= relativeThreshold);
+            return filtered.length > 0 ? filtered : [...entries];
+        }
+
+        const scaledMad = 1.4826 * mad;
+        const filtered = entries.filter((entry) => Math.abs(entry.token_price - medianPrice) / scaledMad <= RawPriceFeed.MAD_THRESHOLD);
+        return filtered.length > 0 ? filtered : [...entries];
+    }
+
+    private median(sortedValues: readonly number[]): number {
+        const mid = Math.floor(sortedValues.length / 2);
+        if (sortedValues.length % 2 === 0) {
+            return (sortedValues[mid - 1] + sortedValues[mid]) / 2;
+        }
+        return sortedValues[mid];
     }
 
     // TODO: if we want to update individual price entries in the future.
@@ -219,3 +273,4 @@ export class TopPriceFeedWrapper implements PriceFeedProducer {
         }
     }
 }
+
