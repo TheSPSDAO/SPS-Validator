@@ -1,6 +1,6 @@
 import { Result } from '@steem-monsters/lib-monad';
 import { IAction } from '../../actions';
-import { PromiseEntity, Trx } from '../../db/tables';
+import { PromiseEntity, PromiseStatus, Trx } from '../../db/tables';
 import { EventLog } from '../../entities/event_log';
 
 export type HandlerCreatePromiseRequest = {
@@ -15,6 +15,11 @@ export type HandlerCreatePromiseResult = {
      * and they will be stored
      */
     params: unknown;
+    /**
+     * If true, the promise can be created by non-admin accounts (e.g. the lender directly).
+     * Default: false (admin required).
+     */
+    allowNonAdmin?: boolean;
 };
 
 export type HandlerFulfillPromiseRequest = {
@@ -27,6 +32,26 @@ export type HandlerFulfillPromisesRequest = {
     type: string;
     ids: string[];
     metadata: unknown;
+};
+
+/**
+ * Result returned by fulfillPromise/fulfillPromises handlers to control
+ * how the PromiseManager transitions the promise state.
+ */
+export type HandlerFulfillPromiseResult = {
+    logs: EventLog[];
+    /**
+     * Controls what status the promise transitions to after this fill.
+     * - 'fulfilled': normal behavior (default). Promise is fully filled.
+     * - 'open': partial fill — promise stays open for more fills.
+     * - 'completed': promise is fully filled and done (skips fulfilled state).
+     */
+    status?: PromiseStatus;
+    /**
+     * If provided, the promise params will be updated to this value.
+     * Used to track remaining quantity for partial fills.
+     */
+    updatedParams?: unknown;
 };
 
 export type HandlerReversePromiseRequest = {
@@ -45,14 +70,22 @@ export type HandlerCancelPromiseRequest = {
 };
 
 export abstract class PromiseHandler {
+    /**
+     * Whether this handler requires admin privileges to create promises.
+     * Override to return false for handlers that allow direct user creation.
+     */
+    requiresAdminForCreate(): boolean {
+        return true;
+    }
+
     abstract validateCreatePromise(request: HandlerCreatePromiseRequest, action: IAction, trx?: Trx): Promise<Result<HandlerCreatePromiseResult, Error>>;
     abstract createPromise(request: HandlerCreatePromiseRequest, action: IAction, trx?: Trx): Promise<EventLog[]>;
 
     abstract validateFulfillPromise(request: HandlerFulfillPromiseRequest, promise: PromiseEntity, action: IAction, trx?: Trx): Promise<Result<void, Error>>;
-    abstract fulfillPromise(request: HandlerFulfillPromiseRequest, promise: PromiseEntity, action: IAction, trx?: Trx): Promise<EventLog[]>;
+    abstract fulfillPromise(request: HandlerFulfillPromiseRequest, promise: PromiseEntity, action: IAction, trx?: Trx): Promise<HandlerFulfillPromiseResult>;
 
     abstract validateFulfillPromises(request: HandlerFulfillPromisesRequest, promises: PromiseEntity[], action: IAction, trx?: Trx): Promise<Result<void, Error>>;
-    abstract fulfillPromises(request: HandlerFulfillPromisesRequest, promises: PromiseEntity[], action: IAction, trx?: Trx): Promise<EventLog[]>;
+    abstract fulfillPromises(request: HandlerFulfillPromisesRequest, promises: PromiseEntity[], action: IAction, trx?: Trx): Promise<HandlerFulfillPromiseResult>;
 
     abstract validateReversePromise(request: HandlerReversePromiseRequest, promise: PromiseEntity, action: IAction, trx?: Trx): Promise<Result<void, Error>>;
     abstract reversePromise(request: HandlerReversePromiseRequest, promise: PromiseEntity, action: IAction, trx?: Trx): Promise<EventLog[]>;

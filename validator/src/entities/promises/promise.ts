@@ -1,6 +1,7 @@
 import { IAction } from '../../actions/action';
 import { EventLog, EventTypes } from '../event_log';
 import { BaseRepository, Handle, PromiseAction, PromiseEntity, PromiseHistoryEntity, PromiseStatus, Trx } from '../../db/tables';
+import { JSONB } from '../../db/columns';
 
 export type PromiseInsert = Omit<PromiseEntity, 'id' | 'created_date' | 'updated_date' | 'fulfilled_by' | 'fulfilled_at' | 'fulfilled_expiration'> & {
     actor: string;
@@ -107,6 +108,21 @@ export class PromiseRepository extends BaseRepository {
         const eventLogs = [...updateLogs, ...historyLogs];
 
         return [updatedPromises, eventLogs];
+    }
+
+    /**
+     * Update only the params field of a promise (e.g. for tracking remaining quantity in partial fills).
+     */
+    async updateParams(type: string, ext_id: string, params: JSONB, action: IAction, trx?: Trx): Promise<EventLog[]> {
+        const updatedPromise = await this.query(PromiseEntity, trx).where('type', type).where('ext_id', ext_id).updateItemWithReturning({
+            params,
+            updated_date: action.op.block_time,
+        });
+        const logEntity = {
+            ...updatedPromise,
+            id: undefined,
+        };
+        return [new EventLog(EventTypes.UPDATE, PromiseEntity, logEntity)];
     }
 
     private async insertHistory(

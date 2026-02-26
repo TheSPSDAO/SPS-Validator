@@ -24,12 +24,13 @@ import { SpsValidatorRepository } from './entities/validator/validator';
 import { SpsBalanceHistoryRepository } from './entities/tokens/balance_history';
 import { SpsActiveDelegationsRepository } from './entities/tokens/active_delegations';
 import { SpsPromiseRepository } from './entities/promises/promise';
+import { SpsRentalDelegationRepository } from './entities/rental/rental_delegation';
 import { SpsHiveStream } from './hive-stream';
 import { SpsValidatorShop } from './validator-shop';
 import { SpsPoolManager } from './pool-manager';
 import { SpsHiveClient } from './hive';
 import { SpsBookkeeping } from './bookkeeping';
-import { SpsDelegationManager, SpsDelegationPromiseHandler } from './features/delegation';
+import { SpsDelegationManager, SpsDelegationPromiseHandler, SpsDelegationOfferPromiseHandler, SpsRentalDelegationExpirationSource } from './features/delegation';
 import { SpsPromiseManager } from './features/promises';
 import {
     ActionOrBust,
@@ -108,7 +109,9 @@ import {
     DelegationManager,
     PromiseManager,
     DelegationPromiseHandler,
+    DelegationOfferPromiseHandler,
     PromiseRepository,
+    RentalDelegationRepository,
     ValidatorUpdater,
 } from '@steem-monsters/splinterlands-validator';
 import { ValidatorPools } from './pools';
@@ -332,6 +335,11 @@ export class CompositionRoot extends null {
 
         // Promise handlers
         container.register<DelegationPromiseHandler>(DelegationPromiseHandler, { useToken: SpsDelegationPromiseHandler });
+        container.register<DelegationOfferPromiseHandler>(DelegationOfferPromiseHandler, { useToken: SpsDelegationOfferPromiseHandler });
+
+        // Rental delegations
+        container.register<RentalDelegationRepository>(RentalDelegationRepository, { useToken: SpsRentalDelegationRepository });
+        container.register(SpsRentalDelegationExpirationSource, { useClass: SpsRentalDelegationExpirationSource });
 
         // External price feeds
         const daoFeedConfig = cfg.price_feed_dao;

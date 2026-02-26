@@ -382,6 +382,13 @@ const expire_promises = new Schema.Schema(
     }),
 );
 
+const expire_rental_delegations = new Schema.Schema(
+    'expire_rental_delegations',
+    object({
+        block_num: number().integer().positive().required(),
+    }),
+);
+
 const activate_license = new Schema.Schema(
     'activate_license',
     object({
@@ -480,6 +487,7 @@ export {
     fulfill_promise,
     fulfill_promise_multi,
     expire_promises,
+    expire_rental_delegations,
     activate_license,
     deactivate_license,
     check_in_validator,

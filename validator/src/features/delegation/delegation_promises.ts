@@ -8,6 +8,7 @@ import {
     HandlerCreatePromiseRequest,
     HandlerFulfillPromiseRequest,
     HandlerFulfillPromisesRequest,
+    HandlerFulfillPromiseResult,
     PromiseHandler,
     HandlerReversePromiseRequest,
     HandlerCreatePromiseResult,
@@ -92,7 +93,7 @@ export class DelegationPromiseHandler extends PromiseHandler {
         return Result.OkVoid();
     }
 
-    override async fulfillPromise(request: HandlerFulfillPromiseRequest, promise: PromiseEntity, action: IAction, trx?: Trx): Promise<EventLog<any>[]> {
+    override async fulfillPromise(request: HandlerFulfillPromiseRequest, promise: PromiseEntity, action: IAction, trx?: Trx): Promise<HandlerFulfillPromiseResult> {
         const params = promise.params as DelegationPromiseParams;
         const logs = await this.delegationManager.delegate(
             {
@@ -104,7 +105,7 @@ export class DelegationPromiseHandler extends PromiseHandler {
             action,
             trx,
         );
-        return logs;
+        return { logs };
     }
 
     override async validateFulfillPromises(request: HandlerFulfillPromisesRequest, promises: PromiseEntity[], action: IAction, trx?: Trx): Promise<Result<void, Error>> {
@@ -133,7 +134,7 @@ export class DelegationPromiseHandler extends PromiseHandler {
         return Result.OkVoid();
     }
 
-    override async fulfillPromises(request: HandlerFulfillPromisesRequest, promises: PromiseEntity[], action: IAction, trx?: Trx): Promise<EventLog<any>[]> {
+    override async fulfillPromises(request: HandlerFulfillPromisesRequest, promises: PromiseEntity[], action: IAction, trx?: Trx): Promise<HandlerFulfillPromiseResult> {
         const promiseParams = promises.map((promise) => promise.params as DelegationPromiseParams);
         const eventLogs: EventLog[] = [];
         for (const params of promiseParams) {
@@ -150,7 +151,7 @@ export class DelegationPromiseHandler extends PromiseHandler {
                 )),
             );
         }
-        return eventLogs;
+        return { logs: eventLogs };
     }
 
     override validateReversePromise(request: HandlerReversePromiseRequest, promise: PromiseEntity, action: IAction, trx?: Trx): Promise<Result<void, Error>> {

@@ -1,0 +1,393 @@
+import { Result } from '@steem-monsters/lib-monad';
+import { PromiseEntity, Trx } from '../../db/tables';
+import { IAction } from '../../actions';
+import { EventLog } from '../../entities/event_log';
+import {
+    HandlerCompletePromiseRequest,
+    HandlerCreatePromiseRequest,
+    HandlerFulfillPromiseRequest,
+    HandlerFulfillPromisesRequest,
+    HandlerFulfillPromiseResult,
+    PromiseHandler,
+    HandlerReversePromiseRequest,
+    HandlerCreatePromiseResult,
+} from '../promises';
+import { DelegationManager } from './delegation_manager';
+import { ErrorType, ValidationError } from '../../entities/errors';
+import { object, number } from 'yup';
+import { token, qty, hiveAccount } from '../../actions/schema';
+import { RentalDelegationRepository } from '../../entities/rental/rental_delegation';
+
+export type DelegationOfferPromiseHandlerOpts = {
+    delegation_promise_account: string;
+    default_expiration_blocks: number;
+};
+
+/**
+ * Schema for the params stored on a delegation_offer promise.
+ * - token: the token being delegated (e.g., SPSP)
+ * - qty: the total quantity of tokens offered for rent
+ * - lender: the account offering the delegation (the SPS holder)
+ * - expiration_blocks: how many blocks each rental lasts once filled
+ * - qty_remaining: tracks unfilled quantity (set on create, decremented on fill)
+ */
+const delegation_offer_params_schema = object({
+    token: token,
+    qty: qty.positive(),
+    lender: hiveAccount.required(),
+    expiration_blocks: number().positive().integer().required(),
+    qty_remaining: number().min(0).optional(),
+});
+
+export type DelegationOfferParams = typeof delegation_offer_params_schema['__outputType'];
+
+/**
+ * Metadata passed when a delegation offer is fulfilled (a borrower rents the SPS).
+ * - borrower: the account that will receive the delegated tokens
+ * - rental_id: a unique ID for this rental (used as the rental_delegations record ID)
+ * - qty: the amount of the offer to fill (supports partial fills)
+ */
+const delegation_offer_fulfill_metadata_schema = object({
+    borrower: hiveAccount.required(),
+    rental_id: token, // reuses the 'required string' validator
+    qty: qty.positive(),
+});
+
+export type DelegationOfferFulfillMetadata = typeof delegation_offer_fulfill_metadata_schema['__outputType'];
+
+/**
+ * This handler implements the "delegation_offer" promise type for the SPS Rental Market V3.
+ *
+ * Flow:
+ *
+ * 1. CREATE: The lender sends a create_promise transaction directly. The validator locks the
+ *    lender's SPS by delegating it to the $DELEGATION_PROMISES system account. The bridge
+ *    observes this event and creates an offer on the order book. Non-admin creation is allowed.
+ *
+ * 2. FULFILL: When the order book matches a borrower, the bridge sends a fulfill_promise with
+ *    metadata specifying qty to fill. Supports partial fills:
+ *    - The filled qty of SPS is undelegated from the promises account back to the lender,
+ *      then re-delegated from the lender to the borrower.
+ *    - A rental_delegations record is created to track the expiration.
+ *    - qty_remaining on the promise params is decremented.
+ *    - If qty_remaining > 0, the promise stays open for more fills.
+ *    - If qty_remaining = 0, the promise transitions to completed.
+ *
+ * 3. REVERSE: Returns the remaining locked SPSP from the system account back to the lender.
+ *    Active rental delegations to borrowers are NOT affected — they continue until expiration.
+ *
+ * 4. CANCEL: Same as reverse for open promises — unlocks remaining SPS from system account.
+ *
+ * 5. COMPLETE: No-op. Completion is driven by the fulfill handler when qty_remaining hits 0.
+ */
+export class DelegationOfferPromiseHandler extends PromiseHandler {
+    constructor(
+        private readonly opts: DelegationOfferPromiseHandlerOpts,
+        private readonly delegationManager: DelegationManager,
+        private readonly rentalDelegationRepository: RentalDelegationRepository,
+    ) {
+        super();
+    }
+
+    /**
+     * Delegation offers are created directly by the lender, not by admins.
+     */
+    override requiresAdminForCreate(): boolean {
+        return false;
+    }
+
+    // ─── CREATE ────────────────────────────────────────────────────────────────
+    // Lender creates the promise directly. Locks SPS into $DELEGATION_PROMISES.
+
+    override async validateCreatePromise(request: HandlerCreatePromiseRequest, action: IAction, trx?: Trx): Promise<Result<HandlerCreatePromiseResult, Error>> {
+        const valid = delegation_offer_params_schema.isValidSync(request.params);
+        if (!valid) {
+            return Result.Err(new ValidationError('Invalid delegation offer parameters.', action, ErrorType.InvalidPromiseParams));
+        }
+
+        const params = request.params as DelegationOfferParams;
+
+        // The lender must be the account creating the promise
+        if (params.lender !== action.op.account) {
+            return Result.Err(new ValidationError('Lender must match the account creating the promise.', action, ErrorType.NoAuthority));
+        }
+
+        // Validate the delegation is possible (token supports delegation, valid account, qty > 0)
+        const delegationValid = await this.delegationManager.validateDelegation(
+            {
+                from: params.lender,
+                to: this.opts.delegation_promise_account,
+                qty: params.qty,
+                token: params.token,
+                allowSystemAccounts: true,
+            },
+            action,
+            trx,
+        );
+        if (Result.isErr(delegationValid)) {
+            return Result.Err(delegationValid.error);
+        }
+
+        // Set qty_remaining to the full qty on creation, and signal non-admin creation is OK
+        const storedParams: DelegationOfferParams = {
+            ...params,
+            qty_remaining: params.qty,
+        };
+        return Result.Ok({ params: storedParams, allowNonAdmin: true });
+    }
+
+    override async createPromise(request: HandlerCreatePromiseRequest, action: IAction, trx?: Trx): Promise<EventLog[]> {
+        const params = request.params as DelegationOfferParams;
+
+        // Lock the lender's SPS by delegating to the promises system account
+        const logs = await this.delegationManager.delegate(
+            {
+                from: params.lender,
+                to: this.opts.delegation_promise_account,
+                qty: params.qty,
+                token: params.token,
+                allowSystemAccounts: true,
+            },
+            action,
+            trx,
+        );
+
+        return logs;
+    }
+
+    // ─── FULFILL (single) ──────────────────────────────────────────────────────
+    // A borrower has been matched for a partial or full fill.
+
+    override async validateFulfillPromise(request: HandlerFulfillPromiseRequest, promise: PromiseEntity, action: IAction, trx?: Trx): Promise<Result<void, Error>> {
+        const paramsValid = delegation_offer_params_schema.isValidSync(promise.params);
+        if (!paramsValid) {
+            return Result.Err(new ValidationError('Invalid delegation offer promise parameters.', action, ErrorType.InvalidPromiseParams));
+        }
+
+        const metadataValid = delegation_offer_fulfill_metadata_schema.isValidSync(request.metadata);
+        if (!metadataValid) {
+            return Result.Err(new ValidationError('Invalid delegation offer fulfill metadata. Must include borrower, rental_id, and qty.', action, ErrorType.InvalidPromiseParams));
+        }
+
+        const params = promise.params as DelegationOfferParams;
+        const metadata = request.metadata as DelegationOfferFulfillMetadata;
+        const qtyRemaining = params.qty_remaining ?? params.qty;
+
+        if (metadata.borrower === params.lender) {
+            return Result.Err(new ValidationError('Cannot rent delegation to yourself.', action, ErrorType.CannotDelegateToSelf));
+        }
+
+        if (metadata.qty > qtyRemaining) {
+            // prettier-ignore
+            return Result.Err(new ValidationError(`Fill qty ${metadata.qty} exceeds remaining offer qty ${qtyRemaining}.`, action, ErrorType.InsufficientBalance));
+        }
+
+        // Check that the rental_id doesn't already exist
+        const existingRental = await this.rentalDelegationRepository.getById(metadata.rental_id, trx);
+        if (existingRental) {
+            return Result.Err(new ValidationError(`Rental delegation with id ${metadata.rental_id} already exists.`, action, ErrorType.PromiseAlreadyExists));
+        }
+
+        return Result.OkVoid();
+    }
+
+    override async fulfillPromise(request: HandlerFulfillPromiseRequest, promise: PromiseEntity, action: IAction, trx?: Trx): Promise<HandlerFulfillPromiseResult> {
+        const params = promise.params as DelegationOfferParams;
+        const metadata = request.metadata as DelegationOfferFulfillMetadata;
+        const fillQty = metadata.qty;
+        const qtyRemaining = params.qty_remaining ?? params.qty;
+        const newQtyRemaining = qtyRemaining - fillQty;
+        const eventLogs: EventLog[] = [];
+
+        // 1. Undelegate the fill qty from the promises account back to the lender
+        eventLogs.push(
+            ...(await this.delegationManager.undelegate(
+                {
+                    account: params.lender,
+                    to: params.lender,
+                    from: this.opts.delegation_promise_account,
+                    qty: fillQty,
+                    token: params.token,
+                    allowSystemAccounts: true,
+                },
+                action,
+                trx,
+            )),
+        );
+
+        // 2. Delegate from lender to borrower
+        eventLogs.push(
+            ...(await this.delegationManager.delegate(
+                {
+                    from: params.lender,
+                    to: metadata.borrower,
+                    qty: fillQty,
+                    token: params.token,
+                    allowSystemAccounts: false,
+                },
+                action,
+                trx,
+            )),
+        );
+
+        // 3. Create the rental delegation tracking record
+        const [_, rentalLogs] = await this.rentalDelegationRepository.create(
+            {
+                id: metadata.rental_id,
+                promise_type: 'delegation_offer',
+                promise_ext_id: promise.ext_id,
+                lender: params.lender,
+                borrower: metadata.borrower,
+                token: params.token,
+                qty: fillQty,
+                expiration_blocks: params.expiration_blocks,
+                start_block: action.op.block_num,
+            },
+            action,
+            trx,
+        );
+        eventLogs.push(...rentalLogs);
+
+        // 4. Return the result with updated params and appropriate status
+        const updatedParams: DelegationOfferParams = {
+            ...params,
+            qty_remaining: newQtyRemaining,
+        };
+
+        return {
+            logs: eventLogs,
+            updatedParams,
+            // If there's still qty remaining, keep the promise open for more fills.
+            // Otherwise, mark as completed (all SPS has been delegated out).
+            status: newQtyRemaining > 0 ? 'open' : 'completed',
+        };
+    }
+
+    // ─── FULFILL (batch) ───────────────────────────────────────────────────────
+    // For delegation offers, batch fulfills don't make sense since each fill has
+    // unique metadata. Delegate to single fulfill.
+
+    override async validateFulfillPromises(request: HandlerFulfillPromisesRequest, promises: PromiseEntity[], action: IAction, trx?: Trx): Promise<Result<void, Error>> {
+        for (const promise of promises) {
+            const fulfillRequest: HandlerFulfillPromiseRequest = {
+                type: request.type,
+                id: promise.ext_id,
+                metadata: request.metadata,
+            };
+            const result = await this.validateFulfillPromise(fulfillRequest, promise, action, trx);
+            if (Result.isErr(result)) {
+                return result;
+            }
+        }
+        return Result.OkVoid();
+    }
+
+    override async fulfillPromises(request: HandlerFulfillPromisesRequest, promises: PromiseEntity[], action: IAction, trx?: Trx): Promise<HandlerFulfillPromiseResult> {
+        const eventLogs: EventLog[] = [];
+        let lastResult: HandlerFulfillPromiseResult = { logs: [] };
+        for (const promise of promises) {
+            const fulfillRequest: HandlerFulfillPromiseRequest = {
+                type: request.type,
+                id: promise.ext_id,
+                metadata: request.metadata,
+            };
+            lastResult = await this.fulfillPromise(fulfillRequest, promise, action, trx);
+            eventLogs.push(...lastResult.logs);
+        }
+        return {
+            logs: eventLogs,
+            status: lastResult.status,
+            updatedParams: lastResult.updatedParams,
+        };
+    }
+
+    // ─── REVERSE ───────────────────────────────────────────────────────────────
+    // Returns the remaining locked SPS from the system account back to the lender.
+    // Active rental delegations to borrowers are NOT reversed here — they continue
+    // until their individual expiration blocks are reached.
+
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    override async validateReversePromise(_request: HandlerReversePromiseRequest, _promise: PromiseEntity, _action: IAction, _trx?: Trx): Promise<Result<void, Error>> {
+        return Result.OkVoid();
+    }
+
+    override async reversePromise(request: HandlerReversePromiseRequest, promise: PromiseEntity, action: IAction, trx?: Trx): Promise<EventLog[]> {
+        const params = promise.params as DelegationOfferParams;
+        const qtyRemaining = params.qty_remaining ?? params.qty;
+        const eventLogs: EventLog[] = [];
+
+        // Only undelegate if there's still SPS locked in the system account
+        if (qtyRemaining > 0) {
+            eventLogs.push(
+                ...(await this.delegationManager.undelegate(
+                    {
+                        account: params.lender,
+                        to: params.lender,
+                        from: this.opts.delegation_promise_account,
+                        qty: qtyRemaining,
+                        token: params.token,
+                        allowSystemAccounts: true,
+                    },
+                    action,
+                    trx,
+                )),
+            );
+        }
+
+        return eventLogs;
+    }
+
+    // ─── COMPLETE ──────────────────────────────────────────────────────────────
+    // Completion is driven by the fulfill handler when qty_remaining hits 0.
+    // Manual completion is a no-op.
+
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    override async validateCompletePromise(_request: HandlerCompletePromiseRequest, _promise: PromiseEntity, _action: IAction, _trx?: Trx): Promise<Result<void, Error>> {
+        return Result.OkVoid();
+    }
+
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    override async completePromise(_request: HandlerCompletePromiseRequest, _promise: PromiseEntity, _action: IAction, _trx?: Trx): Promise<EventLog[]> {
+        return [];
+    }
+
+    // ─── CANCEL ────────────────────────────────────────────────────────────────
+    // Cancels the offer. Returns remaining locked SPS from the system account.
+    // Active rental delegations continue until their individual expirations.
+    // Note: PromiseManager calls reversePromise before cancelPromise when status
+    // is 'fulfilled', so we only handle 'open' here.
+
+    override async cancelPromise(request: HandlerCompletePromiseRequest, promise: PromiseEntity, action: IAction, trx?: Trx): Promise<EventLog[]> {
+        const params = promise.params as DelegationOfferParams;
+        const qtyRemaining = params.qty_remaining ?? params.qty;
+        const eventLogs: EventLog[] = [];
+
+        // If the promise is open, unlock the remaining SPS from the system account
+        if (promise.status === 'open' && qtyRemaining > 0) {
+            eventLogs.push(
+                ...(await this.delegationManager.undelegate(
+                    {
+                        account: params.lender,
+                        to: params.lender,
+                        from: this.opts.delegation_promise_account,
+                        qty: qtyRemaining,
+                        token: params.token,
+                        allowSystemAccounts: true,
+                    },
+                    action,
+                    trx,
+                )),
+            );
+        }
+
+        return eventLogs;
+    }
+
+    override getPromisesNotFoundErrorMessage(ids: string[]): string {
+        return `Delegation offers with ids [${ids.join(', ')}] not found.`;
+    }
+
+    override getPromisesNotOpenErrorMessage(ids: string[]): string {
+        return `Delegation offers with ids [${ids.join(', ')}] are not open.`;
+    }
+}
