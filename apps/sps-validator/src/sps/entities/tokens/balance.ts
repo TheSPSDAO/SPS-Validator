@@ -274,15 +274,22 @@ export class SpsBalanceRepository extends BalanceRepository {
                     this.supplyOpts.staking_account,
                     this.supplyOpts.dao_account,
                     this.supplyOpts.dao_delegation_account,
+                    this.supplyOpts.burn_account,
+                    this.supplyOpts.burned_ledger_account,
                     ...Object.values(this.supplyOpts.bridge_accounts_by_chain).flatMap((b) => b.hive_accounts),
                 ],
             },
             trx,
         );
 
-        const combinedNullSps = balances[this.supplyOpts.burn_account][TOKENS.SPS]! + balances[this.supplyOpts.burned_ledger_account][TOKENS.SPS];
+        const combinedNullSps =
+            balances[this.supplyOpts.burn_account][TOKENS.SPS]! +
+            balances[this.supplyOpts.burned_ledger_account][TOKENS.SPS] +
+            balances[this.supplyOpts.burn_account][TOKENS.SPSP]! +
+            balances[this.supplyOpts.burned_ledger_account][TOKENS.SPSP]!;
         balances[this.supplyOpts.burn_account][TOKENS.SPS] = combinedNullSps;
         delete balances[this.supplyOpts.burned_ledger_account];
+        delete balances[this.supplyOpts.burn_account][TOKENS.SPSP];
 
         const combinedDaoSps = balances[this.supplyOpts.dao_account][TOKENS.SPS] + balances[this.supplyOpts.dao_account][TOKENS.SPSP];
         balances[this.supplyOpts.dao_account][TOKENS.SPS] = combinedDaoSps;
