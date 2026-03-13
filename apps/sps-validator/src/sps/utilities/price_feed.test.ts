@@ -44,11 +44,12 @@ test('Reload all price entries', () => {
 
 test('Getting multiple prices at once', async () => {
     const now = new Date();
+    const evaluationBlockNum = 0;
     const priceEntryA = { validator: 'steemmonsters', block_num: 0, token_price: 10, token: 'SPS', block_time: now } as PriceEntry;
     const priceEntryB = { validator: 'tehbone', block_num: 1, token_price: 20, token: 'DEC', block_time: now } as PriceEntry;
     feed.update(priceEntryA);
     feed.update(priceEntryB);
-    const prices = await feed.getPricesAtPoint(['XYZ', 'SPS'], now);
+    const prices = await feed.getPricesAtPoint(['XYZ', 'SPS'], now, undefined, evaluationBlockNum);
     expect(prices).toContainEqual({ token: 'XYZ', price: undefined });
     expect(prices).toContainEqual({ token: 'SPS', price: 10 });
     expect(prices).not.toContainEqual({ token: 'DEC', price: 20 });
