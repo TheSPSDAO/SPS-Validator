@@ -36,19 +36,19 @@ export function ValidatorVotesTable({ account, className }: { account: string; c
                         ))}
                     </TableBody>
                 </Table>
-                {votes && votes.length >= limit && (
-                    <TablePager
-                        className="w-full justify-center mt-3"
-                        page={page}
-                        limit={limit}
-                        displayPageCount={2}
-                        onPageChange={setPage}
-                        count={votes.length}
-                        containerRef={containerRef}
-                    />
-                )}
             </div>
             <GradientOverflow containerRef={containerRef} isLoading={loading} />
+            {votes && votes.length >= limit && (
+                <TablePager
+                    className="w-full justify-center mt-3"
+                    page={page}
+                    limit={limit}
+                    displayPageCount={2}
+                    onPageChange={setPage}
+                    count={votes.length}
+                    containerRef={containerRef}
+                />
+            )}
         </div>
     );
 }
