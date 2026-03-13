@@ -207,25 +207,41 @@ replay() {
     then
         stop
         _destroy
-        build "$1" "$2"
+        build "$@"
         start "all"
     fi
 }
 
 # skip-snapshot works technically, but will result in a broken build
 build() {
-    if [[ $1 == "skip-snapshot" ]] || [[ $2 == "skip-snapshot" ]]; then
+    local args=("$@")
+    local has_skip_snapshot=false
+    local has_no_cache=false
+    local has_local_snapshot=false
+    for arg in "${args[@]}"; do
+        case "$arg" in
+            skip-snapshot) has_skip_snapshot=true ;;
+            no-cache) has_no_cache=true ;;
+            local-snapshot) has_local_snapshot=true ;;
+        esac
+    done
+
+    if [[ $has_skip_snapshot == true ]]; then
         echo "Skipping snapshot"
         echo "Running migrations. This could take several minutes..."
-        if [[ $1 == "no-cache" ]] || [[ $2 == "no-cache" ]]; then
+        if [[ $has_no_cache == true ]]; then
             docker_compose build --no-cache validator-sqitch
         else
             docker_compose build validator-sqitch
         fi
     else
-        dl_snapshot "$1"
+        if [[ $has_local_snapshot == true ]]; then
+            dl_snapshot "local-snapshot"
+        else
+            dl_snapshot
+        fi
         echo "Running migrations. This could take several minutes..."
-        if [[ $1 == "no-cache" ]] || [[ $2 == "no-cache" ]]; then
+        if [[ $has_no_cache == true ]]; then
             docker_compose build --build-arg snapshot="$SNAPSHOT_FILE" --no-cache validator-sqitch
         else
             docker_compose build --build-arg snapshot="$SNAPSHOT_FILE" validator-sqitch
@@ -235,16 +251,25 @@ build() {
 }
 
 dl_snapshot() {
+    local local_snapshot="$1"
     SNAPSHOT="$SQITCH_DIR/$SNAPSHOT_FILE"
     if [[ -f "$SNAPSHOT" ]]; then
-        read -p "Snapshot file already exists. Do you want to replace it and download a new one? (y/n)" -n 1 -r
-        echo    # (optional) move to a new line
-        if [[ $REPLY =~ ^[Yy]$ ]]
-        then
-            sudo rm -f "$SNAPSHOT"
-            _dl_snapshot
+        if [[ $local_snapshot == "local-snapshot" ]]; then
+            echo "Using existing local snapshot file."
+        else
+            read -p "Snapshot file already exists. Do you want to replace it and download a new one? (y/n)" -n 1 -r
+            echo    # (optional) move to a new line
+            if [[ $REPLY =~ ^[Yy]$ ]]
+            then
+                sudo rm -f "$SNAPSHOT"
+                _dl_snapshot
+            fi
         fi
     else
+        if [[ $local_snapshot == "local-snapshot" ]]; then
+            echo "Error: local-snapshot specified but no snapshot file found at $SNAPSHOT"
+            exit 1
+        fi
         _dl_snapshot
     fi
 }
@@ -394,7 +419,7 @@ help() {
     echo "    restart                       - runs stop + start"
     echo "    destroy                       - runs stop and deletes local database"
     echo "    replay                        - stops docker (if exists), deletes local database and runs build + start"
-    echo "    build                         - runs dl_snapshot + database migrations"
+    echo "    build [local-snapshot] [no-cache] [skip-snapshot] - runs dl_snapshot + database migrations. local-snapshot uses existing snapshot without prompting. no-cache rebuilds without docker cache. skip-snapshot skips snapshot entirely"
     echo "    dl_snapshot                   - downloads snapshot if it doesn't exists locally"
     echo "    snapshot                      - creates a snapshot of the current database."
     echo "    logs                          - trails the last 30 lines of logs"
@@ -427,10 +452,10 @@ case $1 in
         destroy
     ;;
     replay)
-        replay "$2" "$3"
+        replay "${@:2}"
     ;;
     build)
-        build "$2" "$3"
+        build "${@:2}"
     ;;
     dl_snapshot)
         dl_snapshot
