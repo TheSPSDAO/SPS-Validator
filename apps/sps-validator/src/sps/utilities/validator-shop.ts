@@ -6,6 +6,11 @@ class Clock {
     current() {
         return this.lastBlockCache.value?.block_time;
     }
+
+    blockNum() {
+        const blockNum = this.lastBlockCache.value?.block_num;
+        return blockNum === undefined ? undefined : blockNum + 1;
+    }
 }
 
 export class ValidatorShop extends Shop<Trx> implements Prime {
