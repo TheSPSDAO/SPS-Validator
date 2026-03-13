@@ -122,6 +122,38 @@ snapshot() {
     fi
 }
 
+snapshot_auto() {
+    echo "Stopping validator"
+    stop "validator"
+
+    echo "Creating snapshot"
+    run_psql -c "SELECT snapshot.freshsnapshot(TRUE);"
+
+    echo "Dumping snapshot to file"
+    docker_compose exec -e PGPASSWORD="$APP_PASSWORD" pg pg_dump \
+        --no-owner --no-acl \
+        --no-comments --no-publications --no-security-labels \
+        --schema snapshot \
+        --no-subscriptions --no-tablespaces --data-only \
+        --host "127.0.0.1" \
+        --username "$APP_USER" \
+        "${APP_DATABASE}" > snapshot.sql
+
+    CHANGE=$(run_psql -t -c "SELECT change FROM sqitch.changes WHERE project = 'splinterlands-validator' ORDER BY committed_at DESC LIMIT 1")
+    CHANGE=$(echo "$CHANGE" | xargs echo -n)
+    echo "Latest change: $CHANGE"
+    sed -i "1s/^/-- to_change:$CHANGE\n/" snapshot.sql
+
+    echo "Snapshot created. Zipping snapshot"
+    zip snapshot.zip snapshot.sql
+    rm snapshot.sql
+    echo "Snapshot zipped."
+
+    echo "Starting validator"
+    start "validator-silent"
+    echo "Snapshot process complete."
+}
+
 repartition_tables() {
     # confirm they want to do this
     echo "Repartioning only has to be done if your database existed before version v1.1.1, or if you have restored a snapshot from before that version."
@@ -422,6 +454,7 @@ help() {
     echo "    build [local-snapshot] [no-cache] [skip-snapshot] - runs dl_snapshot + database migrations. local-snapshot uses existing snapshot without prompting. no-cache rebuilds without docker cache. skip-snapshot skips snapshot entirely"
     echo "    dl_snapshot                   - downloads snapshot if it doesn't exists locally"
     echo "    snapshot                      - creates a snapshot of the current database."
+    echo "    snapshot-auto                 - non-interactive: stops validator, creates snapshot, restarts validator"
     echo "    logs                          - trails the last 30 lines of logs"
     echo "    status                        - checks your validator node status and registration status"
     echo "    repartition_tables            - helper command to repartition the partitioned database tables. only needed if upgrading a database from before v1.1.1 or if restoring a snapshot from before v1.1.1"
@@ -462,6 +495,9 @@ case $1 in
     ;;
     snapshot)
         snapshot
+    ;;
+    snapshot-auto)
+        snapshot_auto
     ;;
     logs)
         logs
