@@ -68,7 +68,7 @@ You should still look through the manual setup steps so you understand how to st
 - `cd SPS-Validator`  : Change directory to the validator repository
 - `./run.sh stop`     : Ensure the validator is not currently running.
 - `cp .env-example .env`: If you haven't already run this. This will copy the default settings. You should update the new `.env` file with your `VALIDATOR_ACCOUNT` and `VALIDATOR_KEY` (posting). If you are JUST looking to earn license rewards, you should also set the `DB_BLOCK_RETENTION` variable to a minimum of `432000` to keep your database size small.
-- `./run.sh build`    : Build the validator.  This will deploy the database, run migrations and also download/deploy the snapshot.
+- `./run.sh build`    : Build the validator.  This will deploy the database, run migrations and also download/deploy the snapshot. Flags: `local-snapshot` (use existing snapshot without prompting), `no-cache` (rebuild without docker cache), `skip-snapshot` (skip snapshot entirely).
 - _(Note)_: If you receive an error like `Got permission denied while trying to connect to the Docker daemon socket`, follow the steps [here](https://docs.docker.com/engine/install/linux-postinstall/#manage-docker-as-a-non-root-user).
 - `./run.sh start` or `./run.sh start all` : Start the validator. `all` will start the management UI as well.
 - You can go to http://localhost:3333/status to check that the validator is running.
@@ -126,7 +126,7 @@ You can take snapshots locally to take backups, and restore them without uploadi
 - You will get a `snapshot.zip` file in the git repositories root directory.
 - You can either upload this zip to a publicly accessible URL and share it, or just restore it locally.
 - To restore it locally, copy the `snapshot.zip` file into `./sqitch/validator-data-latest.zip`. (`cp ./snapshot.zip ./sqitch/validator-data-latest.zip`)
-- `./run.sh replay`: enter "n" when it asks if you want to download a fresh snapshot.
+- `./run.sh replay local-snapshot`: use the local snapshot without being prompted. Alternatively, run `./run.sh replay` and enter "n" when it asks if you want to download a fresh snapshot.
 
 ### Commands Reference
 
@@ -191,7 +191,7 @@ schema-breaking updates cannot be applied before the go-live block. To apply a s
 - `./run.sh stop` so your node stops restarting itself.
 - _(Note)_ You can run `./run.sh snapshot` to take a backup of your database before updating to be safe. If you need to restore this snapshot, see [snapshots](#snapshots).
 - You can now pull the latest version with `git fetch --tags -f && git checkout v{version}`.
-- `./run.sh build` to apply the latest database updates. When it asks if you want to download a new snapshot, you can enter "n".
+- `./run.sh build local-snapshot` to apply the latest database updates using the existing local snapshot. Alternatively, run `./run.sh build` and enter "n" when it asks if you want to download a new snapshot.
 - Remove the `KILL_BLOCK` from your .env file
 - `./run.sh rebuild_service validator` to rebuild the validator with the latest updates. This will also start the validator.
 - `./run.sh rebuild_service ui` if you want to rebuild the UI.
