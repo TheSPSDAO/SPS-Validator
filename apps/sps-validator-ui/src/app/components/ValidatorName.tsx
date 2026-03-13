@@ -9,24 +9,29 @@ export function ValidatorName({ account_name, api_url, post_url, link_to_validat
     return (
         <span>
             {link_to_validator && (
-                <Link to={`/validator-nodes?node=${encodeURIComponent(account_name)}`} target="_blank" className="text-blue-600 underline">
+                <Link to={`/validator-nodes?node=${encodeURIComponent(account_name)}`} className="text-blue-600 underline dark:text-blue-500">
                     {account_name}
                 </Link>
             )}
             {!link_to_validator && <span>{account_name}</span>} (
             {api_url && (
-                <a href={api_url} target="_blank" rel="noopener noreferrer" className="text-blue-600 underline">
+                <a href={api_url.replace(/\/$/, '') + '/status'} target="_blank" rel="noopener noreferrer" className="text-blue-600 underline dark:text-blue-500">
                     api
                 </a>
             )}
-            {!api_url && <span className="text-red-600">no api</span>}
+            {!api_url && <span className="text-red-500">no api</span>}
             {' | '}
             {post_url && (
-                <a href={post_url} target="_blank" rel="noopener noreferrer" className="text-blue-600 underline">
+                <a href={post_url} target="_blank" rel="noopener noreferrer" className="text-blue-600 underline dark:text-blue-500">
                     peakd post
                 </a>
             )}
-            {!post_url && <span className="text-red-600">no peakd post</span>})
+            {!post_url && (
+                <span color="red" className="text-red-500">
+                    no peakd post
+                </span>
+            )}
+            )
         </span>
     );
 }

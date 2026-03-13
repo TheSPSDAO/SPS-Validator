@@ -45,15 +45,13 @@ export class HiveService {
 
     public static async getHeadBlock(): Promise<{ num: number; time: Date }> {
         const client = new Client(['https://anyx.io']);
-
-        const b = await client.blockchain.getCurrentBlockHeader();
         const num = await client.blockchain.getCurrentBlockNum();
         const block = await client.database.getBlock(num);
 
         return { num, time: new Date(`${block.timestamp}Z`) };
     }
 
-    public static requestCustomJson(id: string, key: Key, payload: any, message: string): Promise<CustomJsonSuccessResult | CustomJsonErrorResult> {
+    public static requestCustomJson(id: string, key: Key, payload: unknown, message: string): Promise<CustomJsonSuccessResult | CustomJsonErrorResult> {
         return new Promise((resolve, reject) => {
             if (!window.hive_keychain) {
                 return reject(new Error(NO_HIVE_KEYCHAIN_EXTENSION_ERROR_MESSAGE));
