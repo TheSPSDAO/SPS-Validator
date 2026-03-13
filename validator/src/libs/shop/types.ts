@@ -101,6 +101,7 @@ export type Sale = {
 
 export interface Time {
     current(): Date | undefined;
+    blockNum?(): number | undefined;
 }
 
 // TODO: duplicated from balance.ts
@@ -116,5 +117,5 @@ export interface BalanceGetter<T = void> {
 }
 
 export interface PriceConsumer<T = void> {
-    getPriceAtPoint(token: string, time: Date, cookie?: T): Promise<number | undefined>;
+    getPriceAtPoint(token: string, time: Date, cookie?: T, block_num?: number): Promise<number | undefined>;
 }

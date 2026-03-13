@@ -1,5 +1,6 @@
 import { BlockRepository, MedianPriceCalculator, PriceEntry, PriceHistoryRepository, ValidatorRepository, ValidatorWatch } from '@steem-monsters/splinterlands-validator';
 import { SpsPriceFeed } from './price-feed';
+import { TransitionManager } from '../transition';
 
 function entry(validator: string, token_price: number, block_time: Date): PriceEntry {
     return {
@@ -29,10 +30,40 @@ test('Uses only current top validators when calculating price', async () => {
     const validatorWatch = {
         validator: { num_top_validators: 3 },
     } as unknown as ValidatorWatch;
+    const transitionManager = {
+        isTransitioned: jest.fn().mockReturnValue(true),
+    } as unknown as TransitionManager;
 
-    const feed = new SpsPriceFeed(priceHistoryRepository, new MedianPriceCalculator(), blockRepository, validatorRepository, validatorWatch);
+    const feed = new SpsPriceFeed(priceHistoryRepository, new MedianPriceCalculator(), blockRepository, validatorRepository, validatorWatch, transitionManager);
 
-    await expect(feed.getPriceAtPoint('SPS', now)).resolves.toBe(1);
+    await expect(feed.getPriceAtPoint('SPS', now, undefined, 100)).resolves.toBe(1);
+});
+
+test('Keeps legacy price aggregation before the transition point', async () => {
+    const now = new Date('2026-02-18T12:00:00.000Z');
+    const entries = [entry('validator-a', 1, now), entry('validator-b', 10, now), entry('validator-c', 1, now), entry('validator-x', 5, now)];
+
+    const priceHistoryRepository = {
+        groupedHistory: jest.fn().mockResolvedValue({ SPS: entries }),
+        upsert: jest.fn(),
+    } as unknown as PriceHistoryRepository;
+    const blockRepository = {
+        getLatestBlockNum: jest.fn().mockResolvedValue(1),
+        getByBlockNum: jest.fn().mockResolvedValue({ block_time: now }),
+    } as unknown as BlockRepository;
+    const validatorRepository = {
+        getValidators: jest.fn().mockResolvedValue({ validators: [{ account_name: 'validator-a' }, { account_name: 'validator-b' }, { account_name: 'validator-c' }] }),
+    } as unknown as ValidatorRepository;
+    const validatorWatch = {
+        validator: { num_top_validators: 3 },
+    } as unknown as ValidatorWatch;
+    const transitionManager = {
+        isTransitioned: jest.fn().mockReturnValue(false),
+    } as unknown as TransitionManager;
+
+    const feed = new SpsPriceFeed(priceHistoryRepository, new MedianPriceCalculator(), blockRepository, validatorRepository, validatorWatch, transitionManager);
+
+    await expect(feed.getPriceAtPoint('SPS', now, undefined, 99)).resolves.toBe(3);
 });
 
 test('Stops using a validator price once that validator drops out of top set', async () => {
@@ -56,9 +87,12 @@ test('Stops using a validator price once that validator drops out of top set', a
     const validatorWatch = {
         validator: { num_top_validators: 3 },
     } as unknown as ValidatorWatch;
+    const transitionManager = {
+        isTransitioned: jest.fn().mockReturnValue(true),
+    } as unknown as TransitionManager;
 
-    const feed = new SpsPriceFeed(priceHistoryRepository, new MedianPriceCalculator(), blockRepository, validatorRepository, validatorWatch);
+    const feed = new SpsPriceFeed(priceHistoryRepository, new MedianPriceCalculator(), blockRepository, validatorRepository, validatorWatch, transitionManager);
 
-    await expect(feed.getPriceAtPoint('SPS', now)).resolves.toBe(5);
-    await expect(feed.getPriceAtPoint('SPS', now)).resolves.toBe(1);
+    await expect(feed.getPriceAtPoint('SPS', now, undefined, 100)).resolves.toBe(5);
+    await expect(feed.getPriceAtPoint('SPS', now, undefined, 100)).resolves.toBe(1);
 });

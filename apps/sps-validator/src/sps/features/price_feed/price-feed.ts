@@ -13,6 +13,7 @@ import {
 } from '@steem-monsters/splinterlands-validator';
 import { inject, injectable, singleton } from 'tsyringe';
 import { PriceFeedWatch } from '.';
+import { TransitionManager } from '../transition';
 
 @singleton()
 export class SpsPriceFeed extends RawPriceFeed {
@@ -22,26 +23,27 @@ export class SpsPriceFeed extends RawPriceFeed {
         @inject(BlockRepository) blockRepository: BlockRepository,
         @inject(ValidatorRepository) private readonly validatorRepository: ValidatorRepository,
         @inject(ValidatorWatch) private readonly validatorWatch: ValidatorWatch,
+        @inject(TransitionManager) private readonly transitionManager: TransitionManager,
     ) {
         super(priceHistoryRepository, calculator, blockRepository);
     }
 
-    override async getPriceAtPoint(token: string, block_time: Date, trx?: Trx): Promise<number | undefined> {
+    override async getPriceAtPoint(token: string, block_time: Date, trx?: Trx, block_num?: number): Promise<number | undefined> {
         await this.fillStore(trx);
-        const relevant = await this.getTopValidatorEntries(token, trx);
-        const entries = this.entriesForCalculationFromList(relevant, block_time);
+        const topValidators = await this.getTopValidatorsIfTransitioned(block_num, trx);
+        const entries = this.entriesForTransitionAwareCalculation(token, block_time, topValidators);
         if (entries.length) {
             return this.calculator.calculate(block_time, entries);
         }
         return;
     }
 
-    override async getPricesAtPoint(tokens: string[], block_time: Date, trx?: Trx): Promise<Array<{ token: string; price: number | undefined }>> {
+    override async getPricesAtPoint(tokens: string[], block_time: Date, trx?: Trx, block_num?: number): Promise<Array<{ token: string; price: number | undefined }>> {
         await this.fillStore(trx);
+        const topValidators = await this.getTopValidatorsIfTransitioned(block_num, trx);
         const results: Array<{ token: string; price: number | undefined }> = [];
         for (const token of tokens) {
-            const relevant = await this.getTopValidatorEntries(token, trx);
-            const entries = this.entriesForCalculationFromList(relevant, block_time);
+            const entries = this.entriesForTransitionAwareCalculation(token, block_time, topValidators);
             if (entries.length) {
                 results.push({ token, price: this.calculator.calculate(block_time, entries) });
             } else {
@@ -51,18 +53,30 @@ export class SpsPriceFeed extends RawPriceFeed {
         return results;
     }
 
-    private async getTopValidatorEntries(token: string, trx?: Trx): Promise<PriceEntry[]> {
+    private entriesForTransitionAwareCalculation(token: string, blockTime: Date, topValidators: Set<string> | null | undefined): PriceEntry[] {
         const relevant = this.value.get(token);
         if (!relevant?.length) {
             return [];
         }
 
-        const topValidators = await this.getTopValidatorSet(trx);
-        if (topValidators === null) {
+        if (topValidators === undefined) {
             return [...relevant];
         }
 
-        return relevant.filter((entry) => topValidators.has(entry.validator));
+        return this.entriesForCalculationFromList(topValidators === null ? relevant : relevant.filter((entry) => topValidators.has(entry.validator)), blockTime);
+    }
+
+    private async getTopValidatorsIfTransitioned(block_num?: number, trx?: Trx): Promise<Set<string> | null | undefined> {
+        const effectiveBlockNum = block_num ?? (await this.getEvaluationBlockNum(trx));
+        if (effectiveBlockNum === undefined || !this.transitionManager.isTransitioned('price_feed_consensus_update', effectiveBlockNum)) {
+            return undefined;
+        }
+        return this.getTopValidatorSet(trx);
+    }
+
+    private async getEvaluationBlockNum(trx?: Trx): Promise<number | undefined> {
+        const latestBlockNum = await this.blockRepository.getLatestBlockNum(trx);
+        return latestBlockNum === null ? undefined : latestBlockNum;
     }
 
     private async getTopValidatorSet(trx?: Trx): Promise<Set<string> | null> {

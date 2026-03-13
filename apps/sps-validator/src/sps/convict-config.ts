@@ -582,6 +582,12 @@ const schema = {
             default: 103680250,
             env: 'FIX_MULTI_UNDELEGATE_CRASH_TRANSITION_POINT',
         },
+        price_feed_consensus_update: {
+            doc: 'Block number for the price_feed_consensus_update transition',
+            format: 'nat',
+            default: 999999999,
+            env: 'PRICE_FEED_CONSENSUS_UPDATE_TRANSITION_POINT',
+        },
     },
 };
 

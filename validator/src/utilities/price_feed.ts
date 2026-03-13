@@ -18,11 +18,11 @@ export interface PriceFeedConsumer {
     /**
      * @throws PriceFeedError
      */
-    getPriceAtPoint(token: string, block_time: Date, trx?: Trx): Promise<number | undefined>;
+    getPriceAtPoint(token: string, block_time: Date, trx?: Trx, block_num?: number): Promise<number | undefined>;
     /**
      * @throws PriceFeedError
      */
-    getPricesAtPoint(token: string[], block_time: Date, trx?: Trx): Promise<Array<{ token: string; price: number | undefined }>>;
+    getPricesAtPoint(token: string[], block_time: Date, trx?: Trx, block_num?: number): Promise<Array<{ token: string; price: number | undefined }>>;
 }
 export const PriceFeedConsumer: unique symbol = Symbol.for('PriceFeedConsumer');
 
@@ -104,7 +104,7 @@ export class RawPriceFeed extends Cache<Map<string, PriceEntry[]>, PriceEntry> i
         }
     }
 
-    async getPriceAtPoint(token: string, block_time: Date, trx?: Trx): Promise<number | undefined> {
+    async getPriceAtPoint(token: string, block_time: Date, trx?: Trx, _block_num?: number): Promise<number | undefined> {
         await this.fillStore(trx);
         const relevant = this.entriesForCalculation(token, block_time);
         if (relevant?.length) {
@@ -114,7 +114,7 @@ export class RawPriceFeed extends Cache<Map<string, PriceEntry[]>, PriceEntry> i
         }
     }
 
-    async getPricesAtPoint(tokens: string[], block_time: Date, trx?: Trx) {
+    async getPricesAtPoint(tokens: string[], block_time: Date, trx?: Trx, _block_num?: number) {
         await this.fillStore(trx);
         const results: Array<{ token: string; price: number | undefined }> = [];
         for (const token of tokens) {
@@ -273,4 +273,3 @@ export class TopPriceFeedWrapper implements PriceFeedProducer {
         }
     }
 }
-
