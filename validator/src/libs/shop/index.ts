@@ -291,7 +291,7 @@ export class Shop<Cookie = void> {
     private async convertCurrency(token: string, amount: number, time: Date, cookie?: Cookie) {
         let pricepoint: number | undefined;
         try {
-            pricepoint = await this.consumer.getPriceAtPoint(token, time, cookie);
+            pricepoint = await this.consumer.getPriceAtPoint(token, time, cookie, this.time.blockNum?.());
         } catch (e: unknown) {
             // Swallow PriceFeedError and leave pricepoint undefined
             if (!(e instanceof PriceFeedError)) {
