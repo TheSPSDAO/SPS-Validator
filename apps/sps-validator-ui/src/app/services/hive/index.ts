@@ -1,2 +1,2 @@
-export { HiveService } from "./services/HiveService";
-export { Hive } from "./core/Hive";
+export { HiveService } from './services/HiveService';
+export { Hive } from './core/Hive';

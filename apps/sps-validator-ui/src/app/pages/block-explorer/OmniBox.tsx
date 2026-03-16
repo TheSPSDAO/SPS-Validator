@@ -2,6 +2,7 @@ import { Card, CardBody, Typography, Input, Button, Spinner } from '@material-ta
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { DefaultService } from '../../services/openapi';
+import { MagnifyingGlassIcon } from '@heroicons/react/24/solid';
 
 export function OmniBox({ className }: { className?: string }) {
     const navigate = useNavigate();
@@ -59,18 +60,34 @@ export function OmniBox({ className }: { className?: string }) {
         }
     };
     return (
-        <Card className={className}>
+        <Card className={`${className} dark:bg-gray-800 dark:text-gray-300`}>
             <CardBody>
-                <Typography variant="h5" color="blue-gray" className="mb-2">
+                <Typography variant="h5" color="blue-gray" className="mb-2 dark:text-gray-200">
                     Search
                 </Typography>
-                <Typography variant="small" color="blue-gray" className="mb-2">
+                <Typography variant="small" color="blue-gray" className="mb-2 dark:text-gray-300">
                     Search by block number, account name, or transaction id.
                 </Typography>
                 <form className="flex items-center gap-4" onSubmit={(e) => search(e)}>
-                    <Input value={input} onChange={(e) => setInput(e.target.value)} label="Search" placeholder="Search" className="flex-grow-1" disabled={progress} />
-                    <Button className="w-32 flex flex-row items-center justify-center" type="submit" disabled={progress}>
-                        <span className={progress ? 'me-2' : ''}>Search</span>
+                    <Input
+                        value={input}
+                        onChange={(e) => setInput(e.target.value)}
+                        label="Search"
+                        placeholder="Search"
+                        className="flex-grow-1 dark:text-gray-300 dark:border-gray-300 dark:placeholder-shown:border-t-gray-300 dark:focus:border-gray-200 dark:focus:border-t-transparent dark:placeholder:text-gray-300 dark:focus:placeholder:text-gray-500 dark:border-t-transparent"
+                        labelProps={{
+                            className:
+                                'dark:peer-placeholder-shown:text-gray-300 dark:placeholder:text-gray-300 dark:text-gray-300 dark:peer-focus:text-gray-300 dark:peer-focus:before:!border-gray-200 dark:peer-focus:after:!border-gray-200 dark:before:border-gray-300 dark:after:border-gray-300',
+                        }}
+                        disabled={progress}
+                    />
+                    <Button
+                        className="p-2 sm:w-32 flex flex-row items-center justify-center dark:bg-blue-800 dark:hover:bg-blue-600 dark:border-gray-300 dark:border dark:text-gray-300 dark:hover:text-gray-100 dark:shadow-none"
+                        type="submit"
+                        disabled={progress}
+                    >
+                        <MagnifyingGlassIcon className="sm:hidden size-6" />
+                        <span className={`sr-only sm:not-sr-only ${progress ? 'me-2' : ''}`}>Search</span>
                         {progress && <Spinner width={16} height={16} />}
                     </Button>
                 </form>

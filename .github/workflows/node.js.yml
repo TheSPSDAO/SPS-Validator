@@ -47,7 +47,7 @@ jobs:
         working-directory: scripts
         run: ./ci-lazy-regenerate-structure.sh
 
-      - run: npm ci --silent
+      - run: npm ci
         env:
           NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 

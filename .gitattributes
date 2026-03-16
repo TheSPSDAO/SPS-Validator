@@ -3,3 +3,6 @@
 
 # Linux/OSX specific files that are only run on Windows in WSL
 *.sh text eol=lf
+
+# Generated files (keep LF so OpenAPI generation is stable across platforms)
+apps/sps-validator-ui/src/app/services/openapi/** text eol=lf
