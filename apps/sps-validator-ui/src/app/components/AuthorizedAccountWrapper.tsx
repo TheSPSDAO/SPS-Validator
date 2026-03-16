@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { useLocalStorage } from '../hooks';
 import { Hive, HiveService } from '../services/hive';
 import { Button, Card, CardBody, CardFooter, Input, Spinner, Typography } from '@material-tailwind/react';
+import { useSpinnerColor } from '../hooks/SpinnerColor';
 
 export type AuthorizedAccountWrapperProps = {
     title: string;
@@ -17,6 +18,7 @@ export function AuthorizedAccountWrapper(props: AuthorizedAccountWrapperProps) {
     const [workingAccount, setWorkingAccount] = useState(account);
     const [error, setError] = useState('');
     const [progress, setProgress] = useState(false);
+    const spinnerColor = useSpinnerColor('teal');
 
     useEffect(() => {
         props.onAuthorized(authorized ? account : undefined);
@@ -58,7 +60,11 @@ export function AuthorizedAccountWrapper(props: AuthorizedAccountWrapperProps) {
         return (
             <div className="flex flex-col gap-4">
                 <div className="flex justify-end">
-                    <Button variant="outlined" onClick={reauthorize}>
+                    <Button
+                        variant="outlined"
+                        onClick={reauthorize}
+                        className="dark:bg-blue-800 dark:hover:bg-blue-600 dark:border-gray-300 dark:border dark:text-gray-300 dark:hover:text-gray-100 dark:shadow-none"
+                    >
                         Switch Account ({account})
                     </Button>
                 </div>
@@ -68,13 +74,13 @@ export function AuthorizedAccountWrapper(props: AuthorizedAccountWrapperProps) {
     } else {
         return (
             <div className="flex justify-center">
-                <Card className="2xl:w-1/3 lg:w-2/3 md:w-full">
+                <Card className="2xl:w-2/5 md:w-2/3 sm:w-full dark:bg-gray-800 dark:text-gray-300 dark:shadow-none">
                     <CardBody>
-                        <Typography variant="h5" color="blue-gray" className="mb-2">
+                        <Typography variant="h5" color="blue-gray" className="mb-2 dark:text-gray-200">
                             {props.title} - Authorize Account
                         </Typography>
                         <Typography variant="paragraph">Authorize your Hive Account to use this page.</Typography>
-                        <form className="mt-8 flex flex-col gap-6">
+                        <form className="mt-8 gap-6 max-w-[400px]">
                             <div>
                                 <Input
                                     size="lg"
@@ -89,6 +95,11 @@ export function AuthorizedAccountWrapper(props: AuthorizedAccountWrapperProps) {
                                         }
                                     }}
                                     disabled={progress}
+                                    className="dark:text-gray-300 dark:border-gray-300 dark:placeholder-shown:border-t-gray-300 dark:focus:border-gray-200 dark:focus:border-t-transparent dark:placeholder:text-gray-300 dark:focus:placeholder:text-gray-500 dark:border-t-transparent dark:disabled:text-gray-800"
+                                    labelProps={{
+                                        className:
+                                            'dark:peer-placeholder-shown:text-gray-300 dark:placeholder:text-gray-300 dark:text-gray-300 dark:peer-focus:text-gray-300 dark:peer-focus:before:!border-gray-200 dark:peer-focus:after:!border-gray-200 dark:before:border-gray-300 dark:after:border-gray-300',
+                                    }}
                                 />
                             </div>
                         </form>
@@ -100,8 +111,13 @@ export function AuthorizedAccountWrapper(props: AuthorizedAccountWrapperProps) {
                             </Typography>
                         )}
                         <div className="flex items-center justify-end">
-                            <Button className="flex flex-row items-center" variant="filled" disabled={!workingAccount || progress} onClick={authorize}>
-                                {progress && <Spinner className="me-3 text-sm" />}
+                            <Button
+                                className="flex flex-row items-center dark:bg-blue-800 dark:hover:bg-blue-600 dark:border-gray-300 dark:border dark:text-gray-300 dark:hover:text-gray-100 dark:shadow-none"
+                                variant="filled"
+                                disabled={!workingAccount || progress}
+                                onClick={authorize}
+                            >
+                                {progress && <Spinner className="me-3 text-sm dark:border-gray-300 dark:border-t-transparent" color={spinnerColor} />}
                                 Authorize
                             </Button>
                         </div>

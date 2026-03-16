@@ -1,20 +1,26 @@
-import { Card, CardBody, Checkbox, Select, Spinner, Tab, TabPanel, Tabs, TabsBody, TabsHeader, Typography, Option } from '@material-tailwind/react';
-import { useMemo, useState, useEffect } from 'react';
+import { Button, Card, CardBody, Checkbox, Select, Spinner, Tab, TabPanel, Tabs, TabsBody, TabsHeader, Typography, Option } from '@material-tailwind/react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { DefaultService } from '../services/openapi';
 import { usePromise } from '../hooks/Promise';
-import { Table, TableBody, TableCell, TableColumn, TableHead, TablePager, TableRow } from '../components/Table';
+import { Table, TableBody, TableCell, TablePager, TableRow, GradientOverflow, TableHeader } from '../components/Table';
 import { localeNumber } from '../components/LocaleNumber';
+import { useSpinnerColor } from '../hooks/SpinnerColor';
+import { ChevronDownIcon } from '@heroicons/react/24/solid';
 
 const tokens = ['SPS', 'SPSP', 'SPS_TOTAL', 'LICENSE', 'ACTIVATED_LICENSE', 'LICENSE_TOTAL', 'RUNNING_LICENSE'];
 
 function TokenBalancesTable({ token, searchParams, setSearchParams }: { token: string; searchParams: URLSearchParams; setSearchParams: (params: URLSearchParams) => void }) {
-    const pageParam = parseInt(searchParams.get('page') || '0', 10);
+    const pageParamRaw = Number.parseInt(searchParams.get('page') || '0', 10);
+    const pageParam = Number.isFinite(pageParamRaw) && pageParamRaw >= 0 ? pageParamRaw : 0;
     const systemAccountsParam = searchParams.get('systemAccounts') === 'true';
 
     const [page, setPage] = useState(pageParam);
     const [limit] = useState(10); // TODO: Add a limit selector
     const [systemAccounts, setSystemAccounts] = useState(systemAccountsParam);
+
+    const spinnerColor = useSpinnerColor('blue');
+    const containerRef = useRef<HTMLDivElement | null>(null);
 
     // Sync state with URL params on mount and when params change
     useEffect(() => {
@@ -24,14 +30,24 @@ function TokenBalancesTable({ token, searchParams, setSearchParams }: { token: s
 
     // Update URL params when state changes
     useEffect(() => {
+        const desiredPage = page.toString();
+        const desiredSystemAccounts = systemAccounts.toString();
+        const currentPage = searchParams.get('page') ?? '0';
+        const currentSystemAccounts = searchParams.get('systemAccounts') ?? 'false';
+        if (currentPage === desiredPage && currentSystemAccounts === desiredSystemAccounts) {
+            return;
+        }
         const newParams = new URLSearchParams(searchParams);
-        newParams.set('page', page.toString());
-        newParams.set('systemAccounts', systemAccounts.toString());
+        newParams.set('page', desiredPage);
+        newParams.set('systemAccounts', desiredSystemAccounts);
         setSearchParams(newParams);
     }, [page, systemAccounts, searchParams, setSearchParams]);
 
-    const [count, isLoadingCount] = usePromise(() => DefaultService.getExtendedBalancesByToken(token, 0, 0, systemAccounts), [token, systemAccounts]);
-    const [balances, isLoading] = usePromise(() => DefaultService.getExtendedBalancesByToken(token, limit, page * limit, systemAccounts), [token, page, limit, systemAccounts]);
+    const [count, isLoadingCount, countError, reloadCount] = usePromise(() => DefaultService.getExtendedBalancesByToken(token, 0, 0, systemAccounts), [token, systemAccounts]);
+    const [balances, isLoading, balancesError, reloadBalances] = usePromise(
+        () => DefaultService.getExtendedBalancesByToken(token, limit, page * limit, systemAccounts),
+        [token, page, limit, systemAccounts],
+    );
 
     const toggleSystemAccounts = (value: boolean) => {
         setSystemAccounts(value);
@@ -39,67 +55,135 @@ function TokenBalancesTable({ token, searchParams, setSearchParams }: { token: s
     };
 
     if (isLoading || isLoadingCount) {
-        return <Spinner className="w-full" />;
+        return <Spinner className="w-full" color={spinnerColor} />;
     }
 
+    const loadError = balancesError ?? countError;
+    if (loadError) {
+        return (
+            <div className="flex flex-col gap-2">
+                <Typography variant="paragraph" color="red" className="text-sm">
+                    Failed to load balances: {loadError.message}
+                </Typography>
+                <div>
+                    <Button
+                        size="sm"
+                        onClick={() => {
+                            reloadBalances();
+                            reloadCount();
+                        }}
+                        className="dark:bg-blue-800 dark:hover:bg-blue-600 dark:border-gray-300 dark:border dark:text-gray-300 dark:hover:text-gray-100 dark:shadow-none"
+                    >
+                        Retry
+                    </Button>
+                </div>
+            </div>
+        );
+    }
+
+    const noBalances = !balances?.balances || balances.balances.length === 0;
+
     return (
-        <>
-            <Table className="w-full border-2 border-gray-200">
-                <TableHead>
-                    <TableRow>
-                        <TableColumn>Token</TableColumn>
-                        <TableColumn>
-                            <div className="flex items-center">
-                                Player
-                                <div className="ms-5">
-                                    <Checkbox checked={systemAccounts} label="Include System Accounts" onChange={(e) => toggleSystemAccounts(e.target.checked)} />
-                                </div>
-                            </div>
-                        </TableColumn>
-                        <TableColumn>Balance</TableColumn>
-                    </TableRow>
-                </TableHead>
-                <TableBody>
-                    {balances?.balances?.map((balance) => (
-                        <TableRow key={balance.player}>
-                            <TableCell>{token}</TableCell>
-                            <TableCell>{balance.player}</TableCell>
-                            <TableCell>{localeNumber(balance.balance)}</TableCell>
-                        </TableRow>
-                    ))}
-                </TableBody>
-            </Table>
-            {count?.count && <TablePager className="w-full justify-center mt-3" page={page} limit={limit} displayPageCount={2} onPageChange={setPage} count={count?.count} />}
-        </>
+        <div className="relative">
+            <div ref={containerRef} className="overflow-x-auto">
+                <Table className="w-full border-2 border-gray-200 dark:bg-gray-800 dark:text-gray-300 dark:border-gray-300">
+                    <TableHeader
+                        columns={[
+                            'Token',
+                            <div key="player" className="flex items-center gap-4">
+                                <Typography color="blue-gray" className="font-normal text-left dark:text-gray-800">
+                                    Player
+                                </Typography>
+                                <Checkbox
+                                    checked={systemAccounts}
+                                    label="Include System Accounts"
+                                    onChange={(e) => toggleSystemAccounts(e.target.checked)}
+                                    className="dark:checked:bg-blue-800 dark:border-gray-800 dark:before:bg-blue-400 dark:checked:before:bg-blue-400"
+                                    labelProps={{ className: 'dark:text-gray-800' }}
+                                />
+                            </div>,
+                            'Balance',
+                        ]}
+                    />
+                    <TableBody>
+                        {noBalances && (
+                            <TableRow className="dark:border-gray-300">
+                                <TableCell colSpan={3} className="text-center">
+                                    No balances found
+                                </TableCell>
+                            </TableRow>
+                        )}
+                        {!noBalances &&
+                            balances?.balances?.map((balance) => (
+                                <TableRow key={balance.player} className="dark:border-gray-300">
+                                    <TableCell>{token}</TableCell>
+                                    <TableCell>{balance.player}</TableCell>
+                                    <TableCell>{localeNumber(balance.balance)}</TableCell>
+                                </TableRow>
+                            ))}
+                    </TableBody>
+                </Table>
+            </div>
+            <GradientOverflow isLoading={isLoading} containerRef={containerRef} />
+            {count?.count && (
+                <TablePager
+                    className="w-full justify-center mt-3"
+                    page={page}
+                    limit={limit}
+                    displayPageCount={2}
+                    onPageChange={setPage}
+                    count={count?.count}
+                    containerRef={containerRef}
+                />
+            )}
+        </div>
     );
 }
 
-function ObjectTable({ obj }: { obj: Record<string, any> }) {
-    const format = (value: any) => {
+function TokenSupplyTable({ token }: { token: string }) {
+    const [supply, isLoading] = usePromise(() => DefaultService.getExtendedTokenSupply(token), [token]);
+    const spinnerColor = useSpinnerColor('blue');
+    if (isLoading) {
+        return <Spinner className="w-full" color={spinnerColor} />;
+    } else if (!supply) {
+        return <Typography variant="h6">No supply information available</Typography>;
+    } else if (token === 'SPS') {
+        return <SpsSupplyTable supply={supply as SpsTokenSupply} />;
+    }
+
+    return <ObjectTable obj={supply}></ObjectTable>;
+}
+
+function ObjectTable({ obj }: { obj: Record<string, unknown> }) {
+    const containerRef = useRef<HTMLDivElement | null>(null);
+    const format = (value: unknown): string => {
+        if (value === null || value === undefined) {
+            return '';
+        }
         if (typeof value === 'object') {
             return JSON.stringify(value);
         } else if (typeof value === 'number') {
             return localeNumber(value);
         }
-        return value;
+        return String(value);
     };
     return (
-        <Table className="w-full border-2 border-gray-200">
-            <TableHead>
-                <TableRow>
-                    <TableColumn>Property</TableColumn>
-                    <TableColumn>Value</TableColumn>
-                </TableRow>
-            </TableHead>
-            <TableBody>
-                {Object.entries(obj ?? {}).map(([key, value]) => (
-                    <TableRow key={key}>
-                        <TableCell>{key}</TableCell>
-                        <TableCell>{format(value)}</TableCell>
-                    </TableRow>
-                ))}
-            </TableBody>
-        </Table>
+        <div className="relative">
+            <div ref={containerRef} className="overflow-x-auto">
+                <Table className="w-full border-2 p-4 border-gray-200 dark:bg-gray-800 dark:text-gray-300 dark:border-gray-300">
+                    <TableHeader columns={['Property', 'Value']} />
+                    <TableBody>
+                        {Object.entries(obj ?? {}).map(([key, value]) => (
+                            <TableRow key={key} className="dark:border-gray-300">
+                                <TableCell>{key}</TableCell>
+                                <TableCell>{format(value)}</TableCell>
+                            </TableRow>
+                        ))}
+                    </TableBody>
+                </Table>
+            </div>
+            <GradientOverflow containerRef={containerRef} isLoading={false} />
+        </div>
     );
 }
 
@@ -137,42 +221,44 @@ function SpsSupplyTable({ supply }: { supply: SpsTokenSupply }) {
         };
     }, [supply]);
     return (
-        <Tabs value="sum">
-            <TabsHeader>
-                <Tab value="sum">Summary</Tab>
-                <Tab value="offChain">Off Chain</Tab>
-                <Tab value="reserve">Reserve</Tab>
-                <Tab value="rewardPools">Reward Pools</Tab>
-            </TabsHeader>
-            <TabsBody>
-                <TabPanel value="sum">
-                    <ObjectTable obj={summary}></ObjectTable>
-                </TabPanel>
-                <TabPanel value="offChain">
-                    <ObjectTable obj={supply.off_chain}></ObjectTable>
-                </TabPanel>
-                <TabPanel value="reserve">
-                    <ObjectTable obj={supply.reserve}></ObjectTable>
-                </TabPanel>
-                <TabPanel value="rewardPools">
-                    <ObjectTable obj={supply.reward_pools}></ObjectTable>
-                </TabPanel>
-            </TabsBody>
-        </Tabs>
+        <div className="relative">
+            <div className="overflow-x-auto">
+                <Tabs value="sum">
+                    <TabsHeader
+                        className="flex items-center dark:bg-gray-300 dark:text-gray-800"
+                        indicatorProps={{ className: 'transition-colors delay-200 duration-400 dark:bg-blue-800' }}
+                    >
+                        <Tab value="sum" activeClassName="dark:text-gray-300 transition-colors delay-200 duration-400" className="transition-colors delay-200 duration-400">
+                            Summary
+                        </Tab>
+                        <Tab value="offChain" activeClassName="dark:text-gray-300 transition-colors delay-200 duration-400" className="transition-colors delay-200 duration-400">
+                            Off Chain
+                        </Tab>
+                        <Tab value="reserve" activeClassName="dark:text-gray-300 transition-colors delay-200 duration-400" className="transition-colors delay-200 duration-400">
+                            Reserve
+                        </Tab>
+                        <Tab value="rewardPools" activeClassName="dark:text-gray-300 transition-colors delay-200 duration-400" className="transition-colors delay-200 duration-400">
+                            Reward Pools
+                        </Tab>
+                    </TabsHeader>
+                    <TabsBody>
+                        <TabPanel value="sum">
+                            <ObjectTable obj={summary}></ObjectTable>
+                        </TabPanel>
+                        <TabPanel value="offChain">
+                            <ObjectTable obj={supply.off_chain}></ObjectTable>
+                        </TabPanel>
+                        <TabPanel value="reserve">
+                            <ObjectTable obj={supply.reserve}></ObjectTable>
+                        </TabPanel>
+                        <TabPanel value="rewardPools">
+                            <ObjectTable obj={supply.reward_pools}></ObjectTable>
+                        </TabPanel>
+                    </TabsBody>
+                </Tabs>
+            </div>
+        </div>
     );
-}
-
-function TokenSupplyTable({ token }: { token: string }) {
-    const [supply, isLoading] = usePromise(() => DefaultService.getExtendedTokenSupply(token), [token]);
-    if (isLoading) {
-        return <Spinner className="w-full" />;
-    } else if (!supply) {
-        return <Typography variant="h6">No supply information available</Typography>;
-    } else if (token === 'SPS') {
-        return <SpsSupplyTable supply={supply as SpsTokenSupply} />;
-    }
-
-    return <ObjectTable obj={supply}></ObjectTable>;
 }
 
 export function TokenBalances() {
@@ -182,11 +268,10 @@ export function TokenBalances() {
 
     // Sync state with URL params on mount and when params change
     useEffect(() => {
-        const urlToken = searchParams.get('token');
-        if (urlToken && tokens.includes(urlToken)) {
-            setToken(urlToken);
+        if (tokenParam && tokens.includes(tokenParam) && tokenParam !== token) {
+            setToken(tokenParam);
         }
-    }, [searchParams]);
+    }, [tokenParam, token]);
 
     // Update URL params when token changes
     const handleTokenChange = (newToken: string) => {
@@ -199,16 +284,28 @@ export function TokenBalances() {
     };
 
     return (
-        <div className="grid gap-6">
-            <Card className="col-span-full">
+        <div className="grid gap-6 w-full">
+            <Card className="w-full col-span-full dark:bg-gray-800 dark:text-gray-300 dark:shadow-none">
                 <CardBody>
-                    <Typography variant="h5" color="blue-gray" className="mb-2">
+                    <Typography variant="h5" color="blue-gray" className="mb-2 dark:text-gray-200">
                         Token Information
                     </Typography>
-                    <div className="mt-4 flex 2xl:max-w-96 2xl:w-1/4 lg:w-2/3 md:w-full">
-                        <Select label="Token" value={token} onChange={(val) => handleTokenChange(val ?? tokens[0])}>
+                    <div className="mt-4 flex 2xl:max-w-96 2xl:w-1/4 lg:w-2/3 md:w-full dark:bg-gray-800 dark:text-gray-300">
+                        <Select
+                            label="Token"
+                            value={token}
+                            onChange={(val) => handleTokenChange(val ?? tokens[0])}
+                            className="dark:bg-gray-800 dark:text-gray-300 dark:border-x-gray-300 dark:border-b-gray-300"
+                            labelProps={{
+                                className:
+                                    'dark:text-gray-300 dark:peer-disabled:before:border-transparent dark:peer-disabled:after:border-transparent dark:before:border-gray-300 dark:after:border-gray-300 ',
+                            }}
+                            containerProps={{ className: 'dark:bg-gray-800' }}
+                            menuProps={{ className: 'dark:bg-gray-800 dark:text-gray-300 dark:border-gray-300' }}
+                            arrow={<ChevronDownIcon className="w-5 h-5 dark:fill-gray-300 dark:text-gray-300" />}
+                        >
                             {tokens.map((token) => (
-                                <Option key={token} value={token}>
+                                <Option key={token} value={token} className="dark:text-gray-300 dark:bg-gray-800 dark:hover:bg-gray-300 dark:hover:text-gray-800">
                                     {token}
                                 </Option>
                             ))}
@@ -216,10 +313,10 @@ export function TokenBalances() {
                     </div>
                 </CardBody>
             </Card>
-            <div className="grid xl:grid-cols-2 gap-6 col-span-full">
-                <Card className="col-span-1">
+            <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
+                <Card className="w-full col-span-1 dark:bg-gray-800 dark:text-gray-300 dark:shadow-none">
                     <CardBody>
-                        <Typography variant="h5" color="blue-gray" className="mb-2">
+                        <Typography variant="h5" color="blue-gray" className="mb-6 dark:text-gray-200">
                             Account Balances
                         </Typography>
                         <div className="mt-4">
@@ -227,12 +324,12 @@ export function TokenBalances() {
                         </div>
                     </CardBody>
                 </Card>
-                <Card className="col-span-1">
+                <Card className="w-full col-span-1 dark:bg-gray-800 dark:text-gray-300 dark:shadow-none">
                     <CardBody>
-                        <Typography variant="h5" color="blue-gray" className="mb-2">
+                        <Typography variant="h5" color="blue-gray" className="mb-6 dark:text-gray-200">
                             Token Supply
                         </Typography>
-                        <div className="mt-4">
+                        <div>
                             <TokenSupplyTable token={token} />
                         </div>
                     </CardBody>
