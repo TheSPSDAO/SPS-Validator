@@ -102,6 +102,7 @@ describe('After controller_creation_block transition', () => {
 
     test.dbOnly('lender can create delegation_offer directly (non-admin)', async () => {
         const blockNum = getBlockAfterTransition();
+        const txId = 'tx-offer-1';
         await fixture.testHelper.setStaked(lender, 1000);
 
         await expect(
@@ -109,7 +110,6 @@ describe('After controller_creation_block transition', () => {
                 'create_promise',
                 lender,
                 {
-                    id: 'offer-1',
                     type: 'delegation_offer',
                     controllers: [controller],
                     params: {
@@ -119,15 +119,15 @@ describe('After controller_creation_block transition', () => {
                         price: 0.001,
                     },
                 },
-                { block_num: blockNum },
+                { block_num: blockNum, transaction: txId },
             ),
         ).resolves.toBeUndefined();
 
-        const result = await fixture.testHelper.getPromise('delegation_offer', 'offer-1');
+        const result = await fixture.testHelper.getPromise('delegation_offer', txId);
         expect(result).not.toBeNull();
         expect(result).toMatchObject({
             type: 'delegation_offer',
-            ext_id: 'offer-1',
+            ext_id: txId,
             controllers: [controller],
             status: 'open',
             params: {
@@ -171,6 +171,7 @@ describe('After controller_creation_block transition', () => {
 
     test.dbOnly('controller can create delegation_offer on behalf of lender with source_promise_id', async () => {
         const blockNum = getBlockAfterTransition();
+        const txId = 'tx-offer-2';
         await fixture.testHelper.setStaked(lender, 1000);
 
         // Insert a source promise that the controller is on
@@ -200,7 +201,6 @@ describe('After controller_creation_block transition', () => {
                 'create_promise',
                 controller,
                 {
-                    id: 'offer-2',
                     type: 'delegation_offer',
                     controllers: [controller],
                     params: {
@@ -211,15 +211,15 @@ describe('After controller_creation_block transition', () => {
                         source_promise_id: source_promise_id,
                     },
                 },
-                { block_num: blockNum },
+                { block_num: blockNum, transaction: txId },
             ),
         ).resolves.toBeUndefined();
 
-        const result = await fixture.testHelper.getPromise('delegation_offer', 'offer-2');
+        const result = await fixture.testHelper.getPromise('delegation_offer', txId);
         expect(result).not.toBeNull();
         expect(result).toMatchObject({
             type: 'delegation_offer',
-            ext_id: 'offer-2',
+            ext_id: txId,
             controllers: [controller],
             status: 'open',
             params: expect.objectContaining({
@@ -620,6 +620,7 @@ describe('delegation_offer create and fulfill', () => {
 
     test.dbOnly('create locks SPSP into system account, fulfill delegates to borrower and creates rental record', async () => {
         const blockNum = getBlockAfterTransition();
+        const txId = 'tx-create-fulfill';
         await fixture.testHelper.setStaked(lender, 1000);
 
         // Create the offer
@@ -627,7 +628,6 @@ describe('delegation_offer create and fulfill', () => {
             'create_promise',
             lender,
             {
-                id: 'offer-1',
                 type: 'delegation_offer',
                 controllers: [controller],
                 params: {
@@ -637,7 +637,7 @@ describe('delegation_offer create and fulfill', () => {
                     price: 0.001,
                 },
             },
-            { block_num: blockNum },
+            { block_num: blockNum, transaction: txId },
         );
 
         // Verify SPSP was locked: lender has 100 SPSP_OUT delegated, system account has 100 SPSP_IN
@@ -651,7 +651,7 @@ describe('delegation_offer create and fulfill', () => {
             'fulfill_promise',
             controller,
             {
-                id: 'offer-1',
+                id: txId,
                 type: 'delegation_offer',
                 metadata: {
                     borrower: borrower,
@@ -664,7 +664,7 @@ describe('delegation_offer create and fulfill', () => {
         );
 
         // Promise should be completed (fully filled)
-        const promise = await fixture.testHelper.getPromise('delegation_offer', 'offer-1');
+        const promise = await fixture.testHelper.getPromise('delegation_offer', txId);
         expect(promise).not.toBeNull();
         expect(promise!.status).toBe('completed');
         expect((promise!.params as any).qty_remaining).toBe(0);
@@ -687,7 +687,7 @@ describe('delegation_offer create and fulfill', () => {
         expect(rental).toMatchObject({
             id: 'rental-1',
             promise_type: 'delegation_offer',
-            promise_ext_id: 'offer-1',
+            promise_ext_id: txId,
             lender: lender,
             borrower: borrower,
             token: TOKENS.SPSP,
@@ -698,13 +698,13 @@ describe('delegation_offer create and fulfill', () => {
 
     test.dbOnly('fulfill writes a history record', async () => {
         const blockNum = getBlockAfterTransition();
+        const txId = 'tx-history';
         await fixture.testHelper.setStaked(lender, 1000);
 
         await fixture.opsHelper.processOp(
             'create_promise',
             lender,
             {
-                id: 'offer-1',
                 type: 'delegation_offer',
                 controllers: [controller],
                 params: {
@@ -714,14 +714,14 @@ describe('delegation_offer create and fulfill', () => {
                     price: 0.001,
                 },
             },
-            { block_num: blockNum },
+            { block_num: blockNum, transaction: txId },
         );
 
         await fixture.opsHelper.processOp(
             'fulfill_promise',
             controller,
             {
-                id: 'offer-1',
+                id: txId,
                 type: 'delegation_offer',
                 metadata: {
                     borrower: borrower,
@@ -733,7 +733,7 @@ describe('delegation_offer create and fulfill', () => {
             { block_num: blockNum + 1 },
         );
 
-        const promise = await fixture.testHelper.getPromise('delegation_offer', 'offer-1');
+        const promise = await fixture.testHelper.getPromise('delegation_offer', txId);
         const history = await fixture.testHelper.getPromiseHistory(promise!.id);
         // Should have at least a create and a fulfill record
         expect(history.length).toBeGreaterThanOrEqual(2);
@@ -750,6 +750,7 @@ describe('delegation_offer partial fills', () => {
 
     test.dbOnly('partial fill keeps promise open and decrements qty_remaining', async () => {
         const blockNum = getBlockAfterTransition();
+        const txId = 'tx-partial-1';
         await fixture.testHelper.setStaked(lender, 1000);
 
         // Create offer for 100 SPSP
@@ -757,7 +758,6 @@ describe('delegation_offer partial fills', () => {
             'create_promise',
             lender,
             {
-                id: 'offer-1',
                 type: 'delegation_offer',
                 controllers: [controller],
                 params: {
@@ -767,7 +767,7 @@ describe('delegation_offer partial fills', () => {
                     price: 0.001,
                 },
             },
-            { block_num: blockNum },
+            { block_num: blockNum, transaction: txId },
         );
 
         // Fill 40 of 100
@@ -775,7 +775,7 @@ describe('delegation_offer partial fills', () => {
             'fulfill_promise',
             controller,
             {
-                id: 'offer-1',
+                id: txId,
                 type: 'delegation_offer',
                 metadata: {
                     borrower: borrower,
@@ -788,7 +788,7 @@ describe('delegation_offer partial fills', () => {
         );
 
         // Promise should still be open with 60 remaining
-        const promise = await fixture.testHelper.getPromise('delegation_offer', 'offer-1');
+        const promise = await fixture.testHelper.getPromise('delegation_offer', txId);
         expect(promise!.status).toBe('open');
         expect((promise!.params as any).qty_remaining).toBe(60);
 
@@ -809,13 +809,13 @@ describe('delegation_offer partial fills', () => {
 
     test.dbOnly('partial fill writes a history record even though status stays open', async () => {
         const blockNum = getBlockAfterTransition();
+        const txId = 'tx-partial-history';
         await fixture.testHelper.setStaked(lender, 1000);
 
         await fixture.opsHelper.processOp(
             'create_promise',
             lender,
             {
-                id: 'offer-1',
                 type: 'delegation_offer',
                 controllers: [controller],
                 params: {
@@ -825,14 +825,14 @@ describe('delegation_offer partial fills', () => {
                     price: 0.001,
                 },
             },
-            { block_num: blockNum },
+            { block_num: blockNum, transaction: txId },
         );
 
         await fixture.opsHelper.processOp(
             'fulfill_promise',
             controller,
             {
-                id: 'offer-1',
+                id: txId,
                 type: 'delegation_offer',
                 metadata: {
                     borrower: borrower,
@@ -844,7 +844,7 @@ describe('delegation_offer partial fills', () => {
             { block_num: blockNum + 1 },
         );
 
-        const promise = await fixture.testHelper.getPromise('delegation_offer', 'offer-1');
+        const promise = await fixture.testHelper.getPromise('delegation_offer', txId);
         const history = await fixture.testHelper.getPromiseHistory(promise!.id);
         const fulfillHistory = history.find((h) => h.action === 'fulfill');
         expect(fulfillHistory).toBeDefined();
@@ -855,6 +855,7 @@ describe('delegation_offer partial fills', () => {
 
     test.dbOnly('multiple partial fills then final fill completes the promise', async () => {
         const blockNum = getBlockAfterTransition();
+        const txId = 'tx-multi-fill';
         const borrower2 = 'borrower2';
         await fixture.testHelper.setHiveAccount(borrower2);
         await fixture.testHelper.setStaked(lender, 1000);
@@ -864,7 +865,6 @@ describe('delegation_offer partial fills', () => {
             'create_promise',
             lender,
             {
-                id: 'offer-1',
                 type: 'delegation_offer',
                 controllers: [controller],
                 params: {
@@ -874,7 +874,7 @@ describe('delegation_offer partial fills', () => {
                     price: 0.001,
                 },
             },
-            { block_num: blockNum },
+            { block_num: blockNum, transaction: txId },
         );
 
         // Fill 1: 30 to borrower
@@ -882,7 +882,7 @@ describe('delegation_offer partial fills', () => {
             'fulfill_promise',
             controller,
             {
-                id: 'offer-1',
+                id: txId,
                 type: 'delegation_offer',
                 metadata: {
                     borrower: borrower,
@@ -894,7 +894,7 @@ describe('delegation_offer partial fills', () => {
             { block_num: blockNum + 1 },
         );
 
-        let promise = await fixture.testHelper.getPromise('delegation_offer', 'offer-1');
+        let promise = await fixture.testHelper.getPromise('delegation_offer', txId);
         expect(promise!.status).toBe('open');
         expect((promise!.params as any).qty_remaining).toBe(70);
 
@@ -903,7 +903,7 @@ describe('delegation_offer partial fills', () => {
             'fulfill_promise',
             controller,
             {
-                id: 'offer-1',
+                id: txId,
                 type: 'delegation_offer',
                 metadata: {
                     borrower: borrower2,
@@ -915,7 +915,7 @@ describe('delegation_offer partial fills', () => {
             { block_num: blockNum + 2 },
         );
 
-        promise = await fixture.testHelper.getPromise('delegation_offer', 'offer-1');
+        promise = await fixture.testHelper.getPromise('delegation_offer', txId);
         expect(promise!.status).toBe('open');
         expect((promise!.params as any).qty_remaining).toBe(40);
 
@@ -924,7 +924,7 @@ describe('delegation_offer partial fills', () => {
             'fulfill_promise',
             controller,
             {
-                id: 'offer-1',
+                id: txId,
                 type: 'delegation_offer',
                 metadata: {
                     borrower: borrower,
@@ -937,7 +937,7 @@ describe('delegation_offer partial fills', () => {
         );
 
         // Now the promise should be completed
-        promise = await fixture.testHelper.getPromise('delegation_offer', 'offer-1');
+        promise = await fixture.testHelper.getPromise('delegation_offer', txId);
         expect(promise!.status).toBe('completed');
         expect((promise!.params as any).qty_remaining).toBe(0);
 
@@ -954,19 +954,19 @@ describe('delegation_offer partial fills', () => {
         expect(borrower2In?.balance).toBe(30);
 
         // Three rental records exist
-        const rentals = await fixture.testHelper.getRentalDelegationsByPromise('delegation_offer', 'offer-1');
+        const rentals = await fixture.testHelper.getRentalDelegationsByPromise('delegation_offer', txId);
         expect(rentals.length).toBe(3);
     });
 
     test.dbOnly('fill qty exceeding remaining is rejected', async () => {
         const blockNum = getBlockAfterTransition();
+        const txId = 'tx-exceed';
         await fixture.testHelper.setStaked(lender, 1000);
 
         await fixture.opsHelper.processOp(
             'create_promise',
             lender,
             {
-                id: 'offer-1',
                 type: 'delegation_offer',
                 controllers: [controller],
                 params: {
@@ -976,7 +976,7 @@ describe('delegation_offer partial fills', () => {
                     price: 0.001,
                 },
             },
-            { block_num: blockNum },
+            { block_num: blockNum, transaction: txId },
         );
 
         // Fill 60
@@ -984,7 +984,7 @@ describe('delegation_offer partial fills', () => {
             'fulfill_promise',
             controller,
             {
-                id: 'offer-1',
+                id: txId,
                 type: 'delegation_offer',
                 metadata: {
                     borrower: borrower,
@@ -1001,7 +1001,7 @@ describe('delegation_offer partial fills', () => {
             'fulfill_promise',
             controller,
             {
-                id: 'offer-1',
+                id: txId,
                 type: 'delegation_offer',
                 metadata: {
                     borrower: borrower,
@@ -1014,7 +1014,7 @@ describe('delegation_offer partial fills', () => {
         );
 
         // Promise should still be open with 40 remaining
-        const promise = await fixture.testHelper.getPromise('delegation_offer', 'offer-1');
+        const promise = await fixture.testHelper.getPromise('delegation_offer', txId);
         expect(promise!.status).toBe('open');
         expect((promise!.params as any).qty_remaining).toBe(40);
 
@@ -1025,13 +1025,13 @@ describe('delegation_offer partial fills', () => {
 
     test.dbOnly('duplicate rental_id is rejected', async () => {
         const blockNum = getBlockAfterTransition();
+        const txId = 'tx-dup-rental';
         await fixture.testHelper.setStaked(lender, 1000);
 
         await fixture.opsHelper.processOp(
             'create_promise',
             lender,
             {
-                id: 'offer-1',
                 type: 'delegation_offer',
                 controllers: [controller],
                 params: {
@@ -1041,7 +1041,7 @@ describe('delegation_offer partial fills', () => {
                     price: 0.001,
                 },
             },
-            { block_num: blockNum },
+            { block_num: blockNum, transaction: txId },
         );
 
         // Fill with rental-1
@@ -1049,7 +1049,7 @@ describe('delegation_offer partial fills', () => {
             'fulfill_promise',
             controller,
             {
-                id: 'offer-1',
+                id: txId,
                 type: 'delegation_offer',
                 metadata: {
                     borrower: borrower,
@@ -1066,7 +1066,7 @@ describe('delegation_offer partial fills', () => {
             'fulfill_promise',
             controller,
             {
-                id: 'offer-1',
+                id: txId,
                 type: 'delegation_offer',
                 metadata: {
                     borrower: borrower,
@@ -1079,7 +1079,7 @@ describe('delegation_offer partial fills', () => {
         );
 
         // qty_remaining should still be 60 (only the first fill succeeded)
-        const promise = await fixture.testHelper.getPromise('delegation_offer', 'offer-1');
+        const promise = await fixture.testHelper.getPromise('delegation_offer', txId);
         expect((promise!.params as any).qty_remaining).toBe(60);
     });
 });
@@ -1091,6 +1091,7 @@ describe('delegation_offer cancel', () => {
 
     test.dbOnly('cancel unfilled promise returns all SPSP to lender', async () => {
         const blockNum = getBlockAfterTransition();
+        const txId = 'tx-cancel-unfilled';
         await fixture.testHelper.setStaked(lender, 1000);
 
         // Create offer for 100 SPSP
@@ -1098,7 +1099,6 @@ describe('delegation_offer cancel', () => {
             'create_promise',
             lender,
             {
-                id: 'offer-1',
                 type: 'delegation_offer',
                 controllers: [controller],
                 params: {
@@ -1108,7 +1108,7 @@ describe('delegation_offer cancel', () => {
                     price: 0.001,
                 },
             },
-            { block_num: blockNum },
+            { block_num: blockNum, transaction: txId },
         );
 
         // Verify lender has 100 SPSP_OUT locked
@@ -1120,14 +1120,14 @@ describe('delegation_offer cancel', () => {
             'cancel_promise',
             controller,
             {
-                id: 'offer-1',
+                id: txId,
                 type: 'delegation_offer',
             },
             { block_num: blockNum + 1 },
         );
 
         // Promise should be cancelled
-        const promise = await fixture.testHelper.getPromise('delegation_offer', 'offer-1');
+        const promise = await fixture.testHelper.getPromise('delegation_offer', txId);
         expect(promise!.status).toBe('cancelled');
 
         // Lender should have 0 SPSP_OUT (all unlocked)
@@ -1147,6 +1147,7 @@ describe('delegation_offer cancel', () => {
 
     test.dbOnly('cancel partially filled promise returns only remaining SPSP to lender', async () => {
         const blockNum = getBlockAfterTransition();
+        const txId = 'tx-cancel-partial';
         await fixture.testHelper.setStaked(lender, 1000);
 
         // Create offer for 100 SPSP
@@ -1154,7 +1155,6 @@ describe('delegation_offer cancel', () => {
             'create_promise',
             lender,
             {
-                id: 'offer-1',
                 type: 'delegation_offer',
                 controllers: [controller],
                 params: {
@@ -1164,7 +1164,7 @@ describe('delegation_offer cancel', () => {
                     price: 0.001,
                 },
             },
-            { block_num: blockNum },
+            { block_num: blockNum, transaction: txId },
         );
 
         // Fill 60 of 100
@@ -1172,7 +1172,7 @@ describe('delegation_offer cancel', () => {
             'fulfill_promise',
             controller,
             {
-                id: 'offer-1',
+                id: txId,
                 type: 'delegation_offer',
                 metadata: {
                     borrower: borrower,
@@ -1195,14 +1195,14 @@ describe('delegation_offer cancel', () => {
             'cancel_promise',
             controller,
             {
-                id: 'offer-1',
+                id: txId,
                 type: 'delegation_offer',
             },
             { block_num: blockNum + 2 },
         );
 
         // Promise should be cancelled
-        const promise = await fixture.testHelper.getPromise('delegation_offer', 'offer-1');
+        const promise = await fixture.testHelper.getPromise('delegation_offer', txId);
         expect(promise!.status).toBe('cancelled');
 
         // System account should have 0 SPSP_IN (remaining 40 was returned)
@@ -1234,6 +1234,7 @@ describe('delegation_offer cancel', () => {
 
     test.dbOnly('cancel with multiple partial fills returns correct remaining amount', async () => {
         const blockNum = getBlockAfterTransition();
+        const txId = 'tx-cancel-multi';
         const borrower2 = 'borrower2';
         await fixture.testHelper.setHiveAccount(borrower2);
         await fixture.testHelper.setStaked(lender, 1000);
@@ -1243,7 +1244,6 @@ describe('delegation_offer cancel', () => {
             'create_promise',
             lender,
             {
-                id: 'offer-1',
                 type: 'delegation_offer',
                 controllers: [controller],
                 params: {
@@ -1253,7 +1253,7 @@ describe('delegation_offer cancel', () => {
                     price: 0.001,
                 },
             },
-            { block_num: blockNum },
+            { block_num: blockNum, transaction: txId },
         );
 
         // Fill 50 to borrower
@@ -1261,7 +1261,7 @@ describe('delegation_offer cancel', () => {
             'fulfill_promise',
             controller,
             {
-                id: 'offer-1',
+                id: txId,
                 type: 'delegation_offer',
                 metadata: {
                     borrower: borrower,
@@ -1278,7 +1278,7 @@ describe('delegation_offer cancel', () => {
             'fulfill_promise',
             controller,
             {
-                id: 'offer-1',
+                id: txId,
                 type: 'delegation_offer',
                 metadata: {
                     borrower: borrower2,
@@ -1299,13 +1299,13 @@ describe('delegation_offer cancel', () => {
             'cancel_promise',
             controller,
             {
-                id: 'offer-1',
+                id: txId,
                 type: 'delegation_offer',
             },
             { block_num: blockNum + 3 },
         );
 
-        const promise = await fixture.testHelper.getPromise('delegation_offer', 'offer-1');
+        const promise = await fixture.testHelper.getPromise('delegation_offer', txId);
         expect(promise!.status).toBe('cancelled');
 
         // System account should have 0 SPSP_IN (120 remaining was returned)

@@ -103,7 +103,6 @@ export class PrecomputedMultiRouter<H, T = void> implements IRouter<H, T> {
         PrecomputedRouter.assertAll(this.routers);
         const routes = this.precomputedRoutes(block_num);
         const handler = routes.get(name) ?? null;
-        console.log(`Routing action ${name} at block ${block_num} using precomputed multi-router.`, routes);
         return handler;
     }
 
