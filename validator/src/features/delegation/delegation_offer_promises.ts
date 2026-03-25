@@ -169,6 +169,7 @@ export class DelegationOfferPromiseHandler extends PromiseHandler {
                 qty: params.qty,
                 token: params.token,
                 allowSystemAccounts: true,
+                skipAuthorityCheck: true,
             },
             action,
             trx,

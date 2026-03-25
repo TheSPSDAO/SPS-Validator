@@ -15,6 +15,7 @@ export type DelegateTokensRequest = {
     token: string;
     allowSystemAccounts?: boolean;
     skipDateUpdate?: boolean;
+    skipAuthorityCheck?: boolean;
 };
 
 export type DelegateTokensMultiRequest = {
@@ -103,9 +104,11 @@ export class DelegationManager {
         }
 
         // check authority
-        const has_authority = await this.hiveAccountRepository.checkAuthority(action.op.account, AuthorityTypes.DELEGATION, request.from, trx);
-        if (!has_authority) {
-            return Result.Err(new ValidationError(`${action.op.account} does not have the authority to delegate tokens for ${request.from}.`, action, ErrorType.NoAuthority));
+        if (!request.skipAuthorityCheck) {
+            const has_authority = await this.hiveAccountRepository.checkAuthority(action.op.account, AuthorityTypes.DELEGATION, request.from, trx);
+            if (!has_authority) {
+                return Result.Err(new ValidationError(`${action.op.account} does not have the authority to delegate tokens for ${request.from}.`, action, ErrorType.NoAuthority));
+            }
         }
 
         // Check that the player has enough liquid tokens in their account
