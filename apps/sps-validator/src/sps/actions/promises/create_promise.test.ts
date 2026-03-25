@@ -256,7 +256,6 @@ describe('After delegation_offer_controller_creation transition', () => {
                     id: null,
                     type: 'delegation_offer',
                     controllers: [promise_creator],
-                    fulfill_timeout_seconds: 60_000,
                     params: {
                         token: TOKENS.SPSP,
                         qty: 100,
@@ -284,7 +283,6 @@ describe('After delegation_offer_controller_creation transition', () => {
                     // id property is omitted
                     type: 'delegation_offer',
                     controllers: [promise_creator],
-                    fulfill_timeout_seconds: 60_000,
                     params: {
                         token: TOKENS.SPSP,
                         qty: 100,
@@ -329,6 +327,7 @@ describe('After delegation_offer_controller_creation transition', () => {
 
     test.dbOnly('non-admin can create delegation_offer promise after transition', async () => {
         const blockNum = getBlockAfterTransition();
+        const txId = 'tx-non-admin-offer';
         await fixture.testHelper.setStaked(non_admin, 1000);
 
         await expect(
@@ -336,10 +335,8 @@ describe('After delegation_offer_controller_creation transition', () => {
                 'create_promise',
                 non_admin,
                 {
-                    id: 'offer-1',
                     type: 'delegation_offer',
                     controllers: [promise_creator],
-                    fulfill_timeout_seconds: 60_000,
                     params: {
                         token: TOKENS.SPSP,
                         qty: 100,
@@ -347,11 +344,11 @@ describe('After delegation_offer_controller_creation transition', () => {
                         price: 0.001,
                     },
                 },
-                { block_num: blockNum },
+                { block_num: blockNum, transaction: txId },
             ),
         ).resolves.toBeUndefined();
 
-        const result = await fixture.testHelper.getPromise('delegation_offer', 'offer-1');
+        const result = await fixture.testHelper.getPromise('delegation_offer', txId);
         expect(result).not.toBeNull();
         expect(result?.status).toBe('open');
     });
