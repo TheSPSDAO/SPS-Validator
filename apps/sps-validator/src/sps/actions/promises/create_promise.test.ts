@@ -403,4 +403,28 @@ describe('After delegation_offer_controller_creation transition', () => {
         const result = await fixture.testHelper.getPromise('delegation', 'delegation-1');
         expect(result).not.toBeNull();
     });
+
+    test.dbOnly('delegation promise without fulfill_timeout_seconds fails after transition', async () => {
+        const blockNum = getBlockAfterTransition();
+
+        // The new schema makes fulfill_timeout_seconds optional, but the delegation
+        // handler still requires it. This test ensures the handler-level validation
+        // catches the missing field even though the schema allows it.
+        await expect(
+            fixture.opsHelper.processOp(
+                'create_promise',
+                promise_creator,
+                {
+                    id: 'delegation-no-timeout',
+                    type: 'delegation',
+                    controllers: [promise_creator],
+                    params: { qty: 100, token: 'SPSP', to: delegation_to },
+                },
+                { block_num: blockNum },
+            ),
+        ).resolves.toBeUndefined();
+
+        const result = await fixture.testHelper.getPromise('delegation', 'delegation-no-timeout');
+        expect(result).toBeNull();
+    });
 });
