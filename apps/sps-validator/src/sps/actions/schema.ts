@@ -322,12 +322,30 @@ const increment_reward_pools = new Schema.Schema(
     }),
 );
 
-const create_promise = new Schema.Schema(
+/**
+ * Legacy create_promise schema - requires ID, used by admins before the transition.
+ */
+const create_promise_legacy = new Schema.Schema(
     'create_promise',
     object({
         controllers: array(string().strict().required()).min(1).required(),
         type: string().strict().required(),
         id: string().strict().required(),
+        fulfill_timeout_seconds: number().strict().required(),
+        params: object().unknown(true).optional(),
+    }),
+);
+
+/**
+ * New create_promise schema - allows null ID (auto-generated), used after the transition.
+ * Non-admins can use this for certain promise types (e.g., delegation_offer).
+ */
+const create_promise = new Schema.Schema(
+    'create_promise',
+    object({
+        controllers: array(string().strict().required()).min(1).required(),
+        type: string().strict().required(),
+        id: string().strict().nullable().optional(),
         fulfill_timeout_seconds: number().strict().required(),
         params: object().unknown(true).optional(),
     }),
@@ -481,6 +499,7 @@ export {
     claim_rewards,
     increment_reward_pools,
     create_promise,
+    create_promise_legacy,
     cancel_promise,
     reverse_promise,
     complete_promise,

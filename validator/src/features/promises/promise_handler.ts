@@ -7,6 +7,11 @@ export type HandlerCreatePromiseRequest = {
     type: string;
     id: string;
     params: unknown;
+    /**
+     * The fulfill timeout seconds requested for this promise, if any.
+     * Handlers can validate this value (e.g., require null for certain promise types).
+     */
+    fulfill_timeout_seconds?: number;
 };
 
 export type HandlerCreatePromiseResult = {
@@ -76,6 +81,16 @@ export abstract class PromiseHandler {
      */
     requiresAdminForCreate(): boolean {
         return true;
+    }
+
+    /**
+     * Called before any other validation to check if promise creation is allowed.
+     * Override to block creation entirely under certain conditions (e.g., before a transition block).
+     * Default implementation always allows creation.
+     */
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    canCreate(action: IAction, trx?: Trx): Promise<Result<void, Error>> {
+        return Promise.resolve(Result.OkVoid());
     }
 
     abstract validateCreatePromise(request: HandlerCreatePromiseRequest, action: IAction, trx?: Trx): Promise<Result<HandlerCreatePromiseResult, Error>>;

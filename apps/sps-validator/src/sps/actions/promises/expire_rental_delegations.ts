@@ -1,8 +1,7 @@
-import { OperationData, Action, EventLog, Trx } from '@steem-monsters/splinterlands-validator';
+import { OperationData, Action, EventLog, Trx, DelegationManager } from '@steem-monsters/splinterlands-validator';
 import { expire_rental_delegations } from '../schema';
 import { MakeActionFactory, MakeRouter } from '../utils';
 import { RentalDelegationRepository } from '@steem-monsters/splinterlands-validator';
-import { PromiseManager } from '@steem-monsters/splinterlands-validator';
 
 export class ExpireRentalDelegationsAction extends Action<typeof expire_rental_delegations.actionSchema> {
     constructor(
@@ -10,7 +9,7 @@ export class ExpireRentalDelegationsAction extends Action<typeof expire_rental_d
         data: unknown,
         index: number,
         private readonly rentalDelegationRepository: RentalDelegationRepository,
-        private readonly promiseManager: PromiseManager,
+        private readonly delegationManager: DelegationManager,
     ) {
         super(expire_rental_delegations, op, data, index);
     }
@@ -24,22 +23,29 @@ export class ExpireRentalDelegationsAction extends Action<typeof expire_rental_d
         const eventLogs: EventLog[] = [];
 
         for (const rental of expiredRentals) {
-            // Reverse the promise, which will trigger DelegationOfferPromiseHandler.reversePromise
-            // That handler will undelegate from borrower → lender and mark the rental as expired.
-            const reverseLogs = await this.promiseManager.reversePromise(
+            // Undelegate the rented tokens from borrower back to lender
+            const undelegateLogs = await this.delegationManager.undelegate(
                 {
-                    type: rental.promise_type,
-                    id: rental.promise_ext_id,
+                    account: rental.lender,
+                    to: rental.lender,
+                    from: rental.borrower,
+                    qty: rental.qty,
+                    token: rental.token,
+                    skipDateUpdate: true,
                 },
                 this,
                 trx,
             );
-            eventLogs.push(...reverseLogs);
+            eventLogs.push(...undelegateLogs);
+
+            // Mark the rental as expired
+            const statusLogs = await this.rentalDelegationRepository.updateStatus(rental.id, 'expired', this, trx);
+            eventLogs.push(...statusLogs);
         }
 
         return eventLogs;
     }
 }
 
-const Builder = MakeActionFactory(ExpireRentalDelegationsAction, RentalDelegationRepository, PromiseManager);
+const Builder = MakeActionFactory(ExpireRentalDelegationsAction, RentalDelegationRepository, DelegationManager);
 export const Router = MakeRouter(expire_rental_delegations.action_name, Builder);

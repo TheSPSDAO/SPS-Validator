@@ -14,13 +14,18 @@ import {
 } from '../promises';
 import { DelegationManager } from './delegation_manager';
 import { ErrorType, ValidationError } from '../../entities/errors';
-import { object, number } from 'yup';
+import { object, number, string } from 'yup';
 import { token, qty, hiveAccount } from '../../actions/schema';
 import { RentalDelegationRepository } from '../../entities/rental/rental_delegation';
+import { PromiseRepository } from '../../entities/promises/promise';
 
 export type DelegationOfferPromiseHandlerOpts = {
     delegation_promise_account: string;
-    default_expiration_blocks: number;
+    /**
+     * Block number at which controller-based creation and null promise IDs become enabled.
+     * Before this block, only the lender can create offers, and IDs are required.
+     */
+    controller_creation_block: number;
 };
 
 /**
@@ -30,13 +35,16 @@ export type DelegationOfferPromiseHandlerOpts = {
  * - lender: the account offering the delegation (the SPS holder)
  * - expiration_blocks: how many blocks each rental lasts once filled
  * - qty_remaining: tracks unfilled quantity (set on create, decremented on fill)
+ * - source_promise_id: (optional) if a controller creates the promise on behalf of a lender,
+ *   this references the promise ID that grants them controller authority.
  */
 const delegation_offer_params_schema = object({
     token: token,
     qty: qty.positive(),
     lender: hiveAccount.required(),
-    expiration_blocks: number().positive().integer().required(),
+    price: qty.positive(),
     qty_remaining: number().min(0).optional(),
+    source_promise_id: string().strict().optional(),
 });
 
 export type DelegationOfferParams = typeof delegation_offer_params_schema['__outputType'];
@@ -51,6 +59,7 @@ const delegation_offer_fulfill_metadata_schema = object({
     borrower: hiveAccount.required(),
     rental_id: token, // reuses the 'required string' validator
     qty: qty.positive(),
+    expiration_blocks: number().positive().integer().required(),
 });
 
 export type DelegationOfferFulfillMetadata = typeof delegation_offer_fulfill_metadata_schema['__outputType'];
@@ -73,10 +82,10 @@ export type DelegationOfferFulfillMetadata = typeof delegation_offer_fulfill_met
  *    - If qty_remaining > 0, the promise stays open for more fills.
  *    - If qty_remaining = 0, the promise transitions to completed.
  *
- * 3. REVERSE: Returns the remaining locked SPSP from the system account back to the lender.
- *    Active rental delegations to borrowers are NOT affected — they continue until expiration.
+ * 3. REVERSE: Not allowed for delegation offers. Reversals are rejected with an error.
  *
- * 4. CANCEL: Same as reverse for open promises — unlocks remaining SPS from system account.
+ * 4. CANCEL: Returns the remaining locked SPSP from the system account back to the lender.
+ *    Active rental delegations to borrowers are NOT affected — they continue until expiration.
  *
  * 5. COMPLETE: No-op. Completion is driven by the fulfill handler when qty_remaining hits 0.
  */
@@ -85,6 +94,7 @@ export class DelegationOfferPromiseHandler extends PromiseHandler {
         private readonly opts: DelegationOfferPromiseHandlerOpts,
         private readonly delegationManager: DelegationManager,
         private readonly rentalDelegationRepository: RentalDelegationRepository,
+        private readonly promiseRepository: PromiseRepository,
     ) {
         super();
     }
@@ -96,10 +106,26 @@ export class DelegationOfferPromiseHandler extends PromiseHandler {
         return false;
     }
 
+    /**
+     * Delegation offers can only be created after the controller_creation_block transition.
+     */
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    override async canCreate(action: IAction, _trx?: Trx): Promise<Result<void, Error>> {
+        if (action.op.block_num < this.opts.controller_creation_block) {
+            return Result.Err(new ValidationError('Delegation offer promises cannot be created before the transition block.', action, ErrorType.TransitionRequired));
+        }
+        return Result.OkVoid();
+    }
+
     // ─── CREATE ────────────────────────────────────────────────────────────────
     // Lender creates the promise directly. Locks SPS into $DELEGATION_PROMISES.
 
     override async validateCreatePromise(request: HandlerCreatePromiseRequest, action: IAction, trx?: Trx): Promise<Result<HandlerCreatePromiseResult, Error>> {
+        // Delegation offer promises must not have a fulfill_timeout_seconds
+        if (request.fulfill_timeout_seconds !== undefined && request.fulfill_timeout_seconds !== null) {
+            return Result.Err(new ValidationError('Delegation offer promises cannot have a fulfill_timeout_seconds.', action, ErrorType.InvalidPromiseParams));
+        }
+
         const valid = delegation_offer_params_schema.isValidSync(request.params);
         if (!valid) {
             return Result.Err(new ValidationError('Invalid delegation offer parameters.', action, ErrorType.InvalidPromiseParams));
@@ -107,9 +133,29 @@ export class DelegationOfferPromiseHandler extends PromiseHandler {
 
         const params = request.params as DelegationOfferParams;
 
-        // The lender must be the account creating the promise
+        // Check authority: either the lender themselves, or a controller acting on behalf of the lender
         if (params.lender !== action.op.account) {
-            return Result.Err(new ValidationError('Lender must match the account creating the promise.', action, ErrorType.NoAuthority));
+            // Allow controller creation if source_promise_id is provided
+            if (!params.source_promise_id) {
+                return Result.Err(new ValidationError('Controller must provide source_promise_id to create offer on behalf of lender.', action, ErrorType.NoAuthority));
+            }
+
+            // Look up the source promise to verify controller authority
+            const sourcePromise = await this.promiseRepository.getPromiseByTypeAndId('delegation_offer', params.source_promise_id, trx);
+            if (!sourcePromise) {
+                return Result.Err(new ValidationError(`Source promise ${params.source_promise_id} not found.`, action, ErrorType.InvalidPromise));
+            }
+
+            // Verify the calling account is a controller on the source promise
+            if (!sourcePromise.controllers.includes(action.op.account)) {
+                return Result.Err(new ValidationError('Account is not a controller on the source promise.', action, ErrorType.NotPromiseController));
+            }
+
+            // Verify the source promise's lender matches the new promise's lender
+            const sourceParams = sourcePromise.params as DelegationOfferParams;
+            if (sourceParams.lender !== params.lender) {
+                return Result.Err(new ValidationError('Source promise lender does not match the lender in the new promise.', action, ErrorType.NoAuthority));
+            }
         }
 
         // Validate the delegation is possible (token supports delegation, valid account, qty > 0)
@@ -147,6 +193,7 @@ export class DelegationOfferPromiseHandler extends PromiseHandler {
                 qty: params.qty,
                 token: params.token,
                 allowSystemAccounts: true,
+                skipDateUpdate: true,
             },
             action,
             trx,
@@ -209,6 +256,7 @@ export class DelegationOfferPromiseHandler extends PromiseHandler {
                     qty: fillQty,
                     token: params.token,
                     allowSystemAccounts: true,
+                    skipDateUpdate: true,
                 },
                 action,
                 trx,
@@ -224,6 +272,7 @@ export class DelegationOfferPromiseHandler extends PromiseHandler {
                     qty: fillQty,
                     token: params.token,
                     allowSystemAccounts: false,
+                    skipDateUpdate: true,
                 },
                 action,
                 trx,
@@ -240,7 +289,7 @@ export class DelegationOfferPromiseHandler extends PromiseHandler {
                 borrower: metadata.borrower,
                 token: params.token,
                 qty: fillQty,
-                expiration_blocks: params.expiration_blocks,
+                expiration_blocks: metadata.expiration_blocks,
                 start_block: action.op.block_num,
             },
             action,
@@ -306,35 +355,13 @@ export class DelegationOfferPromiseHandler extends PromiseHandler {
     // Active rental delegations to borrowers are NOT reversed here — they continue
     // until their individual expiration blocks are reached.
 
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    override async validateReversePromise(_request: HandlerReversePromiseRequest, _promise: PromiseEntity, _action: IAction, _trx?: Trx): Promise<Result<void, Error>> {
-        return Result.OkVoid();
+    override async validateReversePromise(_request: HandlerReversePromiseRequest, _promise: PromiseEntity, action: IAction, _trx?: Trx): Promise<Result<void, Error>> {
+        return Result.Err(new ValidationError('Delegation offer promises cannot be reversed.', action, ErrorType.InvalidPromiseStatus));
     }
 
-    override async reversePromise(request: HandlerReversePromiseRequest, promise: PromiseEntity, action: IAction, trx?: Trx): Promise<EventLog[]> {
-        const params = promise.params as DelegationOfferParams;
-        const qtyRemaining = params.qty_remaining ?? params.qty;
-        const eventLogs: EventLog[] = [];
-
-        // Only undelegate if there's still SPS locked in the system account
-        if (qtyRemaining > 0) {
-            eventLogs.push(
-                ...(await this.delegationManager.undelegate(
-                    {
-                        account: params.lender,
-                        to: params.lender,
-                        from: this.opts.delegation_promise_account,
-                        qty: qtyRemaining,
-                        token: params.token,
-                        allowSystemAccounts: true,
-                    },
-                    action,
-                    trx,
-                )),
-            );
-        }
-
-        return eventLogs;
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    override async reversePromise(_request: HandlerReversePromiseRequest, _promise: PromiseEntity, _action: IAction, _trx?: Trx): Promise<EventLog[]> {
+        return [];
     }
 
     // ─── COMPLETE ──────────────────────────────────────────────────────────────
@@ -354,16 +381,14 @@ export class DelegationOfferPromiseHandler extends PromiseHandler {
     // ─── CANCEL ────────────────────────────────────────────────────────────────
     // Cancels the offer. Returns remaining locked SPS from the system account.
     // Active rental delegations continue until their individual expirations.
-    // Note: PromiseManager calls reversePromise before cancelPromise when status
-    // is 'fulfilled', so we only handle 'open' here.
 
     override async cancelPromise(request: HandlerCompletePromiseRequest, promise: PromiseEntity, action: IAction, trx?: Trx): Promise<EventLog[]> {
         const params = promise.params as DelegationOfferParams;
         const qtyRemaining = params.qty_remaining ?? params.qty;
         const eventLogs: EventLog[] = [];
 
-        // If the promise is open, unlock the remaining SPS from the system account
-        if (promise.status === 'open' && qtyRemaining > 0) {
+        // Unlock the remaining SPS from the system account back to the lender
+        if (qtyRemaining > 0) {
             eventLogs.push(
                 ...(await this.delegationManager.undelegate(
                     {
@@ -373,6 +398,7 @@ export class DelegationOfferPromiseHandler extends PromiseHandler {
                         qty: qtyRemaining,
                         token: params.token,
                         allowSystemAccounts: true,
+                        skipDateUpdate: true,
                     },
                     action,
                     trx,

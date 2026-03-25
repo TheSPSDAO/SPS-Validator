@@ -1,4 +1,12 @@
-import { AdminMembership, DelegationOfferPromiseHandler, DelegationPromiseHandler, PrefixOpts, PromiseHandler, PromiseManager, PromiseRepository } from '@steem-monsters/splinterlands-validator';
+import {
+    AdminMembership,
+    DelegationOfferPromiseHandler,
+    DelegationPromiseHandler,
+    PrefixOpts,
+    PromiseHandler,
+    PromiseManager,
+    PromiseRepository,
+} from '@steem-monsters/splinterlands-validator';
 import { inject, injectable } from 'tsyringe';
 
 function buildHandlerMap(delegationPromiseHandler: DelegationPromiseHandler, delegationOfferPromiseHandler: DelegationOfferPromiseHandler): Map<string, PromiseHandler> {

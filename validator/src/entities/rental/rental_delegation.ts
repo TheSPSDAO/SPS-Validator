@@ -86,7 +86,9 @@ export class RentalDelegationRepository extends BaseRepository {
     public async getExpiredRentals(currentBlock: number, trx?: Trx): Promise<RentalDelegationEntry[]> {
         const records = await this.query(RentalDelegationEntity, trx)
             .where('status', 'active')
-            .where('expiration_block', '<=', currentBlock as any)
+            .where('expiration_block', '<=', currentBlock)
+            .orderBy('expiration_block', 'asc')
+            .orderBy('id', 'asc')
             .getMany();
         return RentalDelegationRepository.intoMany(records);
     }
@@ -136,5 +138,40 @@ export class RentalDelegationRepository extends BaseRepository {
         // eslint-disable-next-line prettier/prettier
         const records = await this.query(RentalDelegationEntity, trx).where('borrower', borrower).where('status', 'active').getMany();
         return RentalDelegationRepository.intoMany(records);
+    }
+
+    /**
+     * Get the total active rental qty delegated from a lender to a specific borrower for a given token.
+     */
+    public async getActiveRentalQty(lender: string, borrower: string, token: string, trx?: Trx): Promise<number> {
+        const result = await this.queryRaw(trx)
+            .from('rental_delegations')
+            .where('lender', lender)
+            .where('borrower', borrower)
+            .where('token', token)
+            .where('status', 'active')
+            .sum('qty as total')
+            .first();
+        return parseFloat(result?.total as string) || 0;
+    }
+
+    /**
+     * Get the total active rental qty delegated from a lender to multiple borrowers for a given token.
+     */
+    public async getActiveRentalQtyMulti(lender: string, borrowers: string[], token: string, trx?: Trx): Promise<Map<string, number>> {
+        const results = await this.queryRaw(trx)
+            .from('rental_delegations')
+            .where('lender', lender)
+            .whereIn('borrower', borrowers)
+            .where('token', token)
+            .where('status', 'active')
+            .groupBy('borrower')
+            .select('borrower')
+            .sum('qty as total');
+        const map = new Map<string, number>();
+        for (const row of results) {
+            map.set(row.borrower as string, parseFloat(row.total as string) || 0);
+        }
+        return map;
     }
 }

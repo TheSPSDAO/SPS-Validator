@@ -9,6 +9,7 @@
 SET statement_timeout = 0;
 SET lock_timeout = 0;
 SET idle_in_transaction_session_timeout = 0;
+SET transaction_timeout = 0;
 SET client_encoding = 'UTF8';
 SET standard_conforming_strings = on;
 SELECT pg_catalog.set_config('search_path', '', false);
@@ -249,6 +250,27 @@ CREATE SEQUENCE public.promise_id_seq
 --
 
 ALTER SEQUENCE public.promise_id_seq OWNED BY public.promise.id;
+
+
+--
+-- Name: rental_delegations; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.rental_delegations (
+    id character varying(100) NOT NULL,
+    promise_type character varying(50) NOT NULL,
+    promise_ext_id character varying(100) NOT NULL,
+    lender character varying(50) NOT NULL,
+    borrower character varying(50) NOT NULL,
+    token character varying(20) NOT NULL,
+    qty numeric(15,3) NOT NULL,
+    expiration_block integer NOT NULL,
+    start_block integer NOT NULL,
+    expiration_blocks integer NOT NULL,
+    status character varying(20) DEFAULT 'active'::character varying NOT NULL,
+    created_date timestamp with time zone NOT NULL,
+    updated_date timestamp with time zone NOT NULL
+);
 
 
 --
@@ -530,6 +552,14 @@ ALTER TABLE ONLY public.promise
 
 
 --
+-- Name: rental_delegations rental_delegations_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.rental_delegations
+    ADD CONSTRAINT rental_delegations_pkey PRIMARY KEY (id);
+
+
+--
 -- Name: staking_pool_reward_debt staking_pool_reward_debt_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -641,6 +671,34 @@ CREATE INDEX idx_balance_history_created_date ON public.balance_history USING bt
 --
 
 CREATE INDEX idx_balance_history_player ON public.balance_history USING btree (player);
+
+
+--
+-- Name: idx_rental_delegations_borrower; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_rental_delegations_borrower ON public.rental_delegations USING btree (borrower) WHERE ((status)::text = 'active'::text);
+
+
+--
+-- Name: idx_rental_delegations_lender; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_rental_delegations_lender ON public.rental_delegations USING btree (lender) WHERE ((status)::text = 'active'::text);
+
+
+--
+-- Name: idx_rental_delegations_promise; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_rental_delegations_promise ON public.rental_delegations USING btree (promise_type, promise_ext_id);
+
+
+--
+-- Name: idx_rental_delegations_status_expiration; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_rental_delegations_status_expiration ON public.rental_delegations USING btree (status, expiration_block) WHERE ((status)::text = 'active'::text);
 
 
 --

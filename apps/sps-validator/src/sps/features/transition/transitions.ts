@@ -15,6 +15,8 @@ export const TransitionPointDescriptions = {
         'Transition point for changing the SPS staking reward algorithm and adjusting reward pool balances. This update also adds consecutive missed block tracking and double spend protection in token_transfer and token_transfer_multi ops. This is a one-time transition point that is part of version 1.3.0. Please see https://peakd.com/spsproposal/@clayboyn/sps-governance-proposal-adjust-token-distribution-strategy',
     fix_multi_undelegate_crash:
         'Transition point for fixing a crash that can occur when undelegating sps from the same account multiple times in the same tx. This is a one-time transition point that is part of version 1.3.1.',
+    delegation_offer_controller_creation:
+        'Transition point for enabling controller-based delegation offer creation (allowing a controller to create offers on behalf of a lender) and auto-generated promise IDs for delegation_offer type.',
 } as const;
 
 export type TransitionPoints = {
