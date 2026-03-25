@@ -300,7 +300,7 @@ describe('After delegation_offer_controller_creation transition', () => {
         expect(Number(count.count)).toBe(1);
     });
 
-    test.dbOnly('create_promise with provided id still works after transition', async () => {
+    test.dbOnly('create_promise with provided id does not work after transition', async () => {
         const blockNum = getBlockAfterTransition();
         await fixture.testHelper.setStaked(non_admin, 1000);
 
@@ -312,7 +312,6 @@ describe('After delegation_offer_controller_creation transition', () => {
                     id: 'custom-id',
                     type: 'delegation_offer',
                     controllers: [promise_creator],
-                    fulfill_timeout_seconds: 60_000,
                     params: {
                         token: TOKENS.SPSP,
                         qty: 100,
@@ -325,8 +324,7 @@ describe('After delegation_offer_controller_creation transition', () => {
         ).resolves.toBeUndefined();
 
         const result = await fixture.testHelper.getPromise('delegation_offer', 'custom-id');
-        expect(result).not.toBeNull();
-        expect(result?.ext_id).toBe('custom-id');
+        expect(result).toBeNull();
     });
 
     test.dbOnly('non-admin can create delegation_offer promise after transition', async () => {

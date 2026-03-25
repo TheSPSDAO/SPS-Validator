@@ -52,6 +52,8 @@ export class DelegationPromiseHandler extends PromiseHandler {
             return Result.Err(new ValidationError('player parameter cannot be used in delegation promises.', action, ErrorType.DelegationAuthorityNotAllowed));
         } else if (!request.fulfill_timeout_seconds) {
             return Result.Err(new ValidationError('fulfill_timeout_seconds parameter is required for delegation promises.', action, ErrorType.InvalidPromiseParams));
+        } else if (!request.id) {
+            return Result.Err(new ValidationError('id parameter is required for delegation promises.', action, ErrorType.InvalidPromiseParams));
         }
 
         const delegationValid = await this.delegationManager.validateDelegationPromise(params, action, trx);

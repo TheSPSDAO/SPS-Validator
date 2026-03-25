@@ -5,7 +5,7 @@ import { EventLog } from '../../entities/event_log';
 
 export type HandlerCreatePromiseRequest = {
     type: string;
-    id: string;
+    id: string | undefined | null;
     params: unknown;
     /**
      * The fulfill timeout seconds requested for this promise, if any.

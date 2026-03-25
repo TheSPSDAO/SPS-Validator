@@ -10,8 +10,8 @@ import {
     ActionFactory,
     ActionRouter,
     Compute,
-    Route,
-    BlockRangeConfig,
+    route,
+    addRoutesForClass,
 } from '@steem-monsters/splinterlands-validator';
 import { create_promise, create_promise_legacy } from '../schema';
 import { MakeActionFactory } from '../utils';
@@ -118,25 +118,27 @@ const NewBuilder = MakeActionFactory(CreatePromiseAction, PromiseManager);
 
 @injectable()
 export class Router extends ActionRouter<LegacyCreatePromiseAction | CreatePromiseAction> {
+    private static _transitionBlock = Number.MAX_SAFE_INTEGER;
+
+    static transitionBlock(_c: Compute) {
+        return Router._transitionBlock;
+    }
+
+    @route(create_promise_legacy.action_name, { to_block: Router.transitionBlock })
+    readonly legacyBuilder: ActionFactory<LegacyCreatePromiseAction>;
+
+    @route(create_promise.action_name, { from_block: Router.transitionBlock })
+    readonly newBuilder: ActionFactory<CreatePromiseAction>;
+
     constructor(
         @inject(LegacyBuilder) legacyBuilder: ActionFactory<LegacyCreatePromiseAction>,
         @inject(NewBuilder) newBuilder: ActionFactory<CreatePromiseAction>,
         @inject(TransitionManager) transitionManager: TransitionManager,
     ) {
         super();
-
-        const transitionBlock = transitionManager.transitionPoints.delegation_offer_controller_creation;
-
-        // Legacy admin action - used before the transition block
-        this.addRoute(
-            new Route<Compute, ActionFactory<LegacyCreatePromiseAction>>(
-                create_promise_legacy.action_name,
-                legacyBuilder,
-                new BlockRangeConfig({ to_block: () => transitionBlock }),
-            ),
-        );
-
-        // New non-admin action - used from the transition block onwards
-        this.addRoute(new Route<Compute, ActionFactory<CreatePromiseAction>>(create_promise.action_name, newBuilder, new BlockRangeConfig({ from_block: () => transitionBlock })));
+        Router._transitionBlock = transitionManager.transitionPoints.delegation_offer_controller_creation;
+        this.legacyBuilder = legacyBuilder;
+        this.newBuilder = newBuilder;
+        addRoutesForClass(Router, this);
     }
 }

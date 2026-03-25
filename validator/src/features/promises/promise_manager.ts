@@ -119,14 +119,13 @@ export class PromiseManager implements VirtualPayloadSource {
             return canCreateResult;
         }
 
-        const promiseId = this.resolvePromiseId(request, action);
-
         // Run handler validation first so we can check allowNonAdmin from the result
-        const handlerResult = await handler.validateCreatePromise({ ...request, id: promiseId }, action, trx);
+        const handlerResult = await handler.validateCreatePromise(request, action, trx);
         if (Result.isErr(handlerResult)) {
             return handlerResult;
         }
 
+        const promiseId = this.resolvePromiseId(request, action);
         const allowNonAdmin = handlerResult.value.allowNonAdmin ?? false;
         if (!allowNonAdmin && !(await this.adminMembership.isAdmin(action.op.account))) {
             return Result.Err(new ValidationError('Only admins can create promises', action, ErrorType.AdminOnly));
