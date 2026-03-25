@@ -17,7 +17,7 @@ import {
 } from '@steem-monsters/splinterlands-validator';
 import { inject, injectable } from 'tsyringe';
 import { SpsConfigLoader } from '../sps/config';
-import { BalanceHistoryEntity, PromiseEntity, PromiseHistoryEntity } from 'validator/src/db/tables';
+import { BalanceHistoryEntity, PromiseEntity, PromiseHistoryEntity, RentalDelegationEntity } from 'validator/src/db/tables';
 import { TOKENS } from '../sps/features/tokens';
 import { ValidatorCheckInEntity } from '../sps/entities/tables';
 
@@ -256,6 +256,16 @@ export class TestHelper extends BaseRepository {
 
     countPromises(trx?: Trx) {
         return this.query(PromiseEntity, trx).count('ext_id', 'count').getSingle();
+    }
+
+    // ──── Rental Delegations ──────────────────────────────────────────
+
+    getRentalDelegation(id: string, trx?: Trx) {
+        return this.query(RentalDelegationEntity, trx).where('id', id).getFirstOrNull();
+    }
+
+    getRentalDelegationsByPromise(promiseType: string, promiseExtId: string, trx?: Trx) {
+        return this.query(RentalDelegationEntity, trx).where('promise_type', promiseType).where('promise_ext_id', promiseExtId).getMany();
     }
 }
 
