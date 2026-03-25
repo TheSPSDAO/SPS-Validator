@@ -346,7 +346,7 @@ const create_promise = new Schema.Schema(
         controllers: array(string().strict().required()).min(1).required(),
         type: string().strict().required(),
         id: string().strict().nullable().optional(),
-        fulfill_timeout_seconds: number().strict().required(),
+        fulfill_timeout_seconds: number().strict().optional(),
         params: object().unknown(true).optional(),
     }),
 );

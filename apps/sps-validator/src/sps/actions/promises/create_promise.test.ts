@@ -246,7 +246,6 @@ describe('After delegation_offer_controller_creation transition', () => {
 
     test.dbOnly('create_promise with null id for delegation_offer type auto-generates id', async () => {
         const blockNum = getBlockAfterTransition();
-        await fixture.testHelper.setDummyToken(non_admin, 1000, TOKENS.SPSP);
         await fixture.testHelper.setStaked(non_admin, 1000);
 
         await expect(
@@ -275,7 +274,6 @@ describe('After delegation_offer_controller_creation transition', () => {
 
     test.dbOnly('create_promise without id property for delegation_offer type auto-generates id', async () => {
         const blockNum = getBlockAfterTransition();
-        await fixture.testHelper.setDummyToken(non_admin, 1000, TOKENS.SPSP);
         await fixture.testHelper.setStaked(non_admin, 1000);
 
         await expect(
@@ -304,7 +302,6 @@ describe('After delegation_offer_controller_creation transition', () => {
 
     test.dbOnly('create_promise with provided id still works after transition', async () => {
         const blockNum = getBlockAfterTransition();
-        await fixture.testHelper.setDummyToken(non_admin, 1000, TOKENS.SPSP);
         await fixture.testHelper.setStaked(non_admin, 1000);
 
         await expect(
@@ -334,7 +331,6 @@ describe('After delegation_offer_controller_creation transition', () => {
 
     test.dbOnly('non-admin can create delegation_offer promise after transition', async () => {
         const blockNum = getBlockAfterTransition();
-        await fixture.testHelper.setDummyToken(non_admin, 1000, TOKENS.SPSP);
         await fixture.testHelper.setStaked(non_admin, 1000);
 
         await expect(

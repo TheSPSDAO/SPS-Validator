@@ -122,7 +122,7 @@ export class PromiseManager implements VirtualPayloadSource {
         const promiseId = this.resolvePromiseId(request, action);
 
         // Run handler validation first so we can check allowNonAdmin from the result
-        const handlerResult = await handler.validateCreatePromise({ ...request, id: promiseId, fulfill_timeout_seconds: request.fulfill_timeout_seconds }, action, trx);
+        const handlerResult = await handler.validateCreatePromise({ ...request, id: promiseId }, action, trx);
         if (Result.isErr(handlerResult)) {
             return handlerResult;
         }
