@@ -104,7 +104,7 @@ export { Bookkeeping, BookkeepingWatch, BookkeepingFromConfig, BookkeepingDefaul
 export { DelegationManager, DelegationPromiseHandler, DelegationOfferPromiseHandler, RentalDelegationExpirationSource } from './features/delegation';
 export type { DelegationManagerOpts, DelgationPromiseHandlerOpts, DelegationOfferPromiseHandlerOpts } from './features/delegation';
 export { PromiseHandler, PromiseManager } from './features/promises';
-export type { HandlerFulfillPromiseResult, HandlerCreatePromiseResult } from './features/promises';
+export type { HandlerFulfillPromiseResult, HandlerCreatePromiseResult, HandlerCreateResult } from './features/promises';
 export { isStringArray } from './utilities/guards';
 export { RentalDelegationRepository } from './entities/rental/rental_delegation';
 export type { RentalDelegationEntry, CreateRentalDelegationRequest } from './entities/rental/rental_delegation';

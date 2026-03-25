@@ -149,14 +149,14 @@ export class PromiseManager implements VirtualPayloadSource {
         const promiseId = this.resolvePromiseId(request, action);
         const resolvedRequest = { ...request, id: promiseId };
 
-        const handlerLogs = await handler.createPromise(resolvedRequest, action, trx);
+        const handlerResult = await handler.createPromise(resolvedRequest, action, trx);
         const [_, insertLogs] = await this.promiseRepository.insert(
             {
                 actor: action.op.account,
                 type: request.type,
                 ext_id: promiseId,
                 controllers: request.controllers,
-                params: request.params as JSONB,
+                params: (handlerResult.params ?? request.params) as JSONB,
                 fulfill_timeout_seconds: request.fulfill_timeout_seconds ?? null,
                 status: 'open',
             },
@@ -164,7 +164,7 @@ export class PromiseManager implements VirtualPayloadSource {
             trx,
         );
 
-        return [...insertLogs, ...handlerLogs];
+        return [...insertLogs, ...handlerResult.logs];
     }
 
     async validateFulfillPromise(request: FulfillPromiseRequest, action: IAction, trx?: Trx): Promise<Result<void, Error>> {

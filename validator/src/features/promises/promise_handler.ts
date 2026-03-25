@@ -16,15 +16,22 @@ export type HandlerCreatePromiseRequest = {
 
 export type HandlerCreatePromiseResult = {
     /**
-     * the validation process can set defaults on the params. they can be returned here
-     * and they will be stored
-     */
-    params: unknown;
-    /**
      * If true, the promise can be created by non-admin accounts (e.g. the lender directly).
      * Default: false (admin required).
      */
     allowNonAdmin?: boolean;
+};
+
+/**
+ * Result returned by the handler's createPromise method.
+ */
+export type HandlerCreateResult = {
+    logs: EventLog[];
+    /**
+     * If provided, these params will be stored on the promise instead of the raw request params.
+     * Use this to set computed defaults (e.g. qty_remaining).
+     */
+    params?: unknown;
 };
 
 export type HandlerFulfillPromiseRequest = {
@@ -94,7 +101,7 @@ export abstract class PromiseHandler {
     }
 
     abstract validateCreatePromise(request: HandlerCreatePromiseRequest, action: IAction, trx?: Trx): Promise<Result<HandlerCreatePromiseResult, Error>>;
-    abstract createPromise(request: HandlerCreatePromiseRequest, action: IAction, trx?: Trx): Promise<EventLog[]>;
+    abstract createPromise(request: HandlerCreatePromiseRequest, action: IAction, trx?: Trx): Promise<HandlerCreateResult>;
 
     abstract validateFulfillPromise(request: HandlerFulfillPromiseRequest, promise: PromiseEntity, action: IAction, trx?: Trx): Promise<Result<void, Error>>;
     abstract fulfillPromise(request: HandlerFulfillPromiseRequest, promise: PromiseEntity, action: IAction, trx?: Trx): Promise<HandlerFulfillPromiseResult>;

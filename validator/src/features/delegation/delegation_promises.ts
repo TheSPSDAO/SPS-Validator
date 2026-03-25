@@ -6,6 +6,7 @@ import { EventLog } from '../../entities/event_log';
 import {
     HandlerCompletePromiseRequest,
     HandlerCreatePromiseRequest,
+    HandlerCreateResult,
     HandlerFulfillPromiseRequest,
     HandlerFulfillPromisesRequest,
     HandlerFulfillPromiseResult,
@@ -58,11 +59,11 @@ export class DelegationPromiseHandler extends PromiseHandler {
             return Result.Err(delegationValid.error);
         }
 
-        return Result.Ok({ params });
+        return Result.Ok({});
     }
 
-    override createPromise(request: HandlerCreatePromiseRequest, action: IAction, trx?: Trx): Promise<EventLog<any>[]> {
-        return Promise.resolve([]);
+    override createPromise(request: HandlerCreatePromiseRequest, action: IAction, trx?: Trx): Promise<HandlerCreateResult> {
+        return Promise.resolve({ logs: [] });
     }
 
     override async validateFulfillPromise(request: HandlerFulfillPromiseRequest, promise: PromiseEntity, action: IAction, trx?: Trx): Promise<Result<void, Error>> {

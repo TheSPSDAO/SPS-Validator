@@ -585,7 +585,7 @@ const schema = {
         delegation_offer_controller_creation: {
             doc: 'Block number for enabling controller-based delegation offer creation and null promise IDs',
             format: 'nat',
-            default: Number.MAX_SAFE_INTEGER,
+            default: 104953130,
             env: 'DELEGATION_OFFER_CONTROLLER_CREATION_TRANSITION_POINT',
         },
     },

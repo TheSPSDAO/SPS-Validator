@@ -6,11 +6,11 @@ import { TOKENS } from '../../features/tokens';
 const fixture = container.resolve(Fixture);
 let transitionPoints: TransitionCfg = null!;
 
-const lender = 'lender_account';
-const controller = 'controller_account';
-const borrower = 'borrower_account';
-const other_account = 'other_account';
-const admin = 'AdminAccount';
+const lender = 'lender';
+const controller = 'controller';
+const borrower = 'borrower';
+const other_account = 'other';
+const admin = 'admin';
 const source_promise_id = 'source-promise-1';
 
 beforeAll(async () => {
@@ -130,12 +130,13 @@ describe('After controller_creation_block transition', () => {
             ext_id: 'offer-1',
             controllers: [controller],
             status: 'open',
-            params: expect.objectContaining({
+            params: {
                 token: TOKENS.SPSP,
                 qty: 100,
                 lender: lender,
+                price: 0.001,
                 qty_remaining: 100,
-            }),
+            },
         });
     });
 

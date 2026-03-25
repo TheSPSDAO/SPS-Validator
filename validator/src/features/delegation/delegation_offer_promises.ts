@@ -5,6 +5,7 @@ import { EventLog } from '../../entities/event_log';
 import {
     HandlerCompletePromiseRequest,
     HandlerCreatePromiseRequest,
+    HandlerCreateResult,
     HandlerFulfillPromiseRequest,
     HandlerFulfillPromisesRequest,
     HandlerFulfillPromiseResult,
@@ -174,16 +175,17 @@ export class DelegationOfferPromiseHandler extends PromiseHandler {
             return Result.Err(delegationValid.error);
         }
 
-        // Set qty_remaining to the full qty on creation, and signal non-admin creation is OK
+        return Result.Ok({ allowNonAdmin: true });
+    }
+
+    override async createPromise(request: HandlerCreatePromiseRequest, action: IAction, trx?: Trx): Promise<HandlerCreateResult> {
+        const params = request.params as DelegationOfferParams;
+
+        // Set qty_remaining to the full qty on creation
         const storedParams: DelegationOfferParams = {
             ...params,
             qty_remaining: params.qty,
         };
-        return Result.Ok({ params: storedParams, allowNonAdmin: true });
-    }
-
-    override async createPromise(request: HandlerCreatePromiseRequest, action: IAction, trx?: Trx): Promise<EventLog[]> {
-        const params = request.params as DelegationOfferParams;
 
         // Lock the lender's SPS by delegating to the promises system account
         const logs = await this.delegationManager.delegate(
@@ -199,7 +201,7 @@ export class DelegationOfferPromiseHandler extends PromiseHandler {
             trx,
         );
 
-        return logs;
+        return { logs, params: storedParams };
     }
 
     // ─── FULFILL (single) ──────────────────────────────────────────────────────
