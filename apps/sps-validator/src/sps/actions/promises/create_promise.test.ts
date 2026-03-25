@@ -10,7 +10,7 @@ let transitionPoints: TransitionCfg = null!;
 
 const promise_creator = 'AdminAccount';
 const delegation_to = 'stephen';
-const non_admin = 'non_admin_account';
+const non_admin = 'notadmin';
 
 beforeAll(async () => {
     await fixture.init();
