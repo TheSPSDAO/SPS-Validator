@@ -1089,6 +1089,44 @@ describe('delegation_offer partial fills', () => {
 describe('delegation_offer cancel', () => {
     const getBlockAfterTransition = () => transitionPoints.transition_points.delegation_offer_controller_creation + 10;
 
+    test.dbOnly('only lender can cancel delegation_offer (controller cannot)', async () => {
+        const blockNum = getBlockAfterTransition();
+        const txId = 'tx-cancel-auth';
+        await fixture.testHelper.setStaked(lender, 1000);
+
+        // Create offer for 100 SPSP
+        await fixture.opsHelper.processOp(
+            'create_promise',
+            lender,
+            {
+                type: 'delegation_offer',
+                controllers: [controller],
+                params: {
+                    token: TOKENS.SPSP,
+                    qty: 100,
+                    lender: lender,
+                    price: 0.001,
+                },
+            },
+            { block_num: blockNum, transaction: txId },
+        );
+
+        // Controller tries to cancel - should fail
+        await fixture.opsHelper.processOp(
+            'cancel_promise',
+            controller,
+            {
+                id: txId,
+                type: 'delegation_offer',
+            },
+            { block_num: blockNum + 1 },
+        );
+
+        // Promise should still be open (cancel was rejected)
+        const promise = await fixture.testHelper.getPromise('delegation_offer', txId);
+        expect(promise!.status).toBe('open');
+    });
+
     test.dbOnly('cancel unfilled promise returns all SPSP to lender', async () => {
         const blockNum = getBlockAfterTransition();
         const txId = 'tx-cancel-unfilled';
@@ -1115,10 +1153,10 @@ describe('delegation_offer cancel', () => {
         let lenderOut = await fixture.testHelper.getDummyToken(lender, TOKENS.SPSP_OUT);
         expect(lenderOut?.balance).toBe(100);
 
-        // Cancel the promise
+        // Cancel the promise (must be lender)
         await fixture.opsHelper.processOp(
             'cancel_promise',
-            controller,
+            lender,
             {
                 id: txId,
                 type: 'delegation_offer',
@@ -1142,7 +1180,7 @@ describe('delegation_offer cancel', () => {
         const history = await fixture.testHelper.getPromiseHistory(promise!.id);
         const cancelHistory = history.find((h) => h.action === 'cancel');
         expect(cancelHistory).toBeDefined();
-        expect(cancelHistory!.player).toBe(controller);
+        expect(cancelHistory!.player).toBe(lender);
     });
 
     test.dbOnly('cancel partially filled promise returns only remaining SPSP to lender', async () => {
@@ -1190,10 +1228,10 @@ describe('delegation_offer cancel', () => {
         let borrowerIn = await fixture.testHelper.getDummyToken(borrower, TOKENS.SPSP_IN);
         expect(borrowerIn?.balance).toBe(60);
 
-        // Cancel the promise
+        // Cancel the promise (must be lender)
         await fixture.opsHelper.processOp(
             'cancel_promise',
-            controller,
+            lender,
             {
                 id: txId,
                 type: 'delegation_offer',
@@ -1294,10 +1332,10 @@ describe('delegation_offer cancel', () => {
         let sysIn = await fixture.testHelper.getDummyToken('$DELEGATION_PROMISES', TOKENS.SPSP_IN);
         expect(sysIn?.balance).toBe(120);
 
-        // Cancel the promise
+        // Cancel the promise (must be lender)
         await fixture.opsHelper.processOp(
             'cancel_promise',
-            controller,
+            lender,
             {
                 id: txId,
                 type: 'delegation_offer',
