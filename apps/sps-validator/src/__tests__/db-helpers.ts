@@ -260,6 +260,19 @@ export class TestHelper extends BaseRepository {
 
     // ──── Rental Delegations ──────────────────────────────────────────
 
+    insertRentalDelegation(
+        rental: Omit<RentalDelegationEntity, 'created_date' | 'updated_date'> & Partial<Pick<RentalDelegationEntity, 'created_date' | 'updated_date'>>,
+        trx?: Trx,
+    ) {
+        const now = new Date();
+        const entity: RentalDelegationEntity = {
+            created_date: now,
+            updated_date: now,
+            ...rental,
+        };
+        return this.query(RentalDelegationEntity, trx).insertItem(entity);
+    }
+
     getRentalDelegation(id: string, trx?: Trx) {
         return this.query(RentalDelegationEntity, trx).where('id', id).getFirstOrNull();
     }

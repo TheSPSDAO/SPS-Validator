@@ -374,8 +374,14 @@ export class DelegationOfferPromiseHandler extends PromiseHandler {
     // Manual completion is a no-op.
 
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    override async validateCompletePromise(_request: HandlerCompletePromiseRequest, _promise: PromiseEntity, _action: IAction, _trx?: Trx): Promise<Result<void, Error>> {
-        return Result.OkVoid();
+    override async validateCompletePromise(_request: HandlerCompletePromiseRequest, promise: PromiseEntity, action: IAction, _trx?: Trx): Promise<Result<void, Error>> {
+        return Result.Err(
+            new ValidationError(
+                'Delegation offer promises are completed automatically when fully filled. Manual completion is not allowed.',
+                action,
+                ErrorType.InvalidPromiseStatus,
+            ),
+        );
     }
 
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -386,6 +392,15 @@ export class DelegationOfferPromiseHandler extends PromiseHandler {
     // ─── CANCEL ────────────────────────────────────────────────────────────────
     // Cancels the offer. Returns remaining locked SPS from the system account.
     // Active rental delegations continue until their individual expirations.
+
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    override async validateCancelPromise(_request: HandlerCompletePromiseRequest, promise: PromiseEntity, action: IAction, _trx?: Trx): Promise<Result<void, Error>> {
+        const params = promise.params as DelegationOfferParams;
+        if (action.op.account !== params.lender) {
+            return Result.Err(new ValidationError('Only the lender can cancel delegation offer promises.', action, ErrorType.NoAuthority));
+        }
+        return Result.OkVoid();
+    }
 
     override async cancelPromise(request: HandlerCompletePromiseRequest, promise: PromiseEntity, action: IAction, trx?: Trx): Promise<EventLog[]> {
         const params = promise.params as DelegationOfferParams;

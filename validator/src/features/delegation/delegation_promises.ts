@@ -160,6 +160,9 @@ export class DelegationPromiseHandler extends PromiseHandler {
     }
 
     override validateReversePromise(request: HandlerReversePromiseRequest, promise: PromiseEntity, action: IAction, trx?: Trx): Promise<Result<void, Error>> {
+        if (!promise.controllers.includes(action.op.account)) {
+            return Promise.resolve(Result.Err(new ValidationError('Account is not a controller of the promise', action, ErrorType.NotPromiseController)));
+        }
         return Promise.resolve(Result.OkVoid());
     }
 
@@ -178,7 +181,17 @@ export class DelegationPromiseHandler extends PromiseHandler {
         );
     }
 
+    override validateCancelPromise(request: HandlerCompletePromiseRequest, promise: PromiseEntity, action: IAction, trx?: Trx): Promise<Result<void, Error>> {
+        if (!promise.controllers.includes(action.op.account)) {
+            return Promise.resolve(Result.Err(new ValidationError('Account is not a controller of the promise', action, ErrorType.NotPromiseController)));
+        }
+        return Promise.resolve(Result.OkVoid());
+    }
+
     override validateCompletePromise(request: HandlerCompletePromiseRequest, promise: PromiseEntity, action: IAction, trx?: Trx): Promise<Result<void, Error>> {
+        if (!promise.controllers.includes(action.op.account)) {
+            return Promise.resolve(Result.Err(new ValidationError('Account is not a controller of the promise', action, ErrorType.NotPromiseController)));
+        }
         return Promise.resolve(Result.OkVoid());
     }
 

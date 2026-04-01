@@ -363,8 +363,6 @@ export class PromiseManager implements VirtualPayloadSource {
             return Result.Err(new ValidationError('Promise not found', action, ErrorType.InvalidPromise));
         } else if (promise.status !== 'fulfilled') {
             return Result.Err(new ValidationError('Promise is not fulfilled', action, ErrorType.InvalidPromiseStatus));
-        } else if (!promise.controllers.includes(action.op.account) && action.op.account !== PromiseManager.EXPIRATION_ACCOUNT) {
-            return Result.Err(new ValidationError('Account is not a controller of the promise', action, ErrorType.NotPromiseController));
         }
 
         const handlerResult = await handler.validateReversePromise(request, promise, action, trx);
@@ -414,8 +412,6 @@ export class PromiseManager implements VirtualPayloadSource {
             return Result.Err(new ValidationError('Promise not found', action, ErrorType.InvalidPromise));
         } else if (promise.status !== 'open' && promise.status !== 'fulfilled') {
             return Result.Err(new ValidationError('Promise is not open', action, ErrorType.InvalidPromiseStatus));
-        } else if (!promise.controllers.includes(action.op.account)) {
-            return Result.Err(new ValidationError('Account is not a controller of the promise', action, ErrorType.NotPromiseController));
         }
 
         const handlerResult = await handler.validateCancelPromise(request, promise, action, trx);
@@ -469,8 +465,6 @@ export class PromiseManager implements VirtualPayloadSource {
             return Result.Err(new ValidationError('Promise not found', action, ErrorType.InvalidPromise));
         } else if (promise.status !== 'fulfilled') {
             return Result.Err(new ValidationError('Promise is not fulfilled', action, ErrorType.InvalidPromiseStatus));
-        } else if (!promise.controllers.includes(action.op.account)) {
-            return Result.Err(new ValidationError('Account is not a controller of the promise', action, ErrorType.NotPromiseController));
         }
 
         const handlerResult = await handler.validateCompletePromise(request, promise, action, trx);
