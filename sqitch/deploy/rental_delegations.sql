@@ -37,6 +37,16 @@ CREATE INDEX IF NOT EXISTS idx_rental_delegations_promise
 
 GRANT SELECT, INSERT, UPDATE ON TABLE :APP_SCHEMA.rental_delegations TO :APP_USER;
 
+-- Config for delegation rental qty divisor (offers/bids must be in multiples of this)
+INSERT INTO :APP_SCHEMA.config (group_name, group_type, name, index, value_type, value)
+VALUES ('delegation_rental', 'object', 'qty_divisor', 0, 'number', '500')
+ON CONFLICT DO NOTHING;
+
+-- Config for delegation rental minimum quantity
+INSERT INTO :APP_SCHEMA.config (group_name, group_type, name, index, value_type, value)
+VALUES ('delegation_rental', 'object', 'min_qty', 0, 'number', '500')
+ON CONFLICT DO NOTHING;
+
 -- Snapshot table for rental_delegations
 CREATE TABLE IF NOT EXISTS snapshot.rental_delegations
 (

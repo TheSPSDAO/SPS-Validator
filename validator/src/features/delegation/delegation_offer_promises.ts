@@ -19,6 +19,15 @@ import { object, number, string } from 'yup';
 import { token, qty, hiveAccount } from '../../actions/schema';
 import { RentalDelegationRepository } from '../../entities/rental/rental_delegation';
 import { PromiseRepository } from '../../entities/promises/promise';
+import { ReadOnlyWatcher } from '../../config';
+
+export type DelegationRentalConfig = {
+    qty_divisor: number;
+    min_qty: number;
+};
+
+export type DelegationRentalWatch = ReadOnlyWatcher<'delegation_rental', DelegationRentalConfig>;
+export const DelegationRentalWatch: unique symbol = Symbol('DelegationRentalWatch');
 
 export type DelegationOfferPromiseHandlerOpts = {
     delegation_promise_account: string;
@@ -27,6 +36,14 @@ export type DelegationOfferPromiseHandlerOpts = {
      * Before this block, only the lender can create offers, and IDs are required.
      */
     controller_creation_block: number;
+    /**
+     * Default qty_divisor if config watch is not provided or doesn't have a value.
+     */
+    default_qty_divisor?: number;
+    /**
+     * Default min_qty if config watch is not provided or doesn't have a value.
+     */
+    default_min_qty?: number;
 };
 
 /**
@@ -91,13 +108,25 @@ export type DelegationOfferFulfillMetadata = typeof delegation_offer_fulfill_met
  * 5. COMPLETE: No-op. Completion is driven by the fulfill handler when qty_remaining hits 0.
  */
 export class DelegationOfferPromiseHandler extends PromiseHandler {
+    private static readonly DEFAULT_QTY_DIVISOR = 500;
+    private static readonly DEFAULT_MIN_QTY = 500;
+
     constructor(
         private readonly opts: DelegationOfferPromiseHandlerOpts,
         private readonly delegationManager: DelegationManager,
         private readonly rentalDelegationRepository: RentalDelegationRepository,
         private readonly promiseRepository: PromiseRepository,
+        private readonly configWatch?: DelegationRentalWatch,
     ) {
         super();
+    }
+
+    private get qtyDivisor(): number {
+        return this.configWatch?.delegation_rental?.qty_divisor ?? this.opts.default_qty_divisor ?? DelegationOfferPromiseHandler.DEFAULT_QTY_DIVISOR;
+    }
+
+    private get minQty(): number {
+        return this.configWatch?.delegation_rental?.min_qty ?? this.opts.default_min_qty ?? DelegationOfferPromiseHandler.DEFAULT_MIN_QTY;
     }
 
     /**
@@ -135,6 +164,18 @@ export class DelegationOfferPromiseHandler extends PromiseHandler {
         }
 
         const params = request.params as DelegationOfferParams;
+
+        // Validate qty is divisible by the configured divisor
+        const qtyDivisor = this.qtyDivisor;
+        if (qtyDivisor > 1 && params.qty % qtyDivisor !== 0) {
+            return Result.Err(new ValidationError(`Offer qty must be a multiple of ${qtyDivisor}.`, action, ErrorType.InvalidPromiseParams));
+        }
+
+        // Validate qty meets minimum
+        const minQty = this.minQty;
+        if (minQty > 0 && params.qty < minQty) {
+            return Result.Err(new ValidationError(`Offer qty must be at least ${minQty}.`, action, ErrorType.InvalidPromiseParams));
+        }
 
         // Check authority: either the lender themselves, or a controller acting on behalf of the lender
         if (params.lender !== action.op.account) {
@@ -232,6 +273,18 @@ export class DelegationOfferPromiseHandler extends PromiseHandler {
         if (metadata.qty > qtyRemaining) {
             // prettier-ignore
             return Result.Err(new ValidationError(`Fill qty ${metadata.qty} exceeds remaining offer qty ${qtyRemaining}.`, action, ErrorType.InsufficientBalance));
+        }
+
+        // Validate fill qty is divisible by the configured divisor
+        const qtyDivisor = this.qtyDivisor;
+        if (qtyDivisor > 1 && metadata.qty % qtyDivisor !== 0) {
+            return Result.Err(new ValidationError(`Fill qty must be a multiple of ${qtyDivisor}.`, action, ErrorType.InvalidPromiseParams));
+        }
+
+        // Validate fill qty meets minimum
+        const minQty = this.minQty;
+        if (minQty > 0 && metadata.qty < minQty) {
+            return Result.Err(new ValidationError(`Fill qty must be at least ${minQty}.`, action, ErrorType.InvalidPromiseParams));
         }
 
         // Check that the rental_id doesn't already exist

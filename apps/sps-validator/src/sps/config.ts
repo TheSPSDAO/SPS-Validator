@@ -44,8 +44,9 @@ import { ValidatorCheckInConfig, ValidatorCheckInWatch, validator_check_in_schem
 import { AnySchema, ValidationError } from 'yup';
 import { Result } from '@steem-monsters/lib-monad';
 import { price_feed_schema, PriceFeedConfig, PriceFeedWatch } from './features/price_feed';
+import { delegation_rental_schema, DelegationRentalConfig, DelegationRentalWatch } from './features/delegation/config';
 
-type Watches = ValidatorWatch & TokenWatch & PoolWatch & ShopWatch & UnstakingWatch & BookkeepingWatch & ValidatorCheckInWatch & PriceFeedWatch;
+type Watches = ValidatorWatch & TokenWatch & PoolWatch & ShopWatch & UnstakingWatch & BookkeepingWatch & ValidatorCheckInWatch & PriceFeedWatch & DelegationRentalWatch;
 
 function assertNonNull<T>(v: T): asserts v is NonNullable<T> {
     if (v === undefined || v === null) {
@@ -126,6 +127,7 @@ export class SpsConfigLoader
     #shop?: ShopConfig;
     #bookkeeping?: BookkeepingConfig;
     #price_feed?: PriceFeedConfig;
+    #delegation_rental?: DelegationRentalConfig;
 
     public get validator() {
         return this.#validator;
@@ -157,6 +159,10 @@ export class SpsConfigLoader
 
     public get price_feed() {
         return this.#price_feed;
+    }
+
+    public get delegation_rental() {
+        return this.#delegation_rental;
     }
 
     protected updateImpl(currentState: ConfigType, { group_name, name, value }: ConfigUpdate): ConfigType {
@@ -194,6 +200,7 @@ export class SpsConfigLoader
     private readonly shopWatcher: Quark<ConfigType, 'shop'>;
     private readonly bookkeepingWatcher: Quark<ConfigType, 'bookkeeping'>;
     private readonly priceFeedWatcher: Quark<ConfigType, 'price_feed'>;
+    private readonly delegationRentalWatcher: Quark<ConfigType, 'delegation_rental'>;
 
     public constructor(@inject(ConfigRepository) private readonly configRepository: ConfigRepository, @inject(PoolsHelper) private readonly poolsHelper: PoolsHelper<string>) {
         super({});
@@ -264,6 +271,16 @@ export class SpsConfigLoader
             },
             ({ price_feed }) => {
                 this.#price_feed = price_feed;
+            },
+        );
+
+        this.delegationRentalWatcher = this.addAsserterWatcher(
+            'delegation_rental',
+            {
+                delegation_rental: schemaAssertion<DelegationRentalConfig>(delegation_rental_schema),
+            },
+            ({ delegation_rental }) => {
+                this.#delegation_rental = delegation_rental;
             },
         );
     }

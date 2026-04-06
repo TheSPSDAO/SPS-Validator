@@ -611,6 +611,61 @@ describe('delegation_offer parameter validation', () => {
         const result = await fixture.testHelper.getPromise('delegation_offer', 'offer-1');
         expect(result).toBeNull();
     });
+
+    test.dbOnly('delegation_offer fails when qty is not a multiple of 500', async () => {
+        const blockNum = getBlockAfterTransition();
+        await fixture.testHelper.setStaked(lender, 1000);
+
+        await expect(
+            fixture.opsHelper.processOp(
+                'create_promise',
+                lender,
+                {
+                    id: 'offer-1',
+                    type: 'delegation_offer',
+                    controllers: [controller],
+                    params: {
+                        token: TOKENS.SPSP,
+                        qty: 250,
+                        lender: lender,
+                        price: 0.001,
+                    },
+                },
+                { block_num: blockNum },
+            ),
+        ).resolves.toBeUndefined();
+
+        const result = await fixture.testHelper.getPromise('delegation_offer', 'offer-1');
+        expect(result).toBeNull();
+    });
+
+    test.dbOnly('delegation_offer succeeds when qty is a multiple of 500', async () => {
+        const blockNum = getBlockAfterTransition();
+        await fixture.testHelper.setStaked(lender, 1000);
+
+        await expect(
+            fixture.opsHelper.processOp(
+                'create_promise',
+                lender,
+                {
+                    id: 'offer-1',
+                    type: 'delegation_offer',
+                    controllers: [controller],
+                    params: {
+                        token: TOKENS.SPSP,
+                        qty: 500,
+                        lender: lender,
+                        price: 0.001,
+                    },
+                },
+                { block_num: blockNum },
+            ),
+        ).resolves.toBeUndefined();
+
+        const result = await fixture.testHelper.getPromise('delegation_offer', 'offer-1');
+        expect(result).not.toBeNull();
+        expect(result!.status).toBe('open');
+    });
 });
 
 // ─── CREATE + FULFILL SUCCESS ──────────────────────────────────────────────────

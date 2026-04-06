@@ -7,10 +7,7 @@ import {
 } from '@steem-monsters/splinterlands-validator';
 import { inject, injectable } from 'tsyringe';
 import { TransitionCfg } from '../transition';
-
-const DELEGATION_OFFER_PROMISE_HANDLER_BASE_OPTS: Omit<DelegationOfferPromiseHandlerOpts, 'controller_creation_block'> = {
-    delegation_promise_account: '$DELEGATION_PROMISES',
-};
+import { SpsConfigLoader } from '../../config';
 
 @injectable()
 export class SpsDelegationOfferPromiseHandler extends DelegationOfferPromiseHandler {
@@ -19,11 +16,12 @@ export class SpsDelegationOfferPromiseHandler extends DelegationOfferPromiseHand
         @inject(RentalDelegationRepository) rentalDelegationRepository: RentalDelegationRepository,
         @inject(PromiseRepository) promiseRepository: PromiseRepository,
         @inject(TransitionCfg) transitionCfg: TransitionCfg,
+        @inject(SpsConfigLoader) configLoader: SpsConfigLoader,
     ) {
         const opts: DelegationOfferPromiseHandlerOpts = {
-            ...DELEGATION_OFFER_PROMISE_HANDLER_BASE_OPTS,
+            delegation_promise_account: '$DELEGATION_PROMISES',
             controller_creation_block: transitionCfg.transition_points.delegation_offer_controller_creation,
         };
-        super(opts, delegationManager, rentalDelegationRepository, promiseRepository);
+        super(opts, delegationManager, rentalDelegationRepository, promiseRepository, configLoader);
     }
 }
