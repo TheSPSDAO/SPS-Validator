@@ -38,13 +38,15 @@ import {
     bookkeeping_entries_schema,
     BookkeepingConfig,
     ValidatorUpdater,
+    delegation_rental_schema,
+    DelegationRentalConfig,
+    DelegationRentalWatch,
 } from '@steem-monsters/splinterlands-validator';
 import { TOKENS } from './features/tokens';
 import { ValidatorCheckInConfig, ValidatorCheckInWatch, validator_check_in_schema } from './features/validator/config';
 import { AnySchema, ValidationError } from 'yup';
 import { Result } from '@steem-monsters/lib-monad';
 import { price_feed_schema, PriceFeedConfig, PriceFeedWatch } from './features/price_feed';
-import { delegation_rental_schema, DelegationRentalConfig, DelegationRentalWatch } from './features/delegation/config';
 
 type Watches = ValidatorWatch & TokenWatch & PoolWatch & ShopWatch & UnstakingWatch & BookkeepingWatch & ValidatorCheckInWatch & PriceFeedWatch & DelegationRentalWatch;
 

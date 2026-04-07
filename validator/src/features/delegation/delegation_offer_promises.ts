@@ -26,6 +26,11 @@ export type DelegationRentalConfig = {
     min_qty: number;
 };
 
+export const delegation_rental_schema = object({
+    qty_divisor: number().required().min(1),
+    min_qty: number().required().min(0),
+});
+
 export type DelegationRentalWatch = ReadOnlyWatcher<'delegation_rental', DelegationRentalConfig>;
 export const DelegationRentalWatch: unique symbol = Symbol('DelegationRentalWatch');
 
