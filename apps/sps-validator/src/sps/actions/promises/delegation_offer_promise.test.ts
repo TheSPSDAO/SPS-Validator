@@ -25,6 +25,7 @@ beforeEach(async () => {
     await fixture.testHelper.setHiveAccount(other_account);
     await fixture.testHelper.setHiveAccount(admin);
     await fixture.testHelper.insertExistingAdmins([admin]);
+    await fixture.testHelper.insertDefaultConfiguration();
     await fixture.loader.load();
     transitionPoints = container.resolve(TransitionCfg);
 });
@@ -614,6 +615,8 @@ describe('delegation_offer parameter validation', () => {
 
     test.dbOnly('delegation_offer fails when qty is not a multiple of 500', async () => {
         const blockNum = getBlockAfterTransition();
+        await fixture.loader.updateConfig('rental_delegation', 'qty_divisor', 500);
+        await fixture.loader.load();
         await fixture.testHelper.setStaked(lender, 1000);
 
         await expect(

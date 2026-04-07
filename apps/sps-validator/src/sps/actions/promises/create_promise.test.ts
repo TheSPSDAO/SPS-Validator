@@ -22,6 +22,7 @@ beforeEach(async () => {
     await fixture.testHelper.setHiveAccount(delegation_to);
     await fixture.testHelper.setHiveAccount(non_admin);
     await fixture.testHelper.insertExistingAdmins([promise_creator]);
+    await fixture.testHelper.insertDefaultConfiguration();
     await fixture.loader.load();
     transitionPoints = container.resolve(TransitionCfg);
 });
@@ -339,7 +340,7 @@ describe('After delegation_offer_controller_creation transition', () => {
                     controllers: [promise_creator],
                     params: {
                         token: TOKENS.SPSP,
-                        qty: 100,
+                        qty: 500,
                         lender: non_admin,
                         price: 0.001,
                     },
