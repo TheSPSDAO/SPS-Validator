@@ -615,16 +615,19 @@ describe('delegation_offer parameter validation', () => {
 
     test.dbOnly('delegation_offer fails when qty is not a multiple of 500', async () => {
         const blockNum = getBlockAfterTransition();
-        await fixture.loader.updateConfig('rental_delegation', 'qty_divisor', 500);
-        await fixture.loader.load();
+        await fixture.loader.update({
+            group_name: 'delegation_rental',
+            name: 'qty_divisor',
+            value: 500,
+        });
         await fixture.testHelper.setStaked(lender, 1000);
 
+        const txId = 'tx-offer-not-divisible';
         await expect(
             fixture.opsHelper.processOp(
                 'create_promise',
                 lender,
                 {
-                    id: 'offer-1',
                     type: 'delegation_offer',
                     controllers: [controller],
                     params: {
@@ -634,24 +637,29 @@ describe('delegation_offer parameter validation', () => {
                         price: 0.001,
                     },
                 },
-                { block_num: blockNum },
+                { block_num: blockNum, transaction: txId },
             ),
         ).resolves.toBeUndefined();
 
-        const result = await fixture.testHelper.getPromise('delegation_offer', 'offer-1');
+        const result = await fixture.testHelper.getPromise('delegation_offer', txId);
         expect(result).toBeNull();
     });
 
     test.dbOnly('delegation_offer succeeds when qty is a multiple of 500', async () => {
         const blockNum = getBlockAfterTransition();
+        await fixture.loader.update({
+            group_name: 'delegation_rental',
+            name: 'qty_divisor',
+            value: 500,
+        });
         await fixture.testHelper.setStaked(lender, 1000);
 
+        const txId = 'tx-offer-1';
         await expect(
             fixture.opsHelper.processOp(
                 'create_promise',
                 lender,
                 {
-                    id: 'offer-1',
                     type: 'delegation_offer',
                     controllers: [controller],
                     params: {
@@ -661,11 +669,11 @@ describe('delegation_offer parameter validation', () => {
                         price: 0.001,
                     },
                 },
-                { block_num: blockNum },
+                { block_num: blockNum, transaction: txId },
             ),
         ).resolves.toBeUndefined();
 
-        const result = await fixture.testHelper.getPromise('delegation_offer', 'offer-1');
+        const result = await fixture.testHelper.getPromise('delegation_offer', txId);
         expect(result).not.toBeNull();
         expect(result!.status).toBe('open');
     });
