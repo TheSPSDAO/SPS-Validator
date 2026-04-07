@@ -119,6 +119,10 @@ export class SpsConfigLoader
         price_feed: {
             interval_blocks: 200,
         },
+        delegation_rental: {
+            qty_divisor: 1,
+            min_qty: 0,
+        },
     });
 
     #validator?: ValidatorConfig;
