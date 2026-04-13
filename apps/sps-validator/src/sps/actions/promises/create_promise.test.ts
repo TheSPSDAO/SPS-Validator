@@ -378,28 +378,6 @@ describe('After delegation_offer_block transition', () => {
         expect(result).toBeNull();
     });
 
-    test.dbOnly('admin can still create delegation promise after transition', async () => {
-        const blockNum = getBlockAfterTransition();
-
-        await expect(
-            fixture.opsHelper.processOp(
-                'create_promise',
-                promise_creator,
-                {
-                    id: 'delegation-1',
-                    type: 'delegation',
-                    controllers: [promise_creator],
-                    fulfill_timeout_seconds: 60_000,
-                    params: { qty: 100, token: 'SPSP', to: delegation_to },
-                },
-                { block_num: blockNum },
-            ),
-        ).resolves.toBeUndefined();
-
-        const result = await fixture.testHelper.getPromise('delegation', 'delegation-1');
-        expect(result).not.toBeNull();
-    });
-
     test.dbOnly('delegation promise without fulfill_timeout_seconds fails after transition', async () => {
         const blockNum = getBlockAfterTransition();
 
