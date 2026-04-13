@@ -127,7 +127,7 @@ export class RentalDelegationRepository extends BaseRepository {
      */
     public async getActiveByLender(lender: string, trx?: Trx): Promise<RentalDelegationEntry[]> {
         // eslint-disable-next-line prettier/prettier
-        const records = await this.query(RentalDelegationEntity, trx).where('lender', lender).where('status', 'active').getMany();
+        const records = await this.query(RentalDelegationEntity, trx).where('lender', lender).where('status', 'active').orderBy('id', 'asc').getMany();
         return RentalDelegationRepository.intoMany(records);
     }
 
@@ -136,7 +136,7 @@ export class RentalDelegationRepository extends BaseRepository {
      */
     public async getActiveByBorrower(borrower: string, trx?: Trx): Promise<RentalDelegationEntry[]> {
         // eslint-disable-next-line prettier/prettier
-        const records = await this.query(RentalDelegationEntity, trx).where('borrower', borrower).where('status', 'active').getMany();
+        const records = await this.query(RentalDelegationEntity, trx).where('borrower', borrower).where('status', 'active').orderBy('id', 'asc').getMany();
         return RentalDelegationRepository.intoMany(records);
     }
 
