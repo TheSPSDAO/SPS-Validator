@@ -109,7 +109,14 @@ export {
     DelegationRentalWatch,
     delegation_rental_schema,
 } from './features/delegation';
-export type { DelegationManagerOpts, DelgationPromiseHandlerOpts, DelegationOfferPromiseHandlerOpts, DelegationRentalConfig } from './features/delegation';
+export type {
+    DelegationManagerOpts,
+    DelgationPromiseHandlerOpts,
+    DelegationOfferPromiseHandlerOpts,
+    DelegationRentalConfig,
+    DelegationPromiseParams,
+    RentalDelegationExpirationSourceOpts,
+} from './features/delegation';
 export { PromiseHandler, PromiseManager } from './features/promises';
 export type { HandlerFulfillPromiseResult, HandlerCreatePromiseResult, HandlerCreateResult } from './features/promises';
 export { isStringArray } from './utilities/guards';

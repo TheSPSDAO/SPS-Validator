@@ -45,6 +45,22 @@ export class PromiseRepository extends BaseRepository {
         return result;
     }
 
+    /**
+     * Count open or fulfilled promises by type.
+     */
+    async countOpenOrFulfilledPromisesByType(type: string, trx?: Trx): Promise<number> {
+        const count = await this.query(PromiseEntity, trx).where('type', type).whereIn('status', ['open', 'fulfilled']).getCount();
+        return Number(count);
+    }
+
+    /**
+     * Get all open promises by type.
+     */
+    async getOpenPromisesByType(type: string, trx?: Trx): Promise<PromiseEntity[]> {
+        const result = await this.query(PromiseEntity, trx).where('type', type).where('status', 'open').orderBy('ext_id').getMany();
+        return result;
+    }
+
     async insert(promise: PromiseInsert, action: IAction, trx?: Trx): Promise<[PromiseEntity, EventLog[]]> {
         const insertedPromise = await this.query(PromiseEntity, trx).insertItemWithReturning({
             type: promise.type,

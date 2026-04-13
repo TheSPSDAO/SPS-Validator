@@ -4,6 +4,14 @@ import { ProcessResult, VirtualPayloadSource } from '../../actions/virtual';
 import { PrefixOpts } from '../../entities/operation';
 import { RentalDelegationRepository } from '../../entities/rental/rental_delegation';
 
+export type RentalDelegationExpirationSourceOpts = {
+    /**
+     * Block number at which the rental delegation expiration system becomes active.
+     * Before this block, no expiration actions will be emitted.
+     */
+    transition_block?: number;
+};
+
 /**
  * Virtual payload source that emits an `expire_rental_delegations` action
  * each block if there are any rental delegations whose expiration_block
@@ -15,9 +23,18 @@ import { RentalDelegationRepository } from '../../entities/rental/rental_delegat
 export class RentalDelegationExpirationSource implements VirtualPayloadSource {
     private static readonly EXPIRATION_ACCOUNT = '$RENTAL_EXPIRATION';
 
-    constructor(private readonly cfg: PrefixOpts, private readonly rentalDelegationRepository: RentalDelegationRepository) {}
+    constructor(
+        private readonly cfg: PrefixOpts,
+        private readonly rentalDelegationRepository: RentalDelegationRepository,
+        private readonly opts?: RentalDelegationExpirationSourceOpts,
+    ) {}
 
     async process(block: BlockRef, trx?: Trx): Promise<ProcessResult[]> {
+        // Don't emit expiration actions before the transition block
+        if (this.opts?.transition_block !== undefined && block.block_num < this.opts.transition_block) {
+            return [];
+        }
+
         const expiredCount = await this.rentalDelegationRepository.countExpiredRentals(block.block_num, trx);
         if (expiredCount === 0) {
             return [];

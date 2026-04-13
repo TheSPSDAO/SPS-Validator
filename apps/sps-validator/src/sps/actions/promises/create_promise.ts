@@ -136,7 +136,7 @@ export class Router extends ActionRouter<LegacyCreatePromiseAction | CreatePromi
         @inject(TransitionManager) transitionManager: TransitionManager,
     ) {
         super();
-        Router._transitionBlock = transitionManager.transitionPoints.delegation_offer_controller_creation;
+        Router._transitionBlock = transitionManager.transitionPoints.delegation_offer_block;
         this.legacyBuilder = legacyBuilder;
         this.newBuilder = newBuilder;
         addRoutesForClass(Router, this);

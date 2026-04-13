@@ -20,7 +20,7 @@ export class SpsDelegationOfferPromiseHandler extends DelegationOfferPromiseHand
     ) {
         const opts: DelegationOfferPromiseHandlerOpts = {
             delegation_promise_account: '$DELEGATION_PROMISES',
-            controller_creation_block: transitionCfg.transition_points.delegation_offer_controller_creation,
+            delegation_offer_transition_block: transitionCfg.transition_points.delegation_offer_block,
         };
         super(opts, delegationManager, rentalDelegationRepository, promiseRepository, configLoader);
     }

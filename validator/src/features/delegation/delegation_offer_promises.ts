@@ -40,7 +40,7 @@ export type DelegationOfferPromiseHandlerOpts = {
      * Block number at which controller-based creation and null promise IDs become enabled.
      * Before this block, only the lender can create offers, and IDs are required.
      */
-    controller_creation_block: number;
+    delegation_offer_transition_block: number;
     /**
      * Default qty_divisor if config watch is not provided or doesn't have a value.
      */
@@ -146,7 +146,7 @@ export class DelegationOfferPromiseHandler extends PromiseHandler {
      */
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     override async canCreate(action: IAction, _trx?: Trx): Promise<Result<void, Error>> {
-        if (action.op.block_num < this.opts.controller_creation_block) {
+        if (action.op.block_num < this.opts.delegation_offer_transition_block) {
             return Result.Err(new ValidationError('Delegation offer promises cannot be created before the transition block.', action, ErrorType.TransitionRequired));
         }
         return Result.OkVoid();

@@ -582,11 +582,11 @@ const schema = {
             default: 103680250,
             env: 'FIX_MULTI_UNDELEGATE_CRASH_TRANSITION_POINT',
         },
-        delegation_offer_controller_creation: {
-            doc: 'Block number for enabling controller-based delegation offer creation and null promise IDs',
+        delegation_offer_block: {
+            doc: 'Block number for enabling delegation offers',
             format: 'nat',
-            default: 104997919,
-            env: 'DELEGATION_OFFER_CONTROLLER_CREATION_TRANSITION_POINT',
+            default: 105718615,
+            env: 'DELEGATION_OFFER_BLOCK_TRANSITION_POINT',
         },
     },
 };
