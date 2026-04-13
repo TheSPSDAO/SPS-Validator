@@ -146,8 +146,8 @@ test.dbOnly('delegation promise with duplicate id fails.', async () => {
 
 // ─── ACTION TRANSITION TESTS ────────────────────────────────────────────────────
 
-describe('Before delegation_offer_controller_creation transition', () => {
-    const getBlockBeforeTransition = () => transitionPoints.transition_points.delegation_offer_controller_creation - 10;
+describe('Before delegation_offer_block transition', () => {
+    const getBlockBeforeTransition = () => transitionPoints.transition_points.delegation_offer_block - 10;
 
     test.dbOnly('create_promise requires admin before transition', async () => {
         const blockNum = getBlockBeforeTransition();
@@ -242,8 +242,8 @@ describe('Before delegation_offer_controller_creation transition', () => {
     });
 });
 
-describe('After delegation_offer_controller_creation transition', () => {
-    const getBlockAfterTransition = () => transitionPoints.transition_points.delegation_offer_controller_creation + 10;
+describe('After delegation_offer_block transition', () => {
+    const getBlockAfterTransition = () => transitionPoints.transition_points.delegation_offer_block + 10;
 
     test.dbOnly('create_promise with null id for delegation_offer type auto-generates id', async () => {
         const blockNum = getBlockAfterTransition();

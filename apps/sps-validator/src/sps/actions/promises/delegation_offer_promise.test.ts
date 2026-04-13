@@ -37,7 +37,7 @@ afterAll(async () => {
 // ─── BEFORE TRANSITION: CANNOT CREATE ─────────────────────────────────────────
 
 describe('Before controller_creation_block transition', () => {
-    const getBlockBeforeTransition = () => transitionPoints.transition_points.delegation_offer_controller_creation - 10;
+    const getBlockBeforeTransition = () => transitionPoints.transition_points.delegation_offer_block - 10;
 
     test.dbOnly('delegation_offer cannot be created before transition (even by admin)', async () => {
         const blockNum = getBlockBeforeTransition();
@@ -99,7 +99,7 @@ describe('Before controller_creation_block transition', () => {
 // ─── AFTER TRANSITION: NON-ADMIN CREATION, OPTIONAL ID ──────────────────────────
 
 describe('After controller_creation_block transition', () => {
-    const getBlockAfterTransition = () => transitionPoints.transition_points.delegation_offer_controller_creation + 10;
+    const getBlockAfterTransition = () => transitionPoints.transition_points.delegation_offer_block + 10;
 
     test.dbOnly('lender can create delegation_offer directly (non-admin)', async () => {
         const blockNum = getBlockAfterTransition();
@@ -453,7 +453,7 @@ describe('After controller_creation_block transition', () => {
 // ─── VALIDATION TESTS (after transition) ────────────────────────────────────────
 
 describe('delegation_offer parameter validation', () => {
-    const getBlockAfterTransition = () => transitionPoints.transition_points.delegation_offer_controller_creation + 10;
+    const getBlockAfterTransition = () => transitionPoints.transition_points.delegation_offer_block + 10;
 
     test.dbOnly('delegation_offer fails with missing token', async () => {
         const blockNum = getBlockAfterTransition();
@@ -682,7 +682,7 @@ describe('delegation_offer parameter validation', () => {
 // ─── CREATE + FULFILL SUCCESS ──────────────────────────────────────────────────
 
 describe('delegation_offer create and fulfill', () => {
-    const getBlockAfterTransition = () => transitionPoints.transition_points.delegation_offer_controller_creation + 10;
+    const getBlockAfterTransition = () => transitionPoints.transition_points.delegation_offer_block + 10;
 
     test.dbOnly('create locks SPSP into system account, fulfill delegates to borrower and creates rental record', async () => {
         const blockNum = getBlockAfterTransition();
@@ -812,7 +812,7 @@ describe('delegation_offer create and fulfill', () => {
 // ─── PARTIAL FILLS ─────────────────────────────────────────────────────────────
 
 describe('delegation_offer partial fills', () => {
-    const getBlockAfterTransition = () => transitionPoints.transition_points.delegation_offer_controller_creation + 10;
+    const getBlockAfterTransition = () => transitionPoints.transition_points.delegation_offer_block + 10;
 
     test.dbOnly('partial fill keeps promise open and decrements qty_remaining', async () => {
         const blockNum = getBlockAfterTransition();
@@ -1153,7 +1153,7 @@ describe('delegation_offer partial fills', () => {
 // ─── CANCEL ────────────────────────────────────────────────────────────────────
 
 describe('delegation_offer cancel', () => {
-    const getBlockAfterTransition = () => transitionPoints.transition_points.delegation_offer_controller_creation + 10;
+    const getBlockAfterTransition = () => transitionPoints.transition_points.delegation_offer_block + 10;
 
     test.dbOnly('only lender can cancel delegation_offer (controller cannot)', async () => {
         const blockNum = getBlockAfterTransition();
@@ -1433,7 +1433,7 @@ describe('delegation_offer cancel', () => {
 // ─── REVERSE REJECTED ──────────────────────────────────────────────────────────
 
 describe('delegation_offer reverse', () => {
-    const getBlockAfterTransition = () => transitionPoints.transition_points.delegation_offer_controller_creation + 10;
+    const getBlockAfterTransition = () => transitionPoints.transition_points.delegation_offer_block + 10;
 
     test.dbOnly('reversing a delegation_offer promise is not allowed', async () => {
         const blockNum = getBlockAfterTransition();
