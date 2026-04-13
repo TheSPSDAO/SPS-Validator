@@ -57,7 +57,9 @@ export class DelegationPromiseHandler extends PromiseHandler {
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     override async canCreate(action: IAction, _trx?: Trx): Promise<Result<void, Error>> {
         if (this.opts.delegation_offer_transition_block !== undefined && action.op.block_num >= this.opts.delegation_offer_transition_block) {
-            return Result.Err(new ValidationError('Delegation promises cannot be created after the transition block. Use delegation_offer instead.', action, ErrorType.TransitionRequired));
+            return Result.Err(
+                new ValidationError('Delegation promises cannot be created after the transition block. Use delegation_offer instead.', action, ErrorType.TransitionRequired),
+            );
         }
         return Result.OkVoid();
     }
