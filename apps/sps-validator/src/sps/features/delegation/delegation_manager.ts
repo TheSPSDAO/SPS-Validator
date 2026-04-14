@@ -1,4 +1,11 @@
-import { ActiveDelegationsRepository, DelegationManager, DelegationManagerOpts, HiveAccountRepository, TokenSupport } from '@steem-monsters/splinterlands-validator';
+import {
+    ActiveDelegationsRepository,
+    DelegationManager,
+    DelegationManagerOpts,
+    HiveAccountRepository,
+    RentalDelegationRepository,
+    TokenSupport,
+} from '@steem-monsters/splinterlands-validator';
 import { inject, injectable } from 'tsyringe';
 import { SUPPORTED_TOKENS } from '../tokens';
 import { TransitionManager } from '../transition';
@@ -15,8 +22,9 @@ export class SpsDelegationManager extends DelegationManager {
         @inject(TransitionManager) private readonly transitionManager: TransitionManager,
         @inject(HiveAccountRepository) hiveAccountRepository: HiveAccountRepository,
         @inject(ActiveDelegationsRepository) delegationRepository: ActiveDelegationsRepository,
+        @inject(RentalDelegationRepository) rentalDelegationRepository: RentalDelegationRepository,
     ) {
-        super(DELEGATION_MANAGER_OPTS, TokenSupport.wrap(SUPPORTED_TOKENS), hiveAccountRepository, delegationRepository);
+        super(DELEGATION_MANAGER_OPTS, TokenSupport.wrap(SUPPORTED_TOKENS), hiveAccountRepository, delegationRepository, rentalDelegationRepository);
     }
 
     override shouldGroupTransfersInMultiOps(block_num: number): boolean {

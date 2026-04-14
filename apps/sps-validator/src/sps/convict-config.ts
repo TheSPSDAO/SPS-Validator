@@ -582,6 +582,12 @@ const schema = {
             default: 103680250,
             env: 'FIX_MULTI_UNDELEGATE_CRASH_TRANSITION_POINT',
         },
+        delegation_offer_block: {
+            doc: 'Block number for enabling delegation offers',
+            format: 'nat',
+            default: 105718615,
+            env: 'DELEGATION_OFFER_BLOCK_TRANSITION_POINT',
+        },
     },
 };
 

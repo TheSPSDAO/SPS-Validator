@@ -308,7 +308,7 @@ export class SpsBalanceRepository extends BalanceRepository {
 
         const daoReserveSps = balances[this.supplyOpts.dao_reserve_account][TOKENS.SPS];
         const daoDelegationSps = balances[this.supplyOpts.dao_delegation_account][TOKENS.SPS] + balances[this.supplyOpts.dao_delegation_account][TOKENS.SPSP];
-        const totalStaked = Math.abs(await balances[this.supplyOpts.staking_account][TOKENS.SPSP]);
+        const totalStaked = Math.abs(balances[this.supplyOpts.staking_account][TOKENS.SPSP]);
 
         const offChainBalances = {
             hive_engine: await this.calculateHiveEngineSupply(this.supplyOpts.bridge_accounts_by_chain.hive.excluded_addresses),

@@ -38,16 +38,19 @@ import { Router as ReversePromiseRouter } from './promises/reverse_promise';
 import { Router as CancelPromiseRouter } from './promises/cancel_promise';
 import { Router as CompletePromiseRouter } from './promises/complete_promise';
 import { Router as ExpirePromisesRouter } from './promises/expire_promises';
+import { Router as ExpireRentalDelegationsRouter } from './promises/expire_rental_delegations';
 import { Router as UpdateMissedBlocksRouter } from './validator/update_missed_blocks';
 import { Router as FixVoteWeightRouter } from './transitions/fix_vote_weight';
 import { Router as CleanupLiteAccountsRouter } from './transitions/cleanup_lite_accounts';
 import { Router as BalanceTokenStakingAccountRouter } from './transitions/balance_token_staking_account';
 import { Router as AdjustTokenDistributionStrategyRouter } from './transitions/adjust_token_distribution_strategy';
+import { Router as CancelDelegationPromisesRouter } from './transitions/cancel_delegation_promises';
 import { MakeMultiRouter, MakeVirtualPayloadSource } from './utils';
 import { SpsValidatorLicenseManager } from '../features/validator';
 import { SpsClearBurnedTokensSource } from './burn';
 import { SpsUpdateMissedBlocksSource } from './missed_blocks';
 import { TransitionManager } from '../features/transition';
+import { SpsRentalDelegationExpirationSource } from '../features/delegation/rental_delegation_expiration';
 
 export const RouterImpl = MakeMultiRouter(
     TestActionRouter,
@@ -91,12 +94,14 @@ export const VirtualRouterImpl = MakeMultiRouter(
     ClaimPoolRouter,
     BurnRouter,
     ExpirePromisesRouter,
+    ExpireRentalDelegationsRouter,
     ExpireCheckInsRouter,
     UpdateMissedBlocksRouter,
     FixVoteWeightRouter,
     CleanupLiteAccountsRouter,
     BalanceTokenStakingAccountRouter,
     AdjustTokenDistributionStrategyRouter,
+    CancelDelegationPromisesRouter,
 );
 export type VirtualRouterImpl = InstanceType<typeof VirtualRouterImpl>;
 
@@ -108,6 +113,7 @@ export const VirtualPayloadSource = MakeVirtualPayloadSource(
     SpsValidatorLicenseManager,
     SpsUpdateMissedBlocksSource,
     TransitionManager,
+    SpsRentalDelegationExpirationSource,
 );
 export type VirtualPayloadSource = InstanceType<typeof VirtualPayloadSource>;
 

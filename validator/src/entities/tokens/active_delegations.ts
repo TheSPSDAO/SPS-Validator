@@ -65,27 +65,27 @@ export class ActiveDelegationsRepository extends BaseRepository {
         return balance - unstaking_balance;
     }
 
-    public async delegate(action: IAction, delegator: string, delegatee: string, token: TokenSupportEntry, qty: number, trx?: Trx) {
+    public async delegate(action: IAction, delegator: string, delegatee: string, token: TokenSupportEntry, qty: number, skipDateUpdate?: boolean, trx?: Trx) {
         // TODO we can probably add better typing so we dont need this check.
         if (!token.delegation) {
             throw new Error('Delegation is not supported for the specified token.');
         }
 
         const eventLogs: EventLog[] = [];
-        eventLogs.push(await this.upsertActiveDelegation(action, delegator, delegatee, token.token, qty, false, trx));
+        eventLogs.push(await this.upsertActiveDelegation(action, delegator, delegatee, token.token, qty, false, skipDateUpdate, trx));
         eventLogs.push(...(await this.balanceRepository.updateBalance(action, DELEGATION_ACCOUNT, delegator, token.delegation.out_token, qty, 'delegate_tokens', trx)));
         eventLogs.push(...(await this.balanceRepository.updateBalance(action, DELEGATION_ACCOUNT, delegatee, token.delegation.in_token, qty, 'delegate_tokens', trx)));
         return eventLogs;
     }
 
-    public async undelegate(action: IAction, delegator: string, delegatee: string, token: TokenSupportEntry, qty: number, trx?: Trx) {
+    public async undelegate(action: IAction, delegator: string, delegatee: string, token: TokenSupportEntry, qty: number, skipDateUpdate?: boolean, trx?: Trx) {
         // TODO we can probably add better typing so we dont need this check.
         if (!token.delegation) {
             throw new Error('Delegation is not supported for the specified token.');
         }
 
         const eventLogs: EventLog[] = [];
-        eventLogs.push(await this.upsertActiveDelegation(action, delegator, delegatee, token.token, qty, true, trx));
+        eventLogs.push(await this.upsertActiveDelegation(action, delegator, delegatee, token.token, qty, true, skipDateUpdate, trx));
         eventLogs.push(...(await this.balanceRepository.updateBalance(action, delegator, DELEGATION_ACCOUNT, token.delegation.out_token, qty, 'undelegate_tokens', trx)));
         eventLogs.push(...(await this.balanceRepository.updateBalance(action, delegatee, DELEGATION_ACCOUNT, token.delegation.in_token, qty, 'undelegate_tokens', trx)));
         return eventLogs;
@@ -122,6 +122,7 @@ export class ActiveDelegationsRepository extends BaseRepository {
         token: string,
         amount: number,
         is_undelegation: boolean,
+        skipDateUpdate?: boolean,
         trx?: Trx,
     ): Promise<EventLog> {
         let promise = null;
@@ -143,38 +144,51 @@ export class ActiveDelegationsRepository extends BaseRepository {
 
             promise = this.query(ActiveDelegationEntity, trx).insertItemWithReturning(new_delegation);
         } else if (is_undelegation) {
+            const updateFields: Record<string, unknown> = {
+                amount: (active_delegation_record.amount - amount).toString(),
+            };
+            if (!skipDateUpdate) {
+                updateFields.last_undelegation_tx = action.unique_trx_id;
+                updateFields.last_undelegation_date = action.op.block_time;
+            }
             promise = this.query(ActiveDelegationEntity, trx)
                 .where('delegator', delegator)
                 .where('delegatee', delegatee)
                 .where('token', token)
-                .updateItemWithReturning({
-                    amount: (active_delegation_record.amount - amount).toString(),
-                    last_undelegation_tx: action.unique_trx_id,
-                    last_undelegation_date: action.op.block_time,
-                });
+                .updateItemWithReturning(updateFields);
         } else {
             const new_amount = active_delegation_record.amount + amount;
             if (new_amount == 0) {
                 promise = this.query(ActiveDelegationEntity, trx).where('delegator', delegator).where('delegatee', delegatee).where('token', token).del();
             } else if (amount < 0) {
-                promise = this.query(ActiveDelegationEntity, trx).where('delegator', delegator).where('delegatee', delegatee).where('token', token).updateItemWithReturning({
-                    last_delegation_tx: action.unique_trx_id,
-                    last_delegation_date: action.op.block_time,
+                const updateFields: Record<string, unknown> = {
                     amount: new_amount.toString(),
-                    last_undelegation_date: null,
-                    last_undelegation_tx: null,
-                });
-            } else {
-                // Else update the existing delegation
+                };
+                if (!skipDateUpdate) {
+                    updateFields.last_delegation_tx = action.unique_trx_id;
+                    updateFields.last_delegation_date = action.op.block_time;
+                    updateFields.last_undelegation_date = null;
+                    updateFields.last_undelegation_tx = null;
+                }
                 promise = this.query(ActiveDelegationEntity, trx)
                     .where('delegator', delegator)
                     .where('delegatee', delegatee)
                     .where('token', token)
-                    .updateItemWithReturning({
-                        last_delegation_tx: action.unique_trx_id,
-                        last_delegation_date: action.op.block_time,
-                        amount: (active_delegation_record.amount + amount).toString(),
-                    });
+                    .updateItemWithReturning(updateFields);
+            } else {
+                // Else update the existing delegation
+                const updateFields: Record<string, unknown> = {
+                    amount: (active_delegation_record.amount + amount).toString(),
+                };
+                if (!skipDateUpdate) {
+                    updateFields.last_delegation_tx = action.unique_trx_id;
+                    updateFields.last_delegation_date = action.op.block_time;
+                }
+                promise = this.query(ActiveDelegationEntity, trx)
+                    .where('delegator', delegator)
+                    .where('delegatee', delegatee)
+                    .where('token', token)
+                    .updateItemWithReturning(updateFields);
             }
         }
 

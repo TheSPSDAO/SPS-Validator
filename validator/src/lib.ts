@@ -101,7 +101,26 @@ export type { OperationData } from './entities/operation';
 export { isDefined } from './libs/guards';
 export type { BookkeepingConfig } from './entities/bookkeeping';
 export { Bookkeeping, BookkeepingWatch, BookkeepingFromConfig, BookkeepingDefault } from './entities/bookkeeping';
-export { DelegationManager, DelegationPromiseHandler } from './features/delegation';
-export type { DelegationManagerOpts, DelgationPromiseHandlerOpts } from './features/delegation';
+export {
+    DelegationManager,
+    DelegationPromiseHandler,
+    DelegationOfferPromiseHandler,
+    RentalDelegationExpirationSource,
+    DelegationRentalWatch,
+    delegation_rental_schema,
+} from './features/delegation';
+export type {
+    DelegationManagerOpts,
+    DelgationPromiseHandlerOpts,
+    DelegationOfferPromiseHandlerOpts,
+    DelegationRentalConfig,
+    DelegationPromiseParams,
+    RentalDelegationExpirationSourceOpts,
+} from './features/delegation';
 export { PromiseHandler, PromiseManager } from './features/promises';
+export type { HandlerFulfillPromiseResult, HandlerCreatePromiseResult, HandlerCreateResult } from './features/promises';
 export { isStringArray } from './utilities/guards';
+export { RentalDelegationRepository } from './entities/rental/rental_delegation';
+export type { RentalDelegationEntry, CreateRentalDelegationRequest } from './entities/rental/rental_delegation';
+export { RentalDelegationEntity } from './db/tables';
+export type { RentalDelegationStatus } from './db/tables';

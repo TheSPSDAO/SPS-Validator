@@ -15,6 +15,7 @@ export interface IAction {
     readonly unique_trx_id: string;
     readonly params: Record<string, unknown>;
     readonly players: string[];
+    readonly index: number;
     readonly success?: boolean;
     readonly error?: LogObj;
     readonly result?: EventLog[];

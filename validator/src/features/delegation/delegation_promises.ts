@@ -6,8 +6,10 @@ import { EventLog } from '../../entities/event_log';
 import {
     HandlerCompletePromiseRequest,
     HandlerCreatePromiseRequest,
+    HandlerCreateResult,
     HandlerFulfillPromiseRequest,
     HandlerFulfillPromisesRequest,
+    HandlerFulfillPromiseResult,
     PromiseHandler,
     HandlerReversePromiseRequest,
     HandlerCreatePromiseResult,
@@ -19,6 +21,11 @@ import { token, qty, hiveUsernameOrSystemAccount, hiveAccount } from '../../acti
 
 export type DelgationPromiseHandlerOpts = {
     delegation_promise_account: string;
+    /**
+     * Block number at which delegation promises are replaced by delegation offers.
+     * After this block, new delegation promises cannot be created.
+     */
+    delegation_offer_transition_block?: number;
 };
 
 const delegation_promise_params_schema = object({
@@ -44,10 +51,27 @@ export class DelegationPromiseHandler extends PromiseHandler {
         super();
     }
 
+    /**
+     * Delegation promises cannot be created after the delegation_offer_transition_block.
+     */
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    override async canCreate(action: IAction, _trx?: Trx): Promise<Result<void, Error>> {
+        if (this.opts.delegation_offer_transition_block !== undefined && action.op.block_num >= this.opts.delegation_offer_transition_block) {
+            return Result.Err(
+                new ValidationError('Delegation promises cannot be created after the transition block. Use delegation_offer instead.', action, ErrorType.TransitionRequired),
+            );
+        }
+        return Result.OkVoid();
+    }
+
     override async validateCreatePromise(request: HandlerCreatePromiseRequest, action: IAction, trx?: Trx): Promise<Result<HandlerCreatePromiseResult, Error>> {
         const params = request.params as DelegationPromiseParams;
         if (params.player != null) {
             return Result.Err(new ValidationError('player parameter cannot be used in delegation promises.', action, ErrorType.DelegationAuthorityNotAllowed));
+        } else if (!request.fulfill_timeout_seconds) {
+            return Result.Err(new ValidationError('fulfill_timeout_seconds parameter is required for delegation promises.', action, ErrorType.InvalidPromiseParams));
+        } else if (!request.id) {
+            return Result.Err(new ValidationError('id parameter is required for delegation promises.', action, ErrorType.InvalidPromiseParams));
         }
 
         const delegationValid = await this.delegationManager.validateDelegationPromise(params, action, trx);
@@ -55,11 +79,11 @@ export class DelegationPromiseHandler extends PromiseHandler {
             return Result.Err(delegationValid.error);
         }
 
-        return Result.Ok({ params });
+        return Result.Ok({});
     }
 
-    override createPromise(request: HandlerCreatePromiseRequest, action: IAction, trx?: Trx): Promise<EventLog<any>[]> {
-        return Promise.resolve([]);
+    override createPromise(request: HandlerCreatePromiseRequest, action: IAction, trx?: Trx): Promise<HandlerCreateResult> {
+        return Promise.resolve({ logs: [] });
     }
 
     override async validateFulfillPromise(request: HandlerFulfillPromiseRequest, promise: PromiseEntity, action: IAction, trx?: Trx): Promise<Result<void, Error>> {
@@ -92,7 +116,7 @@ export class DelegationPromiseHandler extends PromiseHandler {
         return Result.OkVoid();
     }
 
-    override async fulfillPromise(request: HandlerFulfillPromiseRequest, promise: PromiseEntity, action: IAction, trx?: Trx): Promise<EventLog<any>[]> {
+    override async fulfillPromise(request: HandlerFulfillPromiseRequest, promise: PromiseEntity, action: IAction, trx?: Trx): Promise<HandlerFulfillPromiseResult> {
         const params = promise.params as DelegationPromiseParams;
         const logs = await this.delegationManager.delegate(
             {
@@ -104,7 +128,7 @@ export class DelegationPromiseHandler extends PromiseHandler {
             action,
             trx,
         );
-        return logs;
+        return { logs };
     }
 
     override async validateFulfillPromises(request: HandlerFulfillPromisesRequest, promises: PromiseEntity[], action: IAction, trx?: Trx): Promise<Result<void, Error>> {
@@ -133,7 +157,7 @@ export class DelegationPromiseHandler extends PromiseHandler {
         return Result.OkVoid();
     }
 
-    override async fulfillPromises(request: HandlerFulfillPromisesRequest, promises: PromiseEntity[], action: IAction, trx?: Trx): Promise<EventLog<any>[]> {
+    override async fulfillPromises(request: HandlerFulfillPromisesRequest, promises: PromiseEntity[], action: IAction, trx?: Trx): Promise<HandlerFulfillPromiseResult> {
         const promiseParams = promises.map((promise) => promise.params as DelegationPromiseParams);
         const eventLogs: EventLog[] = [];
         for (const params of promiseParams) {
@@ -150,10 +174,13 @@ export class DelegationPromiseHandler extends PromiseHandler {
                 )),
             );
         }
-        return eventLogs;
+        return { logs: eventLogs };
     }
 
     override validateReversePromise(request: HandlerReversePromiseRequest, promise: PromiseEntity, action: IAction, trx?: Trx): Promise<Result<void, Error>> {
+        if (!promise.controllers.includes(action.op.account)) {
+            return Promise.resolve(Result.Err(new ValidationError('Account is not a controller of the promise', action, ErrorType.NotPromiseController)));
+        }
         return Promise.resolve(Result.OkVoid());
     }
 
@@ -172,7 +199,17 @@ export class DelegationPromiseHandler extends PromiseHandler {
         );
     }
 
+    override validateCancelPromise(request: HandlerCompletePromiseRequest, promise: PromiseEntity, action: IAction, trx?: Trx): Promise<Result<void, Error>> {
+        if (!promise.controllers.includes(action.op.account)) {
+            return Promise.resolve(Result.Err(new ValidationError('Account is not a controller of the promise', action, ErrorType.NotPromiseController)));
+        }
+        return Promise.resolve(Result.OkVoid());
+    }
+
     override validateCompletePromise(request: HandlerCompletePromiseRequest, promise: PromiseEntity, action: IAction, trx?: Trx): Promise<Result<void, Error>> {
+        if (!promise.controllers.includes(action.op.account)) {
+            return Promise.resolve(Result.Err(new ValidationError('Account is not a controller of the promise', action, ErrorType.NotPromiseController)));
+        }
         return Promise.resolve(Result.OkVoid());
     }
 

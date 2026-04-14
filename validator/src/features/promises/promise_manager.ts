@@ -13,7 +13,11 @@ import { PrefixOpts } from '../../entities/operation';
 
 export type CreatePromiseRequest = {
     type: string;
-    id: string;
+    /**
+     * The promise ID. If null, will be auto-generated from the action context.
+     * Auto-generation is only supported for specific promise types.
+     */
+    id: string | null;
     controllers: string[];
     fulfill_timeout_seconds?: number;
     params: unknown;
@@ -88,22 +92,48 @@ export class PromiseManager implements VirtualPayloadSource {
         return eventLogs;
     }
 
+    /**
+     * Generates a deterministic unique promise ID from the action context.
+     * Format: {block_num}-{transaction_id}-{index}
+     */
+    private generatePromiseId(action: IAction): string {
+        return `${action.op.block_num}-${action.op.transaction_id}-${action.index}`;
+    }
+
+    /**
+     * Resolves the promise ID, generating one if null was provided.
+     */
+    private resolvePromiseId(request: CreatePromiseRequest, action: IAction): string {
+        return request.id ?? action.unique_trx_id;
+    }
+
     async validateCreatePromise(request: CreatePromiseRequest, action: IAction, trx?: Trx): Promise<Result<void, Error>> {
         const handler = this.handlers.get(request.type);
         if (!handler) {
             return Result.Err(new ValidationError('Invalid promise type', action, ErrorType.InvalidPromiseType));
-        } else if (!(await this.adminMembership.isAdmin(action.op.account))) {
-            return Result.Err(new ValidationError('Only admins can create promises', action, ErrorType.AdminOnly));
         }
 
-        const existingPromise = await this.promiseRepository.getPromiseByTypeAndId(request.type, request.id, trx);
-        if (existingPromise) {
-            return Result.Err(new ValidationError('Promise already exists', action, ErrorType.PromiseAlreadyExists));
+        // Check if creation is allowed at all for this handler (e.g., transition blocks)
+        const canCreateResult = await handler.canCreate(action, trx);
+        if (Result.isErr(canCreateResult)) {
+            return canCreateResult;
         }
 
+        // Run handler validation first so we can check allowNonAdmin from the result
         const handlerResult = await handler.validateCreatePromise(request, action, trx);
         if (Result.isErr(handlerResult)) {
             return handlerResult;
+        }
+
+        const promiseId = this.resolvePromiseId(request, action);
+        const allowNonAdmin = handlerResult.value.allowNonAdmin ?? false;
+        if (!allowNonAdmin && !(await this.adminMembership.isAdmin(action.op.account))) {
+            return Result.Err(new ValidationError('Only admins can create promises', action, ErrorType.AdminOnly));
+        }
+
+        const existingPromise = await this.promiseRepository.getPromiseByTypeAndId(request.type, promiseId, trx);
+        if (existingPromise) {
+            return Result.Err(new ValidationError('Promise already exists', action, ErrorType.PromiseAlreadyExists));
         }
 
         return Result.OkVoid();
@@ -115,14 +145,17 @@ export class PromiseManager implements VirtualPayloadSource {
             throw new Error('Invalid promise type');
         }
 
-        const handlerLogs = await handler.createPromise(request, action, trx);
+        const promiseId = this.resolvePromiseId(request, action);
+        const resolvedRequest = { ...request, id: promiseId };
+
+        const handlerResult = await handler.createPromise(resolvedRequest, action, trx);
         const [_, insertLogs] = await this.promiseRepository.insert(
             {
                 actor: action.op.account,
                 type: request.type,
-                ext_id: request.id,
+                ext_id: promiseId,
                 controllers: request.controllers,
-                params: request.params as JSONB,
+                params: (handlerResult.params ?? request.params) as JSONB,
                 fulfill_timeout_seconds: request.fulfill_timeout_seconds ?? null,
                 status: 'open',
             },
@@ -130,7 +163,7 @@ export class PromiseManager implements VirtualPayloadSource {
             trx,
         );
 
-        return [...insertLogs, ...handlerLogs];
+        return [...insertLogs, ...handlerResult.logs];
     }
 
     async validateFulfillPromise(request: FulfillPromiseRequest, action: IAction, trx?: Trx): Promise<Result<void, Error>> {
@@ -160,27 +193,60 @@ export class PromiseManager implements VirtualPayloadSource {
         }
 
         const promise = (await this.promiseRepository.getPromiseByTypeAndId(request.type, request.id, trx))!;
-        const handlerLogs = await handler.fulfillPromise(request, promise, action, trx);
+        const handlerResult = await handler.fulfillPromise(request, promise, action, trx);
+        const targetStatus = handlerResult.status ?? 'fulfilled';
+
+        // If the handler says the promise stays open (partial fill), update params but don't change status
+        if (targetStatus === 'open') {
+            const [_, updateLogs] = await this.promiseRepository.update(
+                {
+                    action: 'fulfill',
+                    previous_status: promise.status,
+                    actor: action.op.account,
+                    type: promise.type,
+                    ext_id: promise.ext_id,
+                    status: 'open',
+                    fulfilled_at: null,
+                    fulfilled_by: null,
+                    fulfilled_expiration: null,
+                },
+                action,
+                trx,
+            );
+            const paramLogs: EventLog[] = [];
+            if (handlerResult.updatedParams) {
+                paramLogs.push(...(await this.promiseRepository.updateParams(promise.type, promise.ext_id, handlerResult.updatedParams as JSONB, action, trx)));
+            }
+            return [...updateLogs, ...paramLogs, ...handlerResult.logs];
+        }
+
+        // Normal fulfill or complete transition
         const fulfillExpiration = promise.fulfill_timeout_seconds !== null ? new Date(action.op.block_time.getTime() + promise.fulfill_timeout_seconds * 1000) : null;
         const [_, updateLogs] = await this.promiseRepository.update(
             {
                 // history data
-                action: 'fulfill',
+                action: targetStatus === 'completed' ? 'complete' : 'fulfill',
                 previous_status: promise.status,
                 actor: action.op.account,
                 // promise data
                 type: promise.type,
                 ext_id: promise.ext_id,
-                status: 'fulfilled',
+                status: targetStatus,
                 fulfilled_at: action.op.block_time,
                 fulfilled_by: action.op.account,
-                fulfilled_expiration: fulfillExpiration,
+                fulfilled_expiration: targetStatus === 'completed' ? null : fulfillExpiration,
             },
             action,
             trx,
         );
 
-        return [...updateLogs, ...handlerLogs];
+        // Also update params if the handler provided new ones
+        const paramLogs: EventLog[] = [];
+        if (handlerResult.updatedParams) {
+            paramLogs.push(...(await this.promiseRepository.updateParams(promise.type, promise.ext_id, handlerResult.updatedParams as JSONB, action, trx)));
+        }
+
+        return [...updateLogs, ...paramLogs, ...handlerResult.logs];
     }
 
     async validateFulfillPromises(request: FulfillPromisesRequest, action: IAction, trx?: Trx): Promise<Result<void, Error>> {
@@ -218,7 +284,35 @@ export class PromiseManager implements VirtualPayloadSource {
 
         const ids = [...new Set(request.ids)];
         const promises = await this.promiseRepository.getPromisesByTypeAndIds(request.type, ids, trx);
-        const handlerLogs = await handler.fulfillPromises(request, promises, action, trx);
+        const handlerResult = await handler.fulfillPromises(request, promises, action, trx);
+        const targetStatus = handlerResult.status ?? 'fulfilled';
+
+        // If the handler says the promises stay open (partial fill), update params but don't change status
+        if (targetStatus === 'open') {
+            const [_, updateLogs] = await this.promiseRepository.updateMultiple(
+                {
+                    action: 'fulfill',
+                    previous_status: 'open',
+                    actor: action.op.account,
+                    type: request.type,
+                    ext_ids: promises.map((p) => p.ext_id),
+                    status: 'open',
+                    fulfilled_at: null,
+                    fulfilled_by: null,
+                    fulfilled_expiration: null,
+                },
+                action,
+                trx,
+            );
+            if (handlerResult.updatedParams) {
+                for (const promise of promises) {
+                    updateLogs.push(...(await this.promiseRepository.updateParams(promise.type, promise.ext_id, handlerResult.updatedParams as JSONB, action, trx)));
+                }
+            }
+            return [...updateLogs, ...handlerResult.logs];
+        }
+
+        // Normal fulfill/complete transition
         const groupedExpirations = promises.reduce((map, promise) => {
             const expiration = promise.fulfill_timeout_seconds !== null ? new Date(action.op.block_time.getTime() + promise.fulfill_timeout_seconds * 1000) : null;
             const group = map.get(expiration) ?? [];
@@ -232,16 +326,16 @@ export class PromiseManager implements VirtualPayloadSource {
             const [_, groupsLogs] = await this.promiseRepository.updateMultiple(
                 {
                     // history data
-                    action: 'fulfill',
+                    action: targetStatus === 'completed' ? 'complete' : 'fulfill',
                     previous_status: 'open',
                     actor: action.op.account,
                     // promise data
                     type: request.type,
                     ext_ids: groupedPromises.map((p) => p.ext_id),
-                    status: 'fulfilled',
+                    status: targetStatus,
                     fulfilled_at: action.op.block_time,
                     fulfilled_by: action.op.account,
-                    fulfilled_expiration: expiration,
+                    fulfilled_expiration: targetStatus === 'completed' ? null : expiration,
                 },
                 action,
                 trx,
@@ -249,7 +343,14 @@ export class PromiseManager implements VirtualPayloadSource {
             updateLogs.push(...groupsLogs);
         }
 
-        return [...updateLogs, ...handlerLogs];
+        // Also update params if the handler provided new ones
+        if (handlerResult.updatedParams) {
+            for (const promise of promises) {
+                updateLogs.push(...(await this.promiseRepository.updateParams(promise.type, promise.ext_id, handlerResult.updatedParams as JSONB, action, trx)));
+            }
+        }
+
+        return [...updateLogs, ...handlerResult.logs];
     }
 
     async validateReversePromise(request: ReversePromiseRequest, action: IAction, trx?: Trx): Promise<Result<void, Error>> {
@@ -262,8 +363,6 @@ export class PromiseManager implements VirtualPayloadSource {
             return Result.Err(new ValidationError('Promise not found', action, ErrorType.InvalidPromise));
         } else if (promise.status !== 'fulfilled') {
             return Result.Err(new ValidationError('Promise is not fulfilled', action, ErrorType.InvalidPromiseStatus));
-        } else if (!promise.controllers.includes(action.op.account) && action.op.account !== PromiseManager.EXPIRATION_ACCOUNT) {
-            return Result.Err(new ValidationError('Account is not a controller of the promise', action, ErrorType.NotPromiseController));
         }
 
         const handlerResult = await handler.validateReversePromise(request, promise, action, trx);
@@ -313,8 +412,6 @@ export class PromiseManager implements VirtualPayloadSource {
             return Result.Err(new ValidationError('Promise not found', action, ErrorType.InvalidPromise));
         } else if (promise.status !== 'open' && promise.status !== 'fulfilled') {
             return Result.Err(new ValidationError('Promise is not open', action, ErrorType.InvalidPromiseStatus));
-        } else if (!promise.controllers.includes(action.op.account)) {
-            return Result.Err(new ValidationError('Account is not a controller of the promise', action, ErrorType.NotPromiseController));
         }
 
         const handlerResult = await handler.validateCancelPromise(request, promise, action, trx);
@@ -368,8 +465,6 @@ export class PromiseManager implements VirtualPayloadSource {
             return Result.Err(new ValidationError('Promise not found', action, ErrorType.InvalidPromise));
         } else if (promise.status !== 'fulfilled') {
             return Result.Err(new ValidationError('Promise is not fulfilled', action, ErrorType.InvalidPromiseStatus));
-        } else if (!promise.controllers.includes(action.op.account)) {
-            return Result.Err(new ValidationError('Account is not a controller of the promise', action, ErrorType.NotPromiseController));
         }
 
         const handlerResult = await handler.validateCompletePromise(request, promise, action, trx);
