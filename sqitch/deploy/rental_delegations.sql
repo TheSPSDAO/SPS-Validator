@@ -65,6 +65,42 @@ CREATE TABLE IF NOT EXISTS snapshot.rental_delegations
     updated_date                timestamptz                     NOT NULL
 );
 
+-- Update pre_snapshot_restore to clear the new snapshot table
+CREATE OR REPLACE FUNCTION snapshot.pre_snapshot_restore(p_data_schema text DEFAULT :'APP_SCHEMA'::text)
+    RETURNS void
+    LANGUAGE 'plpgsql'
+    COST 100
+    VOLATILE PARALLEL UNSAFE
+AS $BODY$
+BEGIN
+
+	PERFORM set_config('search_path', regexp_replace(p_data_schema ||', public', '[^\w ,]', '', 'g'), true);
+
+	RAISE NOTICE 'Data source schema: %', p_data_schema;
+
+    -- Delete any pre-existing snapshot data
+    TRUNCATE TABLE snapshot.token_unstaking;
+    TRUNCATE TABLE snapshot.hive_accounts;
+    TRUNCATE TABLE snapshot.balances;
+    TRUNCATE TABLE snapshot.balance_history;
+    TRUNCATE TABLE snapshot.staking_pool_reward_debt;
+    TRUNCATE TABLE snapshot.validator_votes;
+    TRUNCATE TABLE snapshot.validators;
+    TRUNCATE TABLE snapshot.validator_vote_history;
+    TRUNCATE TABLE snapshot.blocks;
+    TRUNCATE TABLE snapshot.validator_transactions;
+    TRUNCATE TABLE snapshot.validator_transaction_players;
+    TRUNCATE TABLE snapshot.price_history;
+    TRUNCATE TABLE snapshot.active_delegations;
+    TRUNCATE TABLE snapshot.validator_check_in;
+    TRUNCATE TABLE snapshot.promise;
+    TRUNCATE TABLE snapshot.promise_history;
+    TRUNCATE TABLE snapshot.config;
+    TRUNCATE TABLE snapshot.token_transfer_keys;
+    TRUNCATE TABLE snapshot.rental_delegations;
+END;
+$BODY$;
+
 CREATE OR REPLACE FUNCTION snapshot.post_snapshot_restore(p_data_schema text DEFAULT :'APP_SCHEMA'::text)
     RETURNS void
     LANGUAGE 'plpgsql'
@@ -122,6 +158,8 @@ BEGIN
     INSERT INTO active_delegations SELECT * FROM snapshot.active_delegations;
     INSERT INTO balance_history SELECT * FROM snapshot.balance_history;
     INSERT INTO balances SELECT * FROM snapshot.balances;
+    -- Clear config so snapshot config takes precedence over any existing config
+    TRUNCATE TABLE config;
     INSERT INTO config SELECT * FROM snapshot.config;
     INSERT INTO hive_accounts SELECT * FROM snapshot.hive_accounts;
     INSERT INTO price_history SELECT * FROM snapshot.price_history;
