@@ -173,6 +173,25 @@ export class TokenUnstakingEntity {
     @Column() public cancel_tx!: string | null;
 }
 
+export type RentalDelegationStatus = 'pending' | 'active' | 'expired' | 'cancelled';
+
+@Table('rental_delegations')
+export class RentalDelegationEntity {
+    @Column({ primary: true }) public id!: string; // matches the promise ext_id / rental tx_id
+    @Column() public promise_type!: string; // 'delegation_offer'
+    @Column() public promise_ext_id!: string; // links back to the promise
+    @Column() public lender!: string;
+    @Column() public borrower!: string;
+    @Column() public token!: string; // SPSP
+    @Column() public qty!: string; // numeric(15, 3)
+    @Column() public expiration_block!: number; // block_num at which this rental expires
+    @Column() public start_block!: number; // block_num when the delegation was activated
+    @Column() public expiration_blocks!: number; // duration in blocks (e.g., 201600)
+    @Column() public status!: RentalDelegationStatus;
+    @Column() public created_date!: Date;
+    @Column() public updated_date!: Date;
+}
+
 export type PromiseStatus = 'open' | 'fulfilled' | 'completed' | 'cancelled';
 
 @Table('promise')

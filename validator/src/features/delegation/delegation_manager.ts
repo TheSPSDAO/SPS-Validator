@@ -6,6 +6,7 @@ import { Result } from '@steem-monsters/lib-monad';
 import { AuthorityTypes } from '../../actions/authority';
 import { ActiveDelegationsEntry, ActiveDelegationsRepository } from '../../entities/tokens/active_delegations';
 import { IAction } from '../../actions/action';
+import { RentalDelegationRepository } from '../../entities/rental/rental_delegation';
 
 export type DelegateTokensRequest = {
     from: string;
@@ -13,6 +14,8 @@ export type DelegateTokensRequest = {
     qty: number;
     token: string;
     allowSystemAccounts?: boolean;
+    skipDateUpdate?: boolean;
+    skipAuthorityCheck?: boolean;
 };
 
 export type DelegateTokensMultiRequest = {
@@ -30,6 +33,7 @@ export type UndelegateTokensRequest = {
     qty: number;
     token: string;
     allowSystemAccounts?: boolean;
+    skipDateUpdate?: boolean;
 };
 
 export type UndelegateTokensMultiRequest = {
@@ -50,6 +54,7 @@ export class DelegationManager {
         private readonly tokenSupport: WrappedTokenSupport,
         private readonly hiveAccountRepository: HiveAccountRepository,
         private readonly delegationRepository: ActiveDelegationsRepository,
+        private readonly rentalDelegationRepository: RentalDelegationRepository,
     ) {}
 
     shouldGroupTransfersInMultiOps(block_num: number): boolean {
@@ -99,9 +104,11 @@ export class DelegationManager {
         }
 
         // check authority
-        const has_authority = await this.hiveAccountRepository.checkAuthority(action.op.account, AuthorityTypes.DELEGATION, request.from, trx);
-        if (!has_authority) {
-            return Result.Err(new ValidationError(`${action.op.account} does not have the authority to delegate tokens for ${request.from}.`, action, ErrorType.NoAuthority));
+        if (!request.skipAuthorityCheck) {
+            const has_authority = await this.hiveAccountRepository.checkAuthority(action.op.account, AuthorityTypes.DELEGATION, request.from, trx);
+            if (!has_authority) {
+                return Result.Err(new ValidationError(`${action.op.account} does not have the authority to delegate tokens for ${request.from}.`, action, ErrorType.NoAuthority));
+            }
         }
 
         // Check that the player has enough liquid tokens in their account
@@ -172,7 +179,7 @@ export class DelegationManager {
             // TODO - make return type Result? validation should always be called.
             throw new Error(`Delegation is not supported for the specified token: ${delegation.token}.`);
         }
-        return this.delegationRepository.delegate(action, delegation.from, delegation.to, tokenEntry, delegation.qty, trx);
+        return this.delegationRepository.delegate(action, delegation.from, delegation.to, tokenEntry, delegation.qty, delegation.skipDateUpdate, trx);
     }
 
     async validateUndelegation(request: UndelegateTokensRequest, action: IAction, trx?: Trx): Promise<Result<void, Error>> {
@@ -212,7 +219,8 @@ export class DelegationManager {
             );
         }
 
-        const validationResult = this.canUndelegate(active_delegation, request.token, request.from, request.to, request.qty, action);
+        const rentalLockedQty = await this.rentalDelegationRepository.getActiveRentalQty(request.to, request.from, request.token, trx);
+        const validationResult = this.canUndelegate(active_delegation, request.token, request.from, request.to, request.qty, rentalLockedQty, action);
         if (Result.isErr(validationResult)) {
             return validationResult;
         }
@@ -264,10 +272,12 @@ export class DelegationManager {
 
         // Check that the undelegation amount is not bigger than amount delegated
         const active_delegations = await this.delegationRepository.getActiveDelegations(request.to, accounts, request.token, trx);
+        const rentalLockedQtyMap = await this.rentalDelegationRepository.getActiveRentalQtyMulti(request.to, accounts, request.token, trx);
 
         for (const [from, qty] of undelegations) {
             const active_delegation = active_delegations.find((d) => d.delegatee === from);
-            const validationResult = this.canUndelegate(active_delegation, request.token, from, request.to, qty, action);
+            const rentalLockedQty = rentalLockedQtyMap.get(from) ?? 0;
+            const validationResult = this.canUndelegate(active_delegation, request.token, from, request.to, qty, rentalLockedQty, action);
             if (Result.isErr(validationResult)) {
                 return validationResult;
             }
@@ -276,10 +286,20 @@ export class DelegationManager {
         return Result.OkVoid();
     }
 
-    private canUndelegate(delegation: ActiveDelegationsEntry | undefined, token: string, from: string, to: string, qty: number, action: IAction): Result<void, Error> {
+    private canUndelegate(
+        delegation: ActiveDelegationsEntry | undefined,
+        token: string,
+        from: string,
+        to: string,
+        qty: number,
+        rentalLockedQty: number,
+        action: IAction,
+    ): Result<void, Error> {
         if (!delegation) {
             return Result.Err(new ValidationError(`There is currently no ${token} tokens delegated from ${to} to ${from}.`, action, ErrorType.NoTokensDelegated));
-        } else if (qty > delegation.amount) {
+        }
+        const undelegatableAmount = delegation.amount - rentalLockedQty;
+        if (qty > undelegatableAmount) {
             return Result.Err(new ValidationError(`Cannot undelegate more than you have delegated.`, action, ErrorType.UndelegationAmountTooHigh));
         } else if (action.op.block_time.getTime() - delegation.last_delegation_date.getTime() < this.opts.undelegation_cooldown_ms) {
             return Result.Err(
@@ -298,7 +318,7 @@ export class DelegationManager {
         if (!tokenEntry || !tokenEntry.delegation) {
             throw new Error(`Delegation is not supported for the specified token: ${request.token}.`);
         }
-        return this.delegationRepository.undelegate(action, request.to, request.from, tokenEntry, request.qty, trx);
+        return this.delegationRepository.undelegate(action, request.to, request.from, tokenEntry, request.qty, request.skipDateUpdate, trx);
     }
 
     private async validAccounts(accounts: string[], trx?: Trx): Promise<boolean> {

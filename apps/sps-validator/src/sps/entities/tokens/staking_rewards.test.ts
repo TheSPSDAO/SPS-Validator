@@ -41,6 +41,7 @@ function generateDummyIAction(account: string, offset: number, date = new Date()
     const dummyAction: IAction = {
         id: 'dummy',
         op,
+        index: 0,
         params: {},
         players: [],
         unique_trx_id: 'dummy-trx',

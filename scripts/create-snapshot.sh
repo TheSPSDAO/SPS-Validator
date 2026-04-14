@@ -14,6 +14,15 @@ echo "Running snapshot.freshsnapshot() function to prepare the snapshot..."
 PGPASSWORD=$PGPASSWORD psql -h "$POSTGRES_HOST" -U "$POSTGRES_USER" -d "$POSTGRES_DB" -c "SELECT snapshot.freshsnapshot();"
 echo "Snapshot function executed successfully."
 
+# ask if they want to slimify it with the snapshot.slimifysnapshot() function
+read -p "Would you like to slimify the snapshot? (y/n)" -n 1 -r
+echo    # (optional) move to a new line
+if [[ $REPLY =~ ^[Yy]$ ]]; then
+    echo "Running snapshot.slimifysnapshot() function to slimify the snapshot..."
+    PGPASSWORD=$PGPASSWORD psql -h "$POSTGRES_HOST" -U "$POSTGRES_USER" -d "$POSTGRES_DB" -c "SELECT snapshot.slimifysnapshot();"
+    echo "Slimify function executed successfully."
+fi
+
 echo "Creating snapshot.sql file..."
 PGPASSWORD=$PGPASSWORD pg_dump --no-owner --no-acl \
   --no-comments --no-publications --no-security-labels \

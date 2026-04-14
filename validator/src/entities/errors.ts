@@ -77,6 +77,7 @@ export enum ErrorType {
     NotPromiseController = 804,
     DelegationPromiseTokenMismatch = 805,
     InvalidPromiseParams = 806,
+    TransitionRequired = 807,
     // TODO stop defining sps specific errors in the lib.
     InvalidCheckIn = 900,
 }

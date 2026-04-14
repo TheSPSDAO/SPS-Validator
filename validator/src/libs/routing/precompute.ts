@@ -49,7 +49,7 @@ export class PrecomputedRouter<H, T = void> extends Router<H, T> {
             }
             return map;
         };
-        const cutRanges = [...new Set([Number.NEGATIVE_INFINITY, ...cuts])].sort();
+        const cutRanges = [...new Set([Number.NEGATIVE_INFINITY, ...cuts])].sort((a, b) => a - b);
         const cutLookups = cutRanges.map(mapForCut);
         return (block_num: number) => {
             const firstBiggerIndex = cutRanges.findIndex((c) => block_num < c);
@@ -63,7 +63,9 @@ export class PrecomputedRouter<H, T = void> extends Router<H, T> {
 
     override route(block_num: number, name: string) {
         this.assertRecomputed();
-        return this.precomputedRoutes(block_num).get(name) ?? null;
+        const routes = this.precomputedRoutes(block_num);
+        const handler = routes.get(name) ?? null;
+        return handler;
     }
 
     override recompute(v: T) {
@@ -99,7 +101,9 @@ export class PrecomputedMultiRouter<H, T = void> implements IRouter<H, T> {
 
     route(block_num: number, name: string): H | null {
         PrecomputedRouter.assertAll(this.routers);
-        return this.precomputedRoutes(block_num).get(name) ?? null;
+        const routes = this.precomputedRoutes(block_num);
+        const handler = routes.get(name) ?? null;
+        return handler;
     }
 
     routeDynamic(block_num: number, name: string, v: T): H | null {

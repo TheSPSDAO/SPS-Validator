@@ -15,6 +15,7 @@ export const TransitionPointDescriptions = {
         'Transition point for changing the SPS staking reward algorithm and adjusting reward pool balances. This update also adds consecutive missed block tracking and double spend protection in token_transfer and token_transfer_multi ops. This is a one-time transition point that is part of version 1.3.0. Please see https://peakd.com/spsproposal/@clayboyn/sps-governance-proposal-adjust-token-distribution-strategy',
     fix_multi_undelegate_crash:
         'Transition point for fixing a crash that can occur when undelegating sps from the same account multiple times in the same tx. This is a one-time transition point that is part of version 1.3.1.',
+    delegation_offer_block: 'Transition point for enabling delegation offer creation.',
 } as const;
 
 export type TransitionPoints = {
@@ -153,6 +154,23 @@ export class TransitionManager implements VirtualPayloadSource {
                         id: this.cfg.custom_json_id,
                         json: {
                             action: 'transition_adjust_token_distribution_strategy',
+                            params: {
+                                block_num: block.block_num,
+                            },
+                        },
+                    },
+                ],
+            ]);
+        } else if (this.isTransitionPoint('delegation_offer_block', block.block_num)) {
+            return Promise.resolve([
+                [
+                    'custom_json',
+                    {
+                        required_auths: [this.transitionAccount],
+                        required_posting_auths: [],
+                        id: this.cfg.custom_json_id,
+                        json: {
+                            action: 'transition_cancel_delegation_promises',
                             params: {
                                 block_num: block.block_num,
                             },

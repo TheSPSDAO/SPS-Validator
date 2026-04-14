@@ -1,6 +1,7 @@
 import { IAction } from '../../actions/action';
 import { EventLog, EventTypes } from '../event_log';
 import { BaseRepository, Handle, PromiseAction, PromiseEntity, PromiseHistoryEntity, PromiseStatus, Trx } from '../../db/tables';
+import { JSONB } from '../../db/columns';
 
 export type PromiseInsert = Omit<PromiseEntity, 'id' | 'created_date' | 'updated_date' | 'fulfilled_by' | 'fulfilled_at' | 'fulfilled_expiration'> & {
     actor: string;
@@ -41,6 +42,22 @@ export class PromiseRepository extends BaseRepository {
 
     async getExpiredPromises(now: Date, trx?: Trx): Promise<PromiseEntity[]> {
         const result = await this.query(PromiseEntity, trx).where('status', 'fulfilled').where('fulfilled_expiration', '<=', now).orderBy('ext_id').getMany();
+        return result;
+    }
+
+    /**
+     * Count open or fulfilled promises by type.
+     */
+    async countOpenOrFulfilledPromisesByType(type: string, trx?: Trx): Promise<number> {
+        const count = await this.query(PromiseEntity, trx).where('type', type).whereIn('status', ['open', 'fulfilled']).getCount();
+        return Number(count);
+    }
+
+    /**
+     * Get all open promises by type.
+     */
+    async getOpenPromisesByType(type: string, trx?: Trx): Promise<PromiseEntity[]> {
+        const result = await this.query(PromiseEntity, trx).where('type', type).where('status', 'open').orderBy('ext_id').getMany();
         return result;
     }
 
@@ -107,6 +124,21 @@ export class PromiseRepository extends BaseRepository {
         const eventLogs = [...updateLogs, ...historyLogs];
 
         return [updatedPromises, eventLogs];
+    }
+
+    /**
+     * Update only the params field of a promise (e.g. for tracking remaining quantity in partial fills).
+     */
+    async updateParams(type: string, ext_id: string, params: JSONB, action: IAction, trx?: Trx): Promise<EventLog[]> {
+        const updatedPromise = await this.query(PromiseEntity, trx).where('type', type).where('ext_id', ext_id).updateItemWithReturning({
+            params,
+            updated_date: action.op.block_time,
+        });
+        const logEntity = {
+            ...updatedPromise,
+            id: undefined,
+        };
+        return [new EventLog(EventTypes.UPDATE, PromiseEntity, logEntity)];
     }
 
     private async insertHistory(
