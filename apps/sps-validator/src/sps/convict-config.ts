@@ -585,7 +585,7 @@ const schema = {
         delegation_offer_block: {
             doc: 'Block number for enabling delegation offers',
             format: 'nat',
-            default: 105718615,
+            default: 105920215,
             env: 'DELEGATION_OFFER_BLOCK_TRANSITION_POINT',
         },
     },
