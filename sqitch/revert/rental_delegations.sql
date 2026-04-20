@@ -7,7 +7,7 @@ DROP TABLE IF EXISTS :APP_SCHEMA.rental_delegations;
 DROP TABLE IF EXISTS snapshot.rental_delegations;
 
 -- Delete config entries added by this migration
-DELETE FROM :APP_SCHEMA.config WHERE group_name = 'delegation_rental' AND name IN ('qty_divisor', 'min_qty');
+DELETE FROM :APP_SCHEMA.config WHERE group_name = 'delegation_rental' AND name IN ('qty_divisor', 'min_qty', 'min_price');
 
 -- Restore pre_snapshot_restore to version from token_transfer_keys (without rental_delegations)
 CREATE OR REPLACE FUNCTION snapshot.pre_snapshot_restore(p_data_schema text DEFAULT :'APP_SCHEMA'::text)

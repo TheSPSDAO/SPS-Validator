@@ -2,6 +2,31 @@ import { Result } from '@steem-monsters/lib-monad';
 import { IAction } from '../../actions';
 import { PromiseEntity, PromiseStatus, Trx } from '../../db/tables';
 import { EventLog } from '../../entities/event_log';
+import { PrecomputedRouter } from '../../libs/routing/precompute';
+import { BlockRangeConfig, Route } from '../../libs/routing';
+
+/**
+ * Router for promise handlers that supports block-based routing.
+ * Use this to enable/disable promise types based on block numbers.
+ *
+ * Example:
+ * ```
+ * const router = new PromiseHandlerRouter()
+ *   .addRoute(new PromiseHandlerRoute('delegation', delegationHandler, new BlockRangeConfig({ to_block: 1000 })))
+ *   .addRoute(new PromiseHandlerRoute('delegation_offer', delegationOfferHandler, new BlockRangeConfig({ from_block: 1000 })))
+ *   .recompute();
+ * ```
+ */
+export class PromiseHandlerRouter extends PrecomputedRouter<PromiseHandler, void> {}
+
+/**
+ * A route that maps a promise type name to a handler for a given block range.
+ */
+export class PromiseHandlerRoute extends Route<void, PromiseHandler> {
+    constructor(promiseType: string, handler: PromiseHandler, blockRange: BlockRangeConfig<void> = new BlockRangeConfig()) {
+        super(promiseType, handler, blockRange);
+    }
+}
 
 export type HandlerCreatePromiseRequest = {
     type: string;
@@ -88,16 +113,6 @@ export abstract class PromiseHandler {
      */
     requiresAdminForCreate(): boolean {
         return true;
-    }
-
-    /**
-     * Called before any other validation to check if promise creation is allowed.
-     * Override to block creation entirely under certain conditions (e.g., before a transition block).
-     * Default implementation always allows creation.
-     */
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    canCreate(action: IAction, trx?: Trx): Promise<Result<void, Error>> {
-        return Promise.resolve(Result.OkVoid());
     }
 
     abstract validateCreatePromise(request: HandlerCreatePromiseRequest, action: IAction, trx?: Trx): Promise<Result<HandlerCreatePromiseResult, Error>>;

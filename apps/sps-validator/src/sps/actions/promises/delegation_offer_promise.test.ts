@@ -645,6 +645,38 @@ describe('delegation_offer parameter validation', () => {
         expect(result).toBeNull();
     });
 
+    test.dbOnly('delegation_offer fails when price is below min_price', async () => {
+        const blockNum = getBlockAfterTransition();
+        await fixture.loader.update({
+            group_name: 'delegation_rental',
+            name: 'min_price',
+            value: 0.001,
+        });
+        await fixture.testHelper.setStaked(lender, 1000);
+
+        const txId = 'tx-offer-low-price';
+        await expect(
+            fixture.opsHelper.processOp(
+                'create_promise',
+                lender,
+                {
+                    type: 'delegation_offer',
+                    controllers: [controller],
+                    params: {
+                        token: TOKENS.SPSP,
+                        qty: 500,
+                        lender: lender,
+                        price: 0.0001,
+                    },
+                },
+                { block_num: blockNum, transaction: txId },
+            ),
+        ).resolves.toBeUndefined();
+
+        const result = await fixture.testHelper.getPromise('delegation_offer', txId);
+        expect(result).toBeNull();
+    });
+
     test.dbOnly('delegation_offer succeeds when qty is a multiple of 500', async () => {
         const blockNum = getBlockAfterTransition();
         await fixture.loader.update({

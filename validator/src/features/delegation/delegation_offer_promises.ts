@@ -24,11 +24,13 @@ import { ReadOnlyWatcher } from '../../config';
 export type DelegationRentalConfig = {
     qty_divisor: number;
     min_qty: number;
+    min_price: number;
 };
 
 export const delegation_rental_schema = object({
     qty_divisor: number().required().min(1),
     min_qty: number().required().min(0),
+    min_price: number().required().min(0),
 });
 
 export type DelegationRentalWatch = ReadOnlyWatcher<'delegation_rental', DelegationRentalConfig>;
@@ -37,11 +39,6 @@ export const DelegationRentalWatch: unique symbol = Symbol('DelegationRentalWatc
 export type DelegationOfferPromiseHandlerOpts = {
     delegation_promise_account: string;
     /**
-     * Block number at which controller-based creation and null promise IDs become enabled.
-     * Before this block, only the lender can create offers, and IDs are required.
-     */
-    delegation_offer_transition_block: number;
-    /**
      * Default qty_divisor if config watch is not provided or doesn't have a value.
      */
     default_qty_divisor?: number;
@@ -49,6 +46,10 @@ export type DelegationOfferPromiseHandlerOpts = {
      * Default min_qty if config watch is not provided or doesn't have a value.
      */
     default_min_qty?: number;
+    /**
+     * Default min_price if config watch is not provided or doesn't have a value.
+     */
+    default_min_price?: number;
 };
 
 /**
@@ -77,10 +78,11 @@ export type DelegationOfferParams = typeof delegation_offer_params_schema['__out
  * - borrower: the account that will receive the delegated tokens
  * - rental_id: a unique ID for this rental (used as the rental_delegations record ID)
  * - qty: the amount of the offer to fill (supports partial fills)
+ * - expiration_blocks: how many blocks the rental lasts once filled
  */
 const delegation_offer_fulfill_metadata_schema = object({
     borrower: hiveAccount.required(),
-    rental_id: token, // reuses the 'required string' validator
+    rental_id: string().strict().required(),
     qty: qty.positive(),
     expiration_blocks: number().positive().integer().required(),
 });
@@ -115,6 +117,7 @@ export type DelegationOfferFulfillMetadata = typeof delegation_offer_fulfill_met
 export class DelegationOfferPromiseHandler extends PromiseHandler {
     private static readonly DEFAULT_QTY_DIVISOR = 500;
     private static readonly DEFAULT_MIN_QTY = 500;
+    private static readonly DEFAULT_MIN_PRICE = 0.001;
 
     constructor(
         private readonly opts: DelegationOfferPromiseHandlerOpts,
@@ -134,22 +137,15 @@ export class DelegationOfferPromiseHandler extends PromiseHandler {
         return this.configWatch?.delegation_rental?.min_qty ?? this.opts.default_min_qty ?? DelegationOfferPromiseHandler.DEFAULT_MIN_QTY;
     }
 
+    private get minPrice(): number {
+        return this.configWatch?.delegation_rental?.min_price ?? this.opts.default_min_price ?? DelegationOfferPromiseHandler.DEFAULT_MIN_PRICE;
+    }
+
     /**
      * Delegation offers are created directly by the lender, not by admins.
      */
     override requiresAdminForCreate(): boolean {
         return false;
-    }
-
-    /**
-     * Delegation offers can only be created after the controller_creation_block transition.
-     */
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    override async canCreate(action: IAction, _trx?: Trx): Promise<Result<void, Error>> {
-        if (action.op.block_num < this.opts.delegation_offer_transition_block) {
-            return Result.Err(new ValidationError('Delegation offer promises cannot be created before the transition block.', action, ErrorType.TransitionRequired));
-        }
-        return Result.OkVoid();
     }
 
     // ─── CREATE ────────────────────────────────────────────────────────────────
@@ -180,6 +176,12 @@ export class DelegationOfferPromiseHandler extends PromiseHandler {
         const minQty = this.minQty;
         if (minQty > 0 && params.qty < minQty) {
             return Result.Err(new ValidationError(`Offer qty must be at least ${minQty}.`, action, ErrorType.InvalidPromiseParams));
+        }
+
+        // Validate price meets minimum
+        const minPrice = this.minPrice;
+        if (minPrice > 0 && params.price < minPrice) {
+            return Result.Err(new ValidationError(`Offer price must be at least ${minPrice}.`, action, ErrorType.InvalidPromiseParams));
         }
 
         // Check authority: either the lender themselves, or a controller acting on behalf of the lender
