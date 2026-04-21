@@ -33,6 +33,10 @@ export class StakeTokensMultiAction extends AdminAction<typeof stake_tokens_mult
     }
 
     async validate(trx?: Trx) {
+        if (!(await super.validate(trx))) {
+            return false;
+        }
+
         if (!this.stakedToken) {
             throw new ValidationError('Staking is not supported for the specified token.', this, ErrorType.NoStakingToken);
         }
