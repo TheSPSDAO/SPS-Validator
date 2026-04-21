@@ -37,11 +37,6 @@ export const DelegationRentalWatch: unique symbol = Symbol('DelegationRentalWatc
 export type DelegationOfferPromiseHandlerOpts = {
     delegation_promise_account: string;
     /**
-     * Block number at which controller-based creation and null promise IDs become enabled.
-     * Before this block, only the lender can create offers, and IDs are required.
-     */
-    delegation_offer_transition_block: number;
-    /**
      * Default qty_divisor if config watch is not provided or doesn't have a value.
      */
     default_qty_divisor?: number;
@@ -77,10 +72,11 @@ export type DelegationOfferParams = typeof delegation_offer_params_schema['__out
  * - borrower: the account that will receive the delegated tokens
  * - rental_id: a unique ID for this rental (used as the rental_delegations record ID)
  * - qty: the amount of the offer to fill (supports partial fills)
+ * - expiration_blocks: how many blocks the rental lasts once filled
  */
 const delegation_offer_fulfill_metadata_schema = object({
     borrower: hiveAccount.required(),
-    rental_id: token, // reuses the 'required string' validator
+    rental_id: string().strict().required(),
     qty: qty.positive(),
     expiration_blocks: number().positive().integer().required(),
 });
@@ -139,17 +135,6 @@ export class DelegationOfferPromiseHandler extends PromiseHandler {
      */
     override requiresAdminForCreate(): boolean {
         return false;
-    }
-
-    /**
-     * Delegation offers can only be created after the controller_creation_block transition.
-     */
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    override async canCreate(action: IAction, _trx?: Trx): Promise<Result<void, Error>> {
-        if (action.op.block_num < this.opts.delegation_offer_transition_block) {
-            return Result.Err(new ValidationError('Delegation offer promises cannot be created before the transition block.', action, ErrorType.TransitionRequired));
-        }
-        return Result.OkVoid();
     }
 
     // ─── CREATE ────────────────────────────────────────────────────────────────

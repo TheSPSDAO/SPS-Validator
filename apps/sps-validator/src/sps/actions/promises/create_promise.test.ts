@@ -354,11 +354,11 @@ describe('After delegation_offer_block transition', () => {
         expect(result?.status).toBe('open');
     });
 
-    test.dbOnly('delegation promise still requires admin after transition', async () => {
+    test.dbOnly('delegation promise type is not available after transition', async () => {
         const blockNum = getBlockAfterTransition();
 
-        // Non-admin trying to create delegation (not delegation_offer) should fail
-        // because delegation promises still require admin
+        // The delegation type is not routed after the transition block.
+        // Attempts to create delegation promises will fail with "Invalid promise type".
         await expect(
             fixture.opsHelper.processOp(
                 'create_promise',
@@ -378,12 +378,11 @@ describe('After delegation_offer_block transition', () => {
         expect(result).toBeNull();
     });
 
-    test.dbOnly('delegation promise without fulfill_timeout_seconds fails after transition', async () => {
+    test.dbOnly('delegation promise type is not available after transition (even for admin)', async () => {
         const blockNum = getBlockAfterTransition();
 
-        // The new schema makes fulfill_timeout_seconds optional, but the delegation
-        // handler still requires it. This test ensures the handler-level validation
-        // catches the missing field even though the schema allows it.
+        // The delegation type is not routed after the transition block.
+        // Even admins cannot create delegation promises after the transition.
         await expect(
             fixture.opsHelper.processOp(
                 'create_promise',

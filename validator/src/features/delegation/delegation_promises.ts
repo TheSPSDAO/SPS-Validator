@@ -21,11 +21,6 @@ import { token, qty, hiveUsernameOrSystemAccount, hiveAccount } from '../../acti
 
 export type DelgationPromiseHandlerOpts = {
     delegation_promise_account: string;
-    /**
-     * Block number at which delegation promises are replaced by delegation offers.
-     * After this block, new delegation promises cannot be created.
-     */
-    delegation_offer_transition_block?: number;
 };
 
 const delegation_promise_params_schema = object({
@@ -49,19 +44,6 @@ export type DelegationPromiseParams = typeof delegation_promise_params_schema['_
 export class DelegationPromiseHandler extends PromiseHandler {
     constructor(private readonly opts: DelgationPromiseHandlerOpts, private readonly delegationManager: DelegationManager) {
         super();
-    }
-
-    /**
-     * Delegation promises cannot be created after the delegation_offer_transition_block.
-     */
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    override async canCreate(action: IAction, _trx?: Trx): Promise<Result<void, Error>> {
-        if (this.opts.delegation_offer_transition_block !== undefined && action.op.block_num >= this.opts.delegation_offer_transition_block) {
-            return Result.Err(
-                new ValidationError('Delegation promises cannot be created after the transition block. Use delegation_offer instead.', action, ErrorType.TransitionRequired),
-            );
-        }
-        return Result.OkVoid();
     }
 
     override async validateCreatePromise(request: HandlerCreatePromiseRequest, action: IAction, trx?: Trx): Promise<Result<HandlerCreatePromiseResult, Error>> {

@@ -122,6 +122,7 @@ export class SpsConfigLoader
         delegation_rental: {
             qty_divisor: 1,
             min_qty: 0,
+            min_price: 0.001,
         },
     });
 
