@@ -47,11 +47,6 @@ INSERT INTO :APP_SCHEMA.config (group_name, group_type, name, index, value_type,
 VALUES ('delegation_rental', 'object', 'min_qty', 0, 'number', '500')
 ON CONFLICT DO NOTHING;
 
--- Config for delegation rental minimum price
-INSERT INTO :APP_SCHEMA.config (group_name, group_type, name, index, value_type, value)
-VALUES ('delegation_rental', 'object', 'min_price', 0, 'number', '0.001')
-ON CONFLICT DO NOTHING;
-
 -- Snapshot table for rental_delegations
 CREATE TABLE IF NOT EXISTS snapshot.rental_delegations
 (

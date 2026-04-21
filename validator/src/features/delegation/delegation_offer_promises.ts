@@ -24,13 +24,11 @@ import { ReadOnlyWatcher } from '../../config';
 export type DelegationRentalConfig = {
     qty_divisor: number;
     min_qty: number;
-    min_price: number;
 };
 
 export const delegation_rental_schema = object({
     qty_divisor: number().required().min(1),
     min_qty: number().required().min(0),
-    min_price: number().required().min(0),
 });
 
 export type DelegationRentalWatch = ReadOnlyWatcher<'delegation_rental', DelegationRentalConfig>;
@@ -46,10 +44,6 @@ export type DelegationOfferPromiseHandlerOpts = {
      * Default min_qty if config watch is not provided or doesn't have a value.
      */
     default_min_qty?: number;
-    /**
-     * Default min_price if config watch is not provided or doesn't have a value.
-     */
-    default_min_price?: number;
 };
 
 /**
@@ -117,7 +111,6 @@ export type DelegationOfferFulfillMetadata = typeof delegation_offer_fulfill_met
 export class DelegationOfferPromiseHandler extends PromiseHandler {
     private static readonly DEFAULT_QTY_DIVISOR = 500;
     private static readonly DEFAULT_MIN_QTY = 500;
-    private static readonly DEFAULT_MIN_PRICE = 0.001;
 
     constructor(
         private readonly opts: DelegationOfferPromiseHandlerOpts,
@@ -135,10 +128,6 @@ export class DelegationOfferPromiseHandler extends PromiseHandler {
 
     private get minQty(): number {
         return this.configWatch?.delegation_rental?.min_qty ?? this.opts.default_min_qty ?? DelegationOfferPromiseHandler.DEFAULT_MIN_QTY;
-    }
-
-    private get minPrice(): number {
-        return this.configWatch?.delegation_rental?.min_price ?? this.opts.default_min_price ?? DelegationOfferPromiseHandler.DEFAULT_MIN_PRICE;
     }
 
     /**
@@ -176,12 +165,6 @@ export class DelegationOfferPromiseHandler extends PromiseHandler {
         const minQty = this.minQty;
         if (minQty > 0 && params.qty < minQty) {
             return Result.Err(new ValidationError(`Offer qty must be at least ${minQty}.`, action, ErrorType.InvalidPromiseParams));
-        }
-
-        // Validate price meets minimum
-        const minPrice = this.minPrice;
-        if (minPrice > 0 && params.price < minPrice) {
-            return Result.Err(new ValidationError(`Offer price must be at least ${minPrice}.`, action, ErrorType.InvalidPromiseParams));
         }
 
         // Check authority: either the lender themselves, or a controller acting on behalf of the lender
