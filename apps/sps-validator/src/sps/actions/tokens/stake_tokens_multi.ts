@@ -4,6 +4,7 @@ import {
     BalanceRepository,
     ErrorType,
     EventLog,
+    isSystemAccount,
     OperationData,
     StakingRewardsRepository,
     token,
@@ -22,7 +23,7 @@ export class StakeTokensMultiAction extends AdminAction<typeof stake_tokens_mult
         op: OperationData,
         data: unknown,
         index: number,
-        adminMembership: AdminMembership,
+        private readonly adminMembership: AdminMembership,
         private readonly stakingRewardsRepository: StakingRewardsRepository,
         private readonly balanceRepository: BalanceRepository,
         private readonly validatorVoteRepository: ValidatorVoteRepository,
@@ -54,8 +55,13 @@ export class StakeTokensMultiAction extends AdminAction<typeof stake_tokens_mult
             return acc;
         }, {} as Record<string, number>);
 
+        const isAdmin = await this.adminMembership.isAdmin(this.op.account);
         // check that the accounts have enough tokens
         for (const [from, qty] of Object.entries(groupedTransfers)) {
+            if (isSystemAccount(from) && !isAdmin) {
+                throw new ValidationError('Cannot stake from system account as non admin', this, ErrorType.AdminOnly);
+            }
+
             const balance = await this.balanceRepository.getBalance(from, this.params.token, trx);
             if (balance < qty) {
                 throw new ValidationError('Cannot stake more than the currently available liquid token balance.', this, ErrorType.InsufficientBalance);
