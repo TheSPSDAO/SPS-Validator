@@ -58,7 +58,8 @@ export class StakeTokensMultiAction extends AdminAction<typeof stake_tokens_mult
         const isAdmin = await this.adminMembership.isAdmin(this.op.account);
         // check that the accounts have enough tokens
         for (const [from, qty] of Object.entries(groupedTransfers)) {
-            if (isSystemAccount(from) && !isAdmin) {
+            // 105721365
+            if (this.op.block_num > 105721365 && isSystemAccount(from) && !isAdmin) {
                 throw new ValidationError('Cannot stake from system account as non admin', this, ErrorType.AdminOnly);
             }
 
