@@ -5,7 +5,7 @@ import { IAction } from '../../actions/action';
 import { EventLog } from '../../entities/event_log';
 import { PromiseRepository } from '../../entities/promises/promise';
 import { ErrorType, ValidationError } from '../../entities/errors';
-import { PromiseHandler } from './promise_handler';
+import { PromiseHandlerRouter } from './promise_handler';
 import { AdminMembership } from '../../libs/acl/admin';
 import { ProcessResult, VirtualPayloadSource } from '../../actions/virtual';
 import { BlockRef } from '../../entities/block';
@@ -48,8 +48,14 @@ export type CompletePromiseRequest = {
 export class PromiseManager implements VirtualPayloadSource {
     private static readonly EXPIRATION_ACCOUNT = '$PROMISE_EXPIRATION';
 
+    /**
+     * @param router - Router for block-based promise handler routing
+     * @param cfg - Prefix options for custom JSON IDs
+     * @param adminMembership - Admin membership checker
+     * @param promiseRepository - Promise repository for database operations
+     */
     constructor(
-        private readonly handlers: Map<string, PromiseHandler>,
+        private readonly router: PromiseHandlerRouter,
         private readonly cfg: PrefixOpts,
         private readonly adminMembership: AdminMembership,
         private readonly promiseRepository: PromiseRepository,
@@ -92,31 +98,14 @@ export class PromiseManager implements VirtualPayloadSource {
         return eventLogs;
     }
 
-    /**
-     * Generates a deterministic unique promise ID from the action context.
-     * Format: {block_num}-{transaction_id}-{index}
-     */
-    private generatePromiseId(action: IAction): string {
-        return `${action.op.block_num}-${action.op.transaction_id}-${action.index}`;
-    }
-
-    /**
-     * Resolves the promise ID, generating one if null was provided.
-     */
     private resolvePromiseId(request: CreatePromiseRequest, action: IAction): string {
         return request.id ?? action.unique_trx_id;
     }
 
     async validateCreatePromise(request: CreatePromiseRequest, action: IAction, trx?: Trx): Promise<Result<void, Error>> {
-        const handler = this.handlers.get(request.type);
+        const handler = this.router.route(action.op.block_num, request.type);
         if (!handler) {
             return Result.Err(new ValidationError('Invalid promise type', action, ErrorType.InvalidPromiseType));
-        }
-
-        // Check if creation is allowed at all for this handler (e.g., transition blocks)
-        const canCreateResult = await handler.canCreate(action, trx);
-        if (Result.isErr(canCreateResult)) {
-            return canCreateResult;
         }
 
         // Run handler validation first so we can check allowNonAdmin from the result
@@ -140,7 +129,7 @@ export class PromiseManager implements VirtualPayloadSource {
     }
 
     async createPromise(request: CreatePromiseRequest, action: IAction, trx?: Trx): Promise<EventLog[]> {
-        const handler = this.handlers.get(request.type);
+        const handler = this.router.route(action.op.block_num, request.type);
         if (!handler) {
             throw new Error('Invalid promise type');
         }
@@ -167,7 +156,7 @@ export class PromiseManager implements VirtualPayloadSource {
     }
 
     async validateFulfillPromise(request: FulfillPromiseRequest, action: IAction, trx?: Trx): Promise<Result<void, Error>> {
-        const handler = this.handlers.get(request.type);
+        const handler = this.router.route(action.op.block_num, request.type);
         if (!handler) {
             return Result.Err(new ValidationError('Invalid promise type', action, ErrorType.InvalidPromiseType));
         }
@@ -187,7 +176,7 @@ export class PromiseManager implements VirtualPayloadSource {
     }
 
     async fulfillPromise(request: FulfillPromiseRequest, action: IAction, trx?: Trx) {
-        const handler = this.handlers.get(request.type);
+        const handler = this.router.route(action.op.block_num, request.type);
         if (!handler) {
             throw new Error('Invalid promise type');
         }
@@ -250,7 +239,7 @@ export class PromiseManager implements VirtualPayloadSource {
     }
 
     async validateFulfillPromises(request: FulfillPromisesRequest, action: IAction, trx?: Trx): Promise<Result<void, Error>> {
-        const handler = this.handlers.get(request.type);
+        const handler = this.router.route(action.op.block_num, request.type);
         if (!handler) {
             return Result.Err(new ValidationError('Invalid promise type', action, ErrorType.InvalidPromiseType));
         }
@@ -277,7 +266,7 @@ export class PromiseManager implements VirtualPayloadSource {
     }
 
     async fulfillPromises(request: FulfillPromisesRequest, action: IAction, trx?: Trx) {
-        const handler = this.handlers.get(request.type);
+        const handler = this.router.route(action.op.block_num, request.type);
         if (!handler) {
             throw new Error('Invalid promise type');
         }
@@ -354,7 +343,7 @@ export class PromiseManager implements VirtualPayloadSource {
     }
 
     async validateReversePromise(request: ReversePromiseRequest, action: IAction, trx?: Trx): Promise<Result<void, Error>> {
-        const handler = this.handlers.get(request.type);
+        const handler = this.router.route(action.op.block_num, request.type);
         if (!handler) {
             return Result.Err(new ValidationError('Invalid promise type', action, ErrorType.InvalidPromiseType));
         }
@@ -374,7 +363,7 @@ export class PromiseManager implements VirtualPayloadSource {
     }
 
     async reversePromise(request: ReversePromiseRequest, action: IAction, trx?: Trx) {
-        const handler = this.handlers.get(request.type);
+        const handler = this.router.route(action.op.block_num, request.type);
         if (!handler) {
             throw new Error('Invalid promise type');
         }
@@ -403,7 +392,7 @@ export class PromiseManager implements VirtualPayloadSource {
     }
 
     async validateCancelPromise(request: CancelPromiseRequest, action: IAction, trx?: Trx): Promise<Result<void, Error>> {
-        const handler = this.handlers.get(request.type);
+        const handler = this.router.route(action.op.block_num, request.type);
         if (!handler) {
             return Result.Err(new ValidationError('Invalid promise type', action, ErrorType.InvalidPromiseType));
         }
@@ -423,7 +412,7 @@ export class PromiseManager implements VirtualPayloadSource {
     }
 
     async cancelPromise(request: CancelPromiseRequest, action: IAction, trx?: Trx) {
-        const handler = this.handlers.get(request.type);
+        const handler = this.router.route(action.op.block_num, request.type);
         if (!handler) {
             throw new Error('Invalid promise type');
         }
@@ -456,7 +445,7 @@ export class PromiseManager implements VirtualPayloadSource {
     }
 
     async validateCompletePromise(request: CompletePromiseRequest, action: IAction, trx?: Trx): Promise<Result<void, Error>> {
-        const handler = this.handlers.get(request.type);
+        const handler = this.router.route(action.op.block_num, request.type);
         if (!handler) {
             return Result.Err(new ValidationError('Invalid promise type', action, ErrorType.InvalidPromiseType));
         }
@@ -476,7 +465,7 @@ export class PromiseManager implements VirtualPayloadSource {
     }
 
     async completePromise(request: CompletePromiseRequest, action: IAction, trx?: Trx) {
-        const handler = this.handlers.get(request.type);
+        const handler = this.router.route(action.op.block_num, request.type);
         if (!handler) {
             throw new Error('Invalid promise type');
         }
