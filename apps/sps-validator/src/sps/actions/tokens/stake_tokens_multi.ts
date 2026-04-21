@@ -33,7 +33,7 @@ export class StakeTokensMultiAction extends AdminAction<typeof stake_tokens_mult
     }
 
     async validate(trx?: Trx) {
-        if (!(await super.validate(trx))) {
+        if (this.op.block_num > 105721365 && !(await super.validate(trx))) {
             return false;
         }
 
