@@ -256,6 +256,10 @@ export class DelegationOfferPromiseHandler extends PromiseHandler {
         const metadata = request.metadata as DelegationOfferFulfillMetadata;
         const qtyRemaining = params.qty_remaining ?? params.qty;
 
+        if (!promise.controllers.includes(action.op.account)) {
+            return Result.Err(new ValidationError(`Only controllers can fulfill delegation offers.`, action, ErrorType.NoAuthority));
+        }
+
         if (metadata.borrower === params.lender) {
             return Result.Err(new ValidationError('Cannot rent delegation to yourself.', action, ErrorType.CannotDelegateToSelf));
         }
@@ -397,11 +401,6 @@ export class DelegationOfferPromiseHandler extends PromiseHandler {
             updatedParams: lastResult.updatedParams,
         };
     }
-
-    // ─── REVERSE ───────────────────────────────────────────────────────────────
-    // Returns the remaining locked SPS from the system account back to the lender.
-    // Active rental delegations to borrowers are NOT reversed here — they continue
-    // until their individual expiration blocks are reached.
 
     override async validateReversePromise(_request: HandlerReversePromiseRequest, _promise: PromiseEntity, action: IAction, _trx?: Trx): Promise<Result<void, Error>> {
         return Result.Err(new ValidationError('Delegation offer promises cannot be reversed.', action, ErrorType.InvalidPromiseStatus));

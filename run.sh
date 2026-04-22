@@ -341,8 +341,23 @@ update() {
             exit 1
         fi
 
-        echo "Latest update checked out. Restarting node now."
-        rebuild_service validator
+        echo "Latest update checked out."
+
+        # ask if they want to run build (for database migrations)
+        read -p "Would you like to run the build command now? This is required if this version includes a database migration. (y/n):" -n 1 -r
+        echo
+        if [[ $REPLY =~ ^[Yy]$ ]]
+        then
+            build
+        fi
+
+        # ask if they want to restart the node
+        read -p "Would you like to restart the node now? (y/n):" -n 1 -r
+        echo
+        if [[ $REPLY =~ ^[Yy]$ ]]
+        then
+            rebuild_service validator
+        fi
 
         # ask if they want to rebuild the ui
         read -p "Would you like to rebuild the UI? (y/n):" -n 1 -r
@@ -353,7 +368,7 @@ update() {
         fi
 
         echo "Update complete. Please check the logs to ensure everything is working correctly."
-        echo "NOTE: If this is a version with a database migration, you may need to run the following command to apply the migration:"
+        echo "NOTE: If this is a version with a database migration and you skipped the build step, you may need to run the following command to apply the migration:"
         echo "./run.sh build"
         echo "Please check the release notes for more information."
     else
