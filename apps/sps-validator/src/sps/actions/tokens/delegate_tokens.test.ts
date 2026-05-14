@@ -87,6 +87,30 @@ test.dbOnly('Simple delegate tokens.', async () => {
     expect(sysacc_SPSP_IN_balance_after).toBe(-amount_to_delegate);
 });
 
+test.dbOnly('Delegate remaining 3-decimal balance when floating point math drifts below requested quantity.', async () => {
+    await expect(
+        fixture.opsHelper.processOp('delegate_tokens', delegator, {
+            token: 'SPSP',
+            to: delegatee,
+            qty: 99.9,
+        }),
+    ).resolves.toBeUndefined();
+
+    await expect(
+        fixture.opsHelper.processOp('delegate_tokens', delegator, {
+            token: 'SPSP',
+            to: system_delegatee,
+            qty: 0.1,
+        }),
+    ).resolves.toBeUndefined();
+
+    const active_delegation_record = (await fixture.testHelper.getActiveDelegationRecord(delegator, system_delegatee, TOKENS.SPSP))!;
+    const delegator_SPSP_OUT_balance_after = (await fixture.testHelper.getDummyToken(delegator, TOKENS.SPSP_OUT))!.balance;
+
+    expect(Number(active_delegation_record.amount)).toBeCloseTo(0.1);
+    expect(delegator_SPSP_OUT_balance_after).toBeCloseTo(initial_staked_amount);
+});
+
 test.dbOnly('Simple delegate tokens to whitelisted system account.', async () => {
     const amount_to_delegate = 50;
 

@@ -13,6 +13,10 @@ import { unstake_tokens } from '../schema';
 import { SUPPORTED_TOKENS } from '../../features/tokens';
 import { MakeActionFactory, MakeRouter } from '../utils';
 
+const TOKEN_BALANCE_PRECISION = 3;
+
+const normalizeTokenBalance = (balance: number) => +balance.toFixed(TOKEN_BALANCE_PRECISION);
+
 export class UnstakeTokensAction extends Action<typeof unstake_tokens.actionSchema> {
     constructor(
         op: OperationData,
@@ -46,6 +50,7 @@ export class UnstakeTokensAction extends Action<typeof unstake_tokens.actionSche
             const out_balance = await this.balanceRepository.getBalance(this.op.account, delegation_support.out_token, trx);
             unstaking_limit -= out_balance;
         }
+        unstaking_limit = normalizeTokenBalance(unstaking_limit);
 
         if (unstaking_limit < this.params.qty) {
             throw new ValidationError('Cannot unstake more than the currently available staked token balance.', this, ErrorType.InsufficientBalance);

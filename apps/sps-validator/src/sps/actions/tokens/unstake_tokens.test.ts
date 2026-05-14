@@ -67,6 +67,19 @@ test.dbOnly('Cannot unstake more than (staked - delegated) amount', async () => 
     expect(unstaking).toBeNull();
 });
 
+test.dbOnly('Can unstake remaining 3-decimal balance when floating point math drifts below requested quantity', async () => {
+    await fixture.testHelper.setStaked('steemmonsters', 100);
+    await fixture.testHelper.setDelegatedOut('steemmonsters', 99.9);
+    await expect(
+        fixture.opsHelper.processOp('unstake_tokens', 'steemmonsters', {
+            token: TOKENS.SPS,
+            qty: 0.1,
+        }),
+    ).resolves.toBeUndefined();
+    const unstaking = await fixture.testHelper.getUnstakingRecord('steemmonsters');
+    expect(Number(unstaking?.total_qty)).toBeCloseTo(0.1);
+});
+
 test.dbOnly('Double unstake', async () => {
     await fixture.testHelper.setStaked('steemmonsters', 20);
     await expect(
