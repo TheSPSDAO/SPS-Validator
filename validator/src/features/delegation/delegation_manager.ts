@@ -57,7 +57,7 @@ export class DelegationManager {
         private readonly rentalDelegationRepository: RentalDelegationRepository,
     ) {}
 
-    private normalizeAvailableBalance(balance: number, enabled?: boolean): number {
+    private normalizeTokenComparisonAmount(balance: number, enabled?: boolean): number {
         return enabled ? +balance.toFixed(3) : balance;
     }
 
@@ -120,7 +120,7 @@ export class DelegationManager {
         }
 
         // Check that the player has enough liquid tokens in their account
-        const available_balance = this.normalizeAvailableBalance(
+        const available_balance = this.normalizeTokenComparisonAmount(
             await this.delegationRepository.getAvailableBalance(request.from, tokenEntry, trx),
             this.shouldNormalizeAvailableBalance(action.op.block_num),
         );
@@ -175,7 +175,7 @@ export class DelegationManager {
 
         const qtyNeeded = delegations.reduce((acc, [_, qty]) => acc + qty, 0);
         // Check that the player has enough liquid tokens in their account
-        const available_balance = this.normalizeAvailableBalance(
+        const available_balance = this.normalizeTokenComparisonAmount(
             await this.delegationRepository.getAvailableBalance(request.from, tokenEntry, trx),
             this.shouldNormalizeAvailableBalance(action.op.block_num),
         );
@@ -312,7 +312,7 @@ export class DelegationManager {
         if (!delegation) {
             return Result.Err(new ValidationError(`There is currently no ${token} tokens delegated from ${to} to ${from}.`, action, ErrorType.NoTokensDelegated));
         }
-        const undelegatableAmount = delegation.amount - rentalLockedQty;
+        const undelegatableAmount = this.normalizeTokenComparisonAmount(delegation.amount - rentalLockedQty, this.shouldNormalizeAvailableBalance(action.op.block_num));
         if (qty > undelegatableAmount) {
             return Result.Err(new ValidationError(`Cannot undelegate more than you have delegated.`, action, ErrorType.UndelegationAmountTooHigh));
         } else if (action.op.block_time.getTime() - delegation.last_delegation_date.getTime() < this.opts.undelegation_cooldown_ms) {
