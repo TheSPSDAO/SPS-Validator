@@ -130,6 +130,14 @@ export class DelegationOfferPromiseHandler extends PromiseHandler {
         return this.configWatch?.delegation_rental?.min_qty ?? this.opts.default_min_qty ?? DelegationOfferPromiseHandler.DEFAULT_MIN_QTY;
     }
 
+    private normalizeDelegationOfferQty(amount: number, enabled?: boolean): number {
+        return enabled ? +amount.toFixed(3) : amount;
+    }
+
+    protected shouldNormalizeDelegationOfferQty(_block_num: number): boolean {
+        return false;
+    }
+
     /**
      * Delegation offers are created directly by the lender, not by admins.
      */
@@ -295,7 +303,7 @@ export class DelegationOfferPromiseHandler extends PromiseHandler {
         const metadata = request.metadata as DelegationOfferFulfillMetadata;
         const fillQty = metadata.qty;
         const qtyRemaining = params.qty_remaining ?? params.qty;
-        const newQtyRemaining = qtyRemaining - fillQty;
+        const newQtyRemaining = this.normalizeDelegationOfferQty(qtyRemaining - fillQty, this.shouldNormalizeDelegationOfferQty(action.op.block_num));
         const eventLogs: EventLog[] = [];
 
         // 1. Undelegate the fill qty from the promises account back to the lender

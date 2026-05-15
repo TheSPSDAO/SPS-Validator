@@ -951,6 +951,145 @@ describe('delegation_offer partial fills', () => {
         expect(rental!.status).toBe('active');
     });
 
+    test.dbOnly('final 3-decimal fill after drift fails before precision fix transition', async () => {
+        const mutableTransitionPoints = transitionPoints.transition_points as { token_precision_fix: number; delegation_offer_block: number };
+        const originalPrecisionBlock = mutableTransitionPoints.token_precision_fix;
+        const precisionBlock = transitionPoints.transition_points.delegation_offer_block + 20;
+        mutableTransitionPoints.token_precision_fix = precisionBlock;
+
+        try {
+            const txId = 'tx-qty-remaining-precision-pre';
+            await fixture.testHelper.setStaked(lender, 100);
+
+            await fixture.opsHelper.processOp(
+                'create_promise',
+                lender,
+                {
+                    type: 'delegation_offer',
+                    controllers: [controller],
+                    params: {
+                        token: TOKENS.SPSP,
+                        qty: 100,
+                        lender,
+                        price: 0.001,
+                    },
+                },
+                { block_num: precisionBlock - 2, transaction: txId },
+            );
+
+            await fixture.opsHelper.processOp(
+                'fulfill_promise',
+                controller,
+                {
+                    id: txId,
+                    type: 'delegation_offer',
+                    metadata: {
+                        borrower,
+                        rental_id: 'rental-precision-pre-1',
+                        qty: 99.9,
+                        expiration_blocks: 100000,
+                    },
+                },
+                { block_num: precisionBlock - 1 },
+            );
+
+            await fixture.opsHelper.processOp(
+                'fulfill_promise',
+                controller,
+                {
+                    id: txId,
+                    type: 'delegation_offer',
+                    metadata: {
+                        borrower,
+                        rental_id: 'rental-precision-pre-2',
+                        qty: 0.1,
+                        expiration_blocks: 100000,
+                    },
+                },
+                { block_num: precisionBlock - 1 },
+            );
+
+            const promise = await fixture.testHelper.getPromise('delegation_offer', txId);
+            const finalRental = await fixture.testHelper.getRentalDelegation('rental-precision-pre-2');
+
+            expect(promise!.status).toBe('open');
+            expect((promise!.params as any).qty_remaining).toBe(0.09999999999999432);
+            expect(finalRental).toBeNull();
+        } finally {
+            mutableTransitionPoints.token_precision_fix = originalPrecisionBlock;
+        }
+    });
+
+    test.dbOnly('final 3-decimal fill after drift completes after precision fix transition', async () => {
+        const mutableTransitionPoints = transitionPoints.transition_points as { token_precision_fix: number; delegation_offer_block: number };
+        const originalPrecisionBlock = mutableTransitionPoints.token_precision_fix;
+        const precisionBlock = transitionPoints.transition_points.delegation_offer_block + 20;
+        mutableTransitionPoints.token_precision_fix = precisionBlock;
+
+        try {
+            const txId = 'tx-qty-remaining-precision-post';
+            await fixture.testHelper.setStaked(lender, 100);
+
+            await fixture.opsHelper.processOp(
+                'create_promise',
+                lender,
+                {
+                    type: 'delegation_offer',
+                    controllers: [controller],
+                    params: {
+                        token: TOKENS.SPSP,
+                        qty: 100,
+                        lender,
+                        price: 0.001,
+                    },
+                },
+                { block_num: precisionBlock, transaction: txId },
+            );
+
+            await fixture.opsHelper.processOp(
+                'fulfill_promise',
+                controller,
+                {
+                    id: txId,
+                    type: 'delegation_offer',
+                    metadata: {
+                        borrower,
+                        rental_id: 'rental-precision-post-1',
+                        qty: 99.9,
+                        expiration_blocks: 100000,
+                    },
+                },
+                { block_num: precisionBlock + 1 },
+            );
+
+            await fixture.opsHelper.processOp(
+                'fulfill_promise',
+                controller,
+                {
+                    id: txId,
+                    type: 'delegation_offer',
+                    metadata: {
+                        borrower,
+                        rental_id: 'rental-precision-post-2',
+                        qty: 0.1,
+                        expiration_blocks: 100000,
+                    },
+                },
+                { block_num: precisionBlock + 2 },
+            );
+
+            const promise = await fixture.testHelper.getPromise('delegation_offer', txId);
+            const finalRental = await fixture.testHelper.getRentalDelegation('rental-precision-post-2');
+
+            expect(promise!.status).toBe('completed');
+            expect((promise!.params as any).qty_remaining).toBe(0);
+            expect(finalRental).not.toBeNull();
+            expect(finalRental!.qty).toBe('0.100');
+        } finally {
+            mutableTransitionPoints.token_precision_fix = originalPrecisionBlock;
+        }
+    });
+
     test.dbOnly('partial fill writes a history record even though status stays open', async () => {
         const blockNum = getBlockAfterTransition();
         const txId = 'tx-partial-history';
