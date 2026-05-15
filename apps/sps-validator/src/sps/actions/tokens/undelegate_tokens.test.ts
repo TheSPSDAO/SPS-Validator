@@ -2,6 +2,7 @@ import { emoji_payload, garbage_payload } from '../../../__tests__/db-helpers';
 import { container } from '../../../__tests__/test-composition-root';
 import { Fixture } from '../../../__tests__/action-fixture';
 import { TOKENS } from '../../features/tokens';
+import { TransitionCfg } from '../../features/transition';
 
 const fixture = container.resolve(Fixture);
 const DELEGATION_ACCOUNT = '$DELEGATION';
@@ -11,6 +12,7 @@ const delegatorWithoutAuthority = 'steemmonstersauth2';
 const delegator = 'steemmonsters';
 const delegatee = 'steemmonsters2';
 const amount_delegated = 100;
+let transitionPoints: TransitionCfg = null!;
 
 beforeAll(async () => {
     await fixture.init();
@@ -34,6 +36,7 @@ beforeEach(async () => {
     await fixture.testHelper.setActiveDelegationRecord(delegator, delegatee, TOKENS.SPSP, amount_delegated);
 
     await fixture.loader.load();
+    transitionPoints = container.resolve(TransitionCfg);
 });
 
 afterAll(async () => {
@@ -200,6 +203,86 @@ test.dbOnly('undelegate more than delegated amount fails.', async () => {
     expect(Number(active_delegation_record_after.amount)).toBe(amount_delegated);
     expect(active_delegation_record_after.last_undelegation_date).toBeNull();
     expect(active_delegation_record_after.last_undelegation_tx).toBeNull();
+});
+
+test.dbOnly('Undelegate remaining 3-decimal non-rental amount fails before precision fix transition.', async () => {
+    await fixture.testHelper.insertRentalDelegation({
+        id: 'rental-precision-pre',
+        promise_type: 'delegation_offer',
+        promise_ext_id: 'offer-precision-pre',
+        lender: delegator,
+        borrower: delegatee,
+        token: TOKENS.SPSP,
+        qty: '99.900',
+        expiration_block: transitionPoints.transition_points.token_precision_fix + 1000,
+        start_block: transitionPoints.transition_points.token_precision_fix - 1000,
+        expiration_blocks: 2000,
+        status: 'active',
+    });
+
+    const block_time = new Date();
+    block_time.setTime(block_time.getTime() + 8 * 24 * 60 * 60 * 1000);
+
+    await expect(
+        fixture.opsHelper.processOp(
+            'undelegate_tokens',
+            delegator,
+            {
+                token: 'SPSP',
+                from: delegatee,
+                qty: 0.1,
+            },
+            { block_num: transitionPoints.transition_points.token_precision_fix - 1, block_time },
+        ),
+    ).resolves.toBeUndefined();
+
+    const active_delegation_record_after = (await fixture.testHelper.getActiveDelegationRecord(delegator, delegatee, TOKENS.SPSP))!;
+
+    expect(active_delegation_record_after.amount).toBe('100.000');
+    expect(active_delegation_record_after.last_undelegation_date).toBeNull();
+    expect(active_delegation_record_after.last_undelegation_tx).toBeNull();
+});
+
+test.dbOnly('Undelegate remaining 3-decimal non-rental amount succeeds after precision fix transition.', async () => {
+    await fixture.testHelper.insertRentalDelegation({
+        id: 'rental-precision-post',
+        promise_type: 'delegation_offer',
+        promise_ext_id: 'offer-precision-post',
+        lender: delegator,
+        borrower: delegatee,
+        token: TOKENS.SPSP,
+        qty: '99.900',
+        expiration_block: transitionPoints.transition_points.token_precision_fix + 1000,
+        start_block: transitionPoints.transition_points.token_precision_fix - 1000,
+        expiration_blocks: 2000,
+        status: 'active',
+    });
+
+    const block_time = new Date();
+    block_time.setTime(block_time.getTime() + 8 * 24 * 60 * 60 * 1000);
+
+    await expect(
+        fixture.opsHelper.processOp(
+            'undelegate_tokens',
+            delegator,
+            {
+                token: 'SPSP',
+                from: delegatee,
+                qty: 0.1,
+            },
+            { block_num: transitionPoints.transition_points.token_precision_fix, block_time },
+        ),
+    ).resolves.toBeUndefined();
+
+    const active_delegation_record_after = (await fixture.testHelper.getActiveDelegationRecord(delegator, delegatee, TOKENS.SPSP))!;
+    const delegator_SPSP_OUT_balance_after = (await fixture.testHelper.getDummyToken(delegator, TOKENS.SPSP_OUT))!.balance;
+    const delegatee_SPSP_IN_balance_after = (await fixture.testHelper.getDummyToken(delegatee, TOKENS.SPSP_IN))!.balance;
+
+    expect(active_delegation_record_after.amount).toBe('99.900');
+    expect(active_delegation_record_after.last_undelegation_date).toBeTruthy();
+    expect(active_delegation_record_after.last_undelegation_tx).toBeTruthy();
+    expect(delegator_SPSP_OUT_balance_after).toBe(99.9);
+    expect(delegatee_SPSP_IN_balance_after).toBe(99.9);
 });
 
 test.dbOnly('undelegate negative amount fails.', async () => {

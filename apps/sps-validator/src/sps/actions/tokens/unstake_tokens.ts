@@ -12,6 +12,7 @@ import {
 import { unstake_tokens } from '../schema';
 import { SUPPORTED_TOKENS } from '../../features/tokens';
 import { MakeActionFactory, MakeRouter } from '../utils';
+import { TransitionManager } from '../../features/transition';
 
 export class UnstakeTokensAction extends Action<typeof unstake_tokens.actionSchema> {
     constructor(
@@ -20,6 +21,7 @@ export class UnstakeTokensAction extends Action<typeof unstake_tokens.actionSche
         index: number,
         private readonly balanceRepository: BalanceRepository,
         private readonly tokenUnstakingRepository: TokenUnstakingRepository,
+        private readonly transitionManager: TransitionManager,
     ) {
         super(unstake_tokens, op, data, index);
     }
@@ -47,6 +49,11 @@ export class UnstakeTokensAction extends Action<typeof unstake_tokens.actionSche
             unstaking_limit -= out_balance;
         }
 
+        const precisionFixEnabled = this.transitionManager.isTransitioned('token_precision_fix', this.op.block_num);
+        if (precisionFixEnabled) {
+            unstaking_limit = +unstaking_limit.toFixed(3);
+        }
+
         if (unstaking_limit < this.params.qty) {
             throw new ValidationError('Cannot unstake more than the currently available staked token balance.', this, ErrorType.InsufficientBalance);
         }
@@ -68,5 +75,5 @@ export class UnstakeTokensAction extends Action<typeof unstake_tokens.actionSche
     }
 }
 
-const Builder = MakeActionFactory(UnstakeTokensAction, BalanceRepository, TokenUnstakingRepository);
+const Builder = MakeActionFactory(UnstakeTokensAction, BalanceRepository, TokenUnstakingRepository, TransitionManager);
 export const Router = MakeRouter(unstake_tokens.action_name, Builder);

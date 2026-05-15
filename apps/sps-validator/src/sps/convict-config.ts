@@ -582,6 +582,12 @@ const schema = {
             default: 103680250,
             env: 'FIX_MULTI_UNDELEGATE_CRASH_TRANSITION_POINT',
         },
+        token_precision_fix: {
+            doc: 'Block number for the token_precision_fix transition',
+            format: 'nat',
+            default: 999999999,
+            env: 'TOKEN_PRECISION_FIX_TRANSITION_POINT',
+        },
         delegation_offer_block: {
             doc: 'Block number for enabling delegation offers',
             format: 'nat',

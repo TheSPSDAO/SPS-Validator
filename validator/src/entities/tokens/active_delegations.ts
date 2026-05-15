@@ -61,7 +61,6 @@ export class ActiveDelegationsRepository extends BaseRepository {
         if (!token.unstakes) return balance;
         const unstaking_record = await this.unstakingRepository.lookup(player, token.unstakes, trx);
         const unstaking_balance = unstaking_record ? +(unstaking_record.total_qty - unstaking_record.total_unstaked) : 0;
-        // no precision??
         return balance - unstaking_balance;
     }
 
