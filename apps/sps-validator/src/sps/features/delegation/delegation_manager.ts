@@ -30,4 +30,8 @@ export class SpsDelegationManager extends DelegationManager {
     override shouldGroupTransfersInMultiOps(block_num: number): boolean {
         return this.transitionManager.isTransitioned('fix_multi_undelegate_crash', block_num);
     }
+
+    protected override shouldNormalizeAvailableBalance(block_num: number): boolean {
+        return this.transitionManager.isTransitioned('token_precision_fix', block_num);
+    }
 }

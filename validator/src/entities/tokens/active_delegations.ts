@@ -19,9 +19,6 @@ export type ActiveDelegationsEntry = {
 };
 
 const DELEGATION_ACCOUNT = '$DELEGATION';
-const TOKEN_BALANCE_PRECISION = 3;
-
-const normalizeTokenBalance = (balance: number) => +balance.toFixed(TOKEN_BALANCE_PRECISION);
 
 export class ActiveDelegationsRepository extends BaseRepository {
     public readonly table = getTableName(ActiveDelegationEntity);
@@ -61,10 +58,10 @@ export class ActiveDelegationsRepository extends BaseRepository {
         const token_balance = await this.balanceRepository.getBalance(player, token.token, trx);
         const delegated_balance = await this.balanceRepository.getBalance(player, token.delegation.out_token, trx);
         const balance = token_balance - delegated_balance;
-        if (!token.unstakes) return normalizeTokenBalance(balance);
+        if (!token.unstakes) return balance;
         const unstaking_record = await this.unstakingRepository.lookup(player, token.unstakes, trx);
-        const unstaking_balance = unstaking_record ? unstaking_record.total_qty - unstaking_record.total_unstaked : 0;
-        return normalizeTokenBalance(balance - unstaking_balance);
+        const unstaking_balance = unstaking_record ? +(unstaking_record.total_qty - unstaking_record.total_unstaked) : 0;
+        return balance - unstaking_balance;
     }
 
     public async delegate(action: IAction, delegator: string, delegatee: string, token: TokenSupportEntry, qty: number, skipDateUpdate?: boolean, trx?: Trx) {

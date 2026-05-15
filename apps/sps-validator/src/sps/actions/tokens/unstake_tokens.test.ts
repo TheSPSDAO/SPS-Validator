@@ -3,8 +3,10 @@ import { container } from '../../../__tests__/test-composition-root';
 import { Fixture } from '../../../__tests__/action-fixture';
 import { ConfigEntity } from '@steem-monsters/splinterlands-validator';
 import { TOKENS } from '../../features/tokens';
+import { TransitionCfg } from '../../features/transition';
 
 const fixture = container.resolve(Fixture);
+let transitionPoints: TransitionCfg = null!;
 
 afterAll(async () => {
     await fixture.dispose();
@@ -20,6 +22,7 @@ beforeEach(async () => {
     await fixture.handle.query(ConfigEntity).where('group_name', 'sps').andWhere('name', 'unstaking_interval_seconds').updateItem({ value: '1' });
     await fixture.handle.query(ConfigEntity).where('group_name', 'sps').andWhere('name', 'unstaking_periods').updateItem({ value: '1' });
     await fixture.loader.load();
+    transitionPoints = container.resolve(TransitionCfg);
 });
 
 test.dbOnly('Garbage data for unstake_tokens does not crash.', () => {
@@ -71,13 +74,36 @@ test.dbOnly('Can unstake remaining 3-decimal balance when floating point math dr
     await fixture.testHelper.setStaked('steemmonsters', 100);
     await fixture.testHelper.setDelegatedOut('steemmonsters', 99.9);
     await expect(
-        fixture.opsHelper.processOp('unstake_tokens', 'steemmonsters', {
-            token: TOKENS.SPS,
-            qty: 0.1,
-        }),
+        fixture.opsHelper.processOp(
+            'unstake_tokens',
+            'steemmonsters',
+            {
+                token: TOKENS.SPS,
+                qty: 0.1,
+            },
+            { block_num: transitionPoints.transition_points.token_precision_fix },
+        ),
     ).resolves.toBeUndefined();
     const unstaking = await fixture.testHelper.getUnstakingRecord('steemmonsters');
-    expect(Number(unstaking?.total_qty)).toBeCloseTo(0.1);
+    expect(unstaking?.total_qty).toBe('0.100');
+});
+
+test.dbOnly('Cannot unstake remaining 3-decimal balance before precision fix transition', async () => {
+    await fixture.testHelper.setStaked('steemmonsters', 100);
+    await fixture.testHelper.setDelegatedOut('steemmonsters', 99.9);
+    await expect(
+        fixture.opsHelper.processOp(
+            'unstake_tokens',
+            'steemmonsters',
+            {
+                token: TOKENS.SPS,
+                qty: 0.1,
+            },
+            { block_num: transitionPoints.transition_points.token_precision_fix - 1 },
+        ),
+    ).resolves.toBeUndefined();
+    const unstaking = await fixture.testHelper.getUnstakingRecord('steemmonsters');
+    expect(unstaking).toBeNull();
 });
 
 test.dbOnly('Double unstake', async () => {

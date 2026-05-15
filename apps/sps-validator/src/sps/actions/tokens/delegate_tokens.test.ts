@@ -2,6 +2,7 @@ import { emoji_payload, garbage_payload } from '../../../__tests__/db-helpers';
 import { container } from '../../../__tests__/test-composition-root';
 import { Fixture } from '../../../__tests__/action-fixture';
 import { TOKENS } from '../../features/tokens';
+import { TransitionCfg } from '../../features/transition';
 
 const fixture = container.resolve(Fixture);
 const DELEGATION_ACCOUNT = '$DELEGATION';
@@ -11,6 +12,7 @@ const delegatorWithoutAuthority = 'steemmonstersauth2';
 const delegator = 'steemmonsters';
 const delegatee = 'steemmonsters2';
 const system_delegatee = '$SOULKEEP';
+let transitionPoints: TransitionCfg = null!;
 
 beforeAll(async () => {
     await fixture.init();
@@ -36,6 +38,7 @@ beforeEach(async () => {
     await fixture.testHelper.setDelegatedIn(DELEGATION_ACCOUNT, 0);
 
     await fixture.loader.load();
+    transitionPoints = container.resolve(TransitionCfg);
 });
 
 afterAll(async () => {
@@ -89,26 +92,70 @@ test.dbOnly('Simple delegate tokens.', async () => {
 
 test.dbOnly('Delegate remaining 3-decimal balance when floating point math drifts below requested quantity.', async () => {
     await expect(
-        fixture.opsHelper.processOp('delegate_tokens', delegator, {
-            token: 'SPSP',
-            to: delegatee,
-            qty: 99.9,
-        }),
+        fixture.opsHelper.processOp(
+            'delegate_tokens',
+            delegator,
+            {
+                token: 'SPSP',
+                to: delegatee,
+                qty: 99.9,
+            },
+            { block_num: transitionPoints.transition_points.token_precision_fix },
+        ),
     ).resolves.toBeUndefined();
 
     await expect(
-        fixture.opsHelper.processOp('delegate_tokens', delegator, {
-            token: 'SPSP',
-            to: system_delegatee,
-            qty: 0.1,
-        }),
+        fixture.opsHelper.processOp(
+            'delegate_tokens',
+            delegator,
+            {
+                token: 'SPSP',
+                to: system_delegatee,
+                qty: 0.1,
+            },
+            { block_num: transitionPoints.transition_points.token_precision_fix },
+        ),
     ).resolves.toBeUndefined();
 
     const active_delegation_record = (await fixture.testHelper.getActiveDelegationRecord(delegator, system_delegatee, TOKENS.SPSP))!;
     const delegator_SPSP_OUT_balance_after = (await fixture.testHelper.getDummyToken(delegator, TOKENS.SPSP_OUT))!.balance;
 
-    expect(Number(active_delegation_record.amount)).toBeCloseTo(0.1);
-    expect(delegator_SPSP_OUT_balance_after).toBeCloseTo(initial_staked_amount);
+    expect(active_delegation_record.amount).toBe('0.100');
+    expect(delegator_SPSP_OUT_balance_after).toBe(100);
+});
+
+test.dbOnly('Delegate remaining 3-decimal balance fails before precision fix transition.', async () => {
+    await expect(
+        fixture.opsHelper.processOp(
+            'delegate_tokens',
+            delegator,
+            {
+                token: 'SPSP',
+                to: delegatee,
+                qty: 99.9,
+            },
+            { block_num: transitionPoints.transition_points.token_precision_fix - 1 },
+        ),
+    ).resolves.toBeUndefined();
+
+    await expect(
+        fixture.opsHelper.processOp(
+            'delegate_tokens',
+            delegator,
+            {
+                token: 'SPSP',
+                to: system_delegatee,
+                qty: 0.1,
+            },
+            { block_num: transitionPoints.transition_points.token_precision_fix - 1 },
+        ),
+    ).resolves.toBeUndefined();
+
+    const active_delegation_record = await fixture.testHelper.getActiveDelegationRecord(delegator, system_delegatee, TOKENS.SPSP);
+    const delegator_SPSP_OUT_balance_after = (await fixture.testHelper.getDummyToken(delegator, TOKENS.SPSP_OUT))!.balance;
+
+    expect(active_delegation_record).toBeNull();
+    expect(delegator_SPSP_OUT_balance_after).toBe(99.9);
 });
 
 test.dbOnly('Simple delegate tokens to whitelisted system account.', async () => {

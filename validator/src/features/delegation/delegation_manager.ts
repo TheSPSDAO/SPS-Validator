@@ -57,7 +57,15 @@ export class DelegationManager {
         private readonly rentalDelegationRepository: RentalDelegationRepository,
     ) {}
 
-    shouldGroupTransfersInMultiOps(block_num: number): boolean {
+    private normalizeAvailableBalance(balance: number, enabled?: boolean): number {
+        return enabled ? +balance.toFixed(3) : balance;
+    }
+
+    protected shouldNormalizeAvailableBalance(_block_num: number): boolean {
+        return false;
+    }
+
+    shouldGroupTransfersInMultiOps(_block_num: number): boolean {
         return false;
     }
 
@@ -112,7 +120,10 @@ export class DelegationManager {
         }
 
         // Check that the player has enough liquid tokens in their account
-        const available_balance = await this.delegationRepository.getAvailableBalance(request.from, tokenEntry, trx);
+        const available_balance = this.normalizeAvailableBalance(
+            await this.delegationRepository.getAvailableBalance(request.from, tokenEntry, trx),
+            this.shouldNormalizeAvailableBalance(action.op.block_num),
+        );
         if (available_balance < request.qty) {
             return Result.Err(new ValidationError(`Insufficient liquid ${request.token}.`, action, ErrorType.InsufficientBalance));
         }
@@ -164,7 +175,10 @@ export class DelegationManager {
 
         const qtyNeeded = delegations.reduce((acc, [_, qty]) => acc + qty, 0);
         // Check that the player has enough liquid tokens in their account
-        const available_balance = await this.delegationRepository.getAvailableBalance(request.from, tokenEntry, trx);
+        const available_balance = this.normalizeAvailableBalance(
+            await this.delegationRepository.getAvailableBalance(request.from, tokenEntry, trx),
+            this.shouldNormalizeAvailableBalance(action.op.block_num),
+        );
         if (available_balance < qtyNeeded) {
             return Result.Err(new ValidationError(`Insufficient liquid ${request.token}.`, action, ErrorType.InsufficientBalance));
         }

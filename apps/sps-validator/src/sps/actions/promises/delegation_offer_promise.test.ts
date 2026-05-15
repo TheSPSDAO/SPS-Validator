@@ -141,6 +141,84 @@ describe('After controller_creation_block transition', () => {
         });
     });
 
+    test.dbOnly('delegation_offer precision validation uses configured token_precision_fix transition', async () => {
+        const mutableTransitionPoints = transitionPoints.transition_points as { token_precision_fix: number; delegation_offer_block: number };
+        const originalPrecisionBlock = mutableTransitionPoints.token_precision_fix;
+        const precisionBlock = transitionPoints.transition_points.delegation_offer_block + 20;
+        mutableTransitionPoints.token_precision_fix = precisionBlock;
+
+        try {
+            await fixture.testHelper.setStaked(lender, 100);
+
+            await expect(
+                fixture.opsHelper.processOp(
+                    'create_promise',
+                    lender,
+                    {
+                        type: 'delegation_offer',
+                        controllers: [controller],
+                        params: {
+                            token: TOKENS.SPSP,
+                            qty: 99.9,
+                            lender,
+                            price: 0.001,
+                        },
+                    },
+                    { block_num: precisionBlock - 1, transaction: 'precision-before-first' },
+                ),
+            ).resolves.toBeUndefined();
+
+            await expect(
+                fixture.opsHelper.processOp(
+                    'create_promise',
+                    lender,
+                    {
+                        type: 'delegation_offer',
+                        controllers: [controller],
+                        params: {
+                            token: TOKENS.SPSP,
+                            qty: 0.1,
+                            lender,
+                            price: 0.001,
+                        },
+                    },
+                    { block_num: precisionBlock - 1, transaction: 'precision-before-second' },
+                ),
+            ).resolves.toBeUndefined();
+
+            expect(await fixture.testHelper.getPromise('delegation_offer', 'precision-before-second')).toBeNull();
+
+            await expect(
+                fixture.opsHelper.processOp(
+                    'create_promise',
+                    lender,
+                    {
+                        type: 'delegation_offer',
+                        controllers: [controller],
+                        params: {
+                            token: TOKENS.SPSP,
+                            qty: 0.1,
+                            lender,
+                            price: 0.001,
+                        },
+                    },
+                    { block_num: precisionBlock, transaction: 'precision-after-second' },
+                ),
+            ).resolves.toBeUndefined();
+
+            const promise = await fixture.testHelper.getPromise('delegation_offer', 'precision-after-second');
+            expect(promise).not.toBeNull();
+            expect(promise!.params).toEqual(
+                expect.objectContaining({
+                    qty: 0.1,
+                    qty_remaining: 0.1,
+                }),
+            );
+        } finally {
+            mutableTransitionPoints.token_precision_fix = originalPrecisionBlock;
+        }
+    });
+
     test.dbOnly('promise ID is optional after transition (auto-generated)', async () => {
         const blockNum = getBlockAfterTransition();
         const txId = 'test-tx-123';
