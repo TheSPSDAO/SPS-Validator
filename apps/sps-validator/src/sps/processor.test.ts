@@ -418,3 +418,25 @@ test.dbOnly('Block processing without transactions works correctly', async () =>
     expect(actualRewardToken).toBe(TOKENS.SPS);
     expect(actualRewardAmount).toBeGreaterThan(0);
 });
+
+test('bad block 101387262 keeps its transactions and pins the microfork header', () => {
+    const blockNum = transitionPoints!.transition_points.bad_block_101387262;
+    const tx = { ref_block_num: 1, ref_block_prefix: 2, expiration: '2025-11-21T21:28:54', operations: [], extensions: [], signatures: [] };
+    const raw = new NBlock(
+        blockNum,
+        {
+            timestamp: '2025-11-21T21:27:54.000',
+            transactions: [tx as never],
+            transaction_ids: ['ee65874f'],
+            block_id: '060b0bfeecfece0743f61e8b0f26335839f6557f',
+            previous: '060b0bfd484a25cd78093ddfdbf09a28342c4df8',
+        },
+        { l2_block_id: 'prev-l2' },
+    );
+    const transformed = (processor as unknown as { transformBlock(b: NBlock): NBlock }).transformBlock(raw);
+    expect(transformed.block_id).toBe('060b0bfe78f7279a3384d2091cbd191e478c0a69');
+    expect(transformed.previous).toBe('060b0bfd484a25cd78093ddfdbf09a28342c4df8');
+    expect(transformed.block_time).toEqual(new Date('2025-11-21T21:27:54.000Z'));
+    expect(transformed.prev_block_hash).toBe('prev-l2');
+    expect(transformed.transactions).toEqual([{ transaction: tx, id: 'ee65874f' }]);
+});
