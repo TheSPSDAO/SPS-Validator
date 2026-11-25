@@ -8,6 +8,7 @@ import * as utils from '../../utils';
 import { PoolUpdater } from '../../config/updater';
 import { StakingConfiguration } from '../../config/staking';
 import { BlockRepository } from '../block';
+import { deterministicPow } from '../../utilities/pow';
 
 type StakingPoolRewardDebtEntry = {
     player: string;
@@ -285,7 +286,7 @@ export class StakingRewardsRepository extends BaseRepository {
         }
         const total_reductions = Math.trunc((block_num - params.start_block) / params.reduction_blocks);
         const reduction_pct = 1 - params.reduction_pct / 100;
-        return reduction_pct ** total_reductions;
+        return deterministicPow(reduction_pct, total_reductions);
     }
 
     async getTotalRewardDebt<T extends string>(pool_name: T, trx?: Trx): Promise<number> {
